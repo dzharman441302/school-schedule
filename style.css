@@ -206,3 +206,13 @@ footer {
         padding: 0 0.5rem;
     }
 }
+.info-message {
+    background-color: #fff;
+    color: #d32f2f;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
