@@ -118,17 +118,21 @@ header h2 {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
+    padding: 0.5rem;
 }
 
-table {
+.schedule table {
     width: 100%;
+    min-width: 550px;
     border-collapse: collapse;
 }
 
 th, td {
     padding: 0.75rem;
-    text-align: center;
+    text-align: left;
     border: 1px solid #ddd;
+    white-space: nowrap;
+    font-size: 0.95rem;
 }
 
 th {
@@ -186,11 +190,12 @@ footer {
 
     .schedule {
         overflow-x: auto;
+        padding: 0.5rem;
     }
 
-    table {
+    .schedule table {
         font-size: 0.9rem;
-        min-width: 600px;
+        min-width: 550px;
     }
 
     th, td {
