@@ -1,194 +1,187 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Изменения в расписании - МОУ СОШ № 20</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Изменения в расписании - МОУ СОШ № 20</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <header>
-        <h1>МОУ СОШ № 20</h1>
-        <h2>город Тверь</h2>
-        <div class="date" id="current-date"></div>
-        <a href="index.html" class="changes-link">Вернуться к расписанию</a>
-    </header>
+  <header>
+    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+    <h2>город Тверь</h2>
+    <div class="date" id="current-date"></div>
+    <a href="index.html" class="changes-link">Вернуться к расписанию</a>
 
-    <div class="container">
-        <h2 class="changes-title">Изменения на <span id="changes-date"></span></h2>
-        <div id="last-update" class="last-update"></div>
-
-        <div class="changes-table">
-            <div id="loading" class="loading">Загрузка изменений...</div>
-            <div id="error" class="error" style="display: none;"></div>
-
-            <!-- ✅ Обёртка для прокрутки -->
-            <div class="schedule">
-                <table style="display: none;">
-                    <thead>
-                        <tr>
-                            <th>№</th>
-                            <th>Класс</th>
-                            <th>Урок</th>
-                            <th>Изменения</th>
-                            <th>Примечание</th>
-                        </tr>
-                    </thead>
-                    <tbody id="changes-body">
-                        <!-- Данные загружаются из Google Таблицы -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <!-- 🔔 Новое сообщение -->
+    <div class="info-message">
+      <strong>ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</strong>
     </div>
+  </header>
 
-    <footer>
-        <p>МОУ СОШ № 20</p>
-    </footer>
+  <div class="container">
+    <h2 class="changes-title">Изменения на <span id="changes-date"></span></h2>
 
-    <script>
-        const CONFIG = {
-            SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-            SHEET_NAME: 'Изменения',
-            API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI',
-            AUTO_REFRESH: 300000
-        };
+    <div class="changes-table">
+      <div id="loading" class="loading">Загрузка изменений...</div>
+      <div id="error" class="error" style="display: none;"></div>
 
-        const elements = {
-            loading: document.getElementById('loading'),
-            error: document.getElementById('error'),
-            table: document.querySelector('.changes-table table'),
-            tbody: document.getElementById('changes-body'),
-            currentDate: document.getElementById('current-date'),
-            changesDate: document.getElementById('changes-date'),
-            lastUpdate: document.getElementById('last-update')
-        };
+      <div class="schedule">
+        <table style="display: none;">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Класс</th>
+              <th>Урок</th>
+              <th>Изменения</th>
+              <th>Примечание</th>
+            </tr>
+          </thead>
+          <tbody id="changes-body">
+            <!-- Данные из Google Таблицы -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateDates();
-            loadSheetData();
-            if (CONFIG.AUTO_REFRESH > 0) {
-                setInterval(loadSheetData, CONFIG.AUTO_REFRESH);
-            }
-        });
+  <footer>
+    <p>МОУ СОШ № 20 имени Ивана Андреевича Рыбалко</p>
+  </footer>
 
-        function updateDates() {
-            const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            elements.currentDate.textContent = now.toLocaleDateString('ru-RU', options);
+  <script>
+    const CONFIG = {
+      SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
+      SHEET_NAME: 'Изменения',
+      API_KEY: 'ВСТАВЬ_СЮДА_СВОЙ_API_КЛЮЧ',
+      AUTO_REFRESH: 300000
+    };
 
-            const tomorrow = new Date();
-            tomorrow.setDate(now.getDate() + 1);
-            elements.changesDate.textContent = tomorrow.toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'numeric',
-                year: 'numeric'
-            });
+    const elements = {
+      loading: document.getElementById('loading'),
+      error: document.getElementById('error'),
+      table: document.querySelector('.changes-table table'),
+      tbody: document.getElementById('changes-body'),
+      currentDate: document.getElementById('current-date'),
+      changesDate: document.getElementById('changes-date')
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDates();
+      loadSheetData();
+      if (CONFIG.AUTO_REFRESH > 0) {
+        setInterval(loadSheetData, CONFIG.AUTO_REFRESH);
+      }
+    });
+
+    function updateDates() {
+      const now = new Date();
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      elements.currentDate.textContent = now.toLocaleDateString('ru-RU', options);
+
+      const tomorrow = new Date();
+      tomorrow.setDate(now.getDate() + 1);
+      elements.changesDate.textContent = tomorrow.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    async function loadSheetData() {
+      try {
+        showLoading();
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Ошибка сервера: ${response.status}`);
         }
-
-        async function loadSheetData() {
-            try {
-                showLoading();
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Ошибка сервера: ${response.status}`);
-                }
-                const data = await response.json();
-                if (!data.values || data.values.length < 2) {
-                    showMessage('Нет изменений на завтра');
-                    return;
-                }
-                processData(data.values);
-                updateLastUpdateTime();
-            } catch (error) {
-                showError(error);
-            }
+        const data = await response.json();
+        if (!data.values || data.values.length < 2) {
+          showMessage('Нет изменений на завтра');
+          return;
         }
+        processData(data.values);
+      } catch (error) {
+        showError(error);
+      }
+    }
 
-        function processData(rows) {
-            const [headers, ...dataRows] = rows;
-            const headerMap = {};
-            headers.forEach((header, index) => {
-                headerMap[header.trim()] = index;
-            });
+    function processData(rows) {
+      const [headers, ...dataRows] = rows;
+      const headerMap = {};
+      headers.forEach((header, index) => {
+        headerMap[header.trim()] = index;
+      });
 
-            const requiredColumns = ['Класс', 'Урок', 'Изменения'];
-            for (const column of requiredColumns) {
-                if (!headerMap.hasOwnProperty(column)) {
-                    throw new Error(`Отсутствует обязательный столбец: ${column}`);
-                }
-            }
-
-            elements.tbody.innerHTML = dataRows
-                .filter(row => row[headerMap['Класс']])
-                .map((row, index) => `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${row[headerMap['Класс']] || ''}</td>
-                        <td>${row[headerMap['Урок']] || ''}</td>
-                        <td>${row[headerMap['Изменения']] || ''}</td>
-                        <td>${row[headerMap['Примечание']] || ''}</td>
-                    </tr>
-                `)
-                .join('');
-
-            showTable();
+      const requiredColumns = ['Класс', 'Урок', 'Изменения'];
+      for (const column of requiredColumns) {
+        if (!headerMap.hasOwnProperty(column)) {
+          throw new Error(`Отсутствует обязательный столбец: ${column}`);
         }
+      }
 
-        function updateLastUpdateTime() {
-            const now = new Date();
-            elements.lastUpdate.textContent = `Обновлено: ${now.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit'
-            })}`;
-        }
+      elements.tbody.innerHTML = dataRows
+        .filter(row => row[headerMap['Класс']])
+        .map((row, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${row[headerMap['Класс']] || ''}</td>
+            <td>${row[headerMap['Урок']] || ''}</td>
+            <td>${row[headerMap['Изменения']] || ''}</td>
+            <td>${row[headerMap['Примечание']] || ''}</td>
+          </tr>
+        `)
+        .join('');
 
-        function showLoading() {
-            elements.loading.style.display = 'block';
-            elements.error.style.display = 'none';
-            elements.table.style.display = 'none';
-        }
+      showTable();
+    }
 
-        function showTable() {
-            elements.loading.style.display = 'none';
-            elements.error.style.display = 'none';
-            elements.table.style.display = 'table';
-        }
+    function showLoading() {
+      elements.loading.style.display = 'block';
+      elements.error.style.display = 'none';
+      elements.table.style.display = 'none';
+    }
 
-        function showMessage(message) {
-            elements.loading.textContent = message;
-            elements.loading.style.display = 'block';
-            elements.error.style.display = 'none';
-            elements.table.style.display = 'none';
-        }
+    function showTable() {
+      elements.loading.style.display = 'none';
+      elements.error.style.display = 'none';
+      elements.table.style.display = 'table';
+    }
 
-        function showError(error) {
-            console.error('Ошибка:', error);
-            elements.loading.style.display = 'none';
-            elements.table.style.display = 'none';
+    function showMessage(message) {
+      elements.loading.textContent = message;
+      elements.loading.style.display = 'block';
+      elements.error.style.display = 'none';
+      elements.table.style.display = 'none';
+    }
 
-            let errorMessage = 'Ошибка загрузки данных';
-            if (error.message.includes('404')) {
-                errorMessage = 'Таблица не найдена. Проверьте ID таблицы и название листа';
-            } else if (error.message.includes('403')) {
-                errorMessage = 'Доступ запрещен. Проверьте настройки доступа к таблице';
-            }
+    function showError(error) {
+      console.error('Ошибка:', error);
+      elements.loading.style.display = 'none';
+      elements.table.style.display = 'none';
 
-            elements.error.innerHTML = `
-                <strong>${errorMessage}</strong><br>
-                ${error.message}<br><br>
-                <small>Попробуйте обновить страницу или обратитесь к администратору</small>
-            `;
-            elements.error.style.display = 'block';
-        }
-    </script>
+      let errorMessage = 'Ошибка загрузки данных';
+      if (error.message.includes('404')) {
+        errorMessage = 'Таблица не найдена. Проверьте ID таблицы и название листа';
+      } else if (error.message.includes('403')) {
+        errorMessage = 'Доступ запрещен. Проверьте настройки доступа к таблице';
+      }
+
+      elements.error.innerHTML = `
+        <strong>${errorMessage}</strong><br>
+        ${error.message}<br><br>
+        <small>Попробуйте обновить страницу или обратитесь к администратору</small>
+      `;
+      elements.error.style.display = 'block';
+    }
+  </script>
 </body>
 </html>
