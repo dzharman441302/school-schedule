@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменения в расписании - МОУ СОШ № 20</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            padding: 20px;
+            font-weight: bold;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .last-update {
+            text-align: right;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+        <h2>город Тверь</h2>
+        <div class="date" id="current-date"></div>
+        <a href="index.html" class="changes-link">Вернуться к расписанию</a>
+    </header>
+
+    <div class="container">
+        <h2 class="changes-title">Изменения на <span id="changes-date"></span></h2>
+        <div id="last-update" class="last-update"></div>
+        
+        <div class="changes-table">
+            <div id="loading" class="loading">Загрузка изменений...</div>
+            <div id="error" class="error" style="display: none;"></div>
+            <table style="display: none;">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Класс</th>
+                        <th>Урок</th>
+                        <th>Изменения</th>
+                        <th>Примечание</th>
+                    </tr>
+                </thead>
+                <tbody id="changes-body">
+                    <!-- Данные будут загружены из Google Таблиц -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>МОУ СОШ № 20 имени Ивана Андреевича Рыбалко</p>
+    </footer>
+
+    <script>
+        // Конфигурация
+        const CONFIG = {
+            SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4', // Замените на ваш ID
+            SHEET_NAME: 'Изменения', // Название листа
+            API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI', // Ключ API
+            AUTO_REFRESH: 300000 // 5 минут (в миллисекундах)
+        };
+
+        // Элементы DOM
+        const elements = {
+            loading: document.getElementById('loading'),
+            error: document.getElementById('error'),
+            table: document.querySelector('.changes-table table'),
+            tbody: document.getElementById('changes-body'),
+            currentDate: document.getElementById('current-date'),
+            changesDate: document.getElementById('changes-date'),
+            lastUpdate: document.getElementById('last-update')
+        };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDates();
+            loadSheetData();
+            
+            if (CONFIG.AUTO_REFRESH > 0) {
+                setInterval(loadSheetData, CONFIG.AUTO_REFRESH);
+            }
+        });
+
+        // Обновление дат
+        function updateDates() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            
+            elements.currentDate.textContent = now.toLocaleDateString('ru-RU', options);
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(now.getDate() + 1);
+            elements.changesDate.textContent = tomorrow.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Загрузка данных
+        async function loadSheetData() {
+            try {
+                showLoading();
+                
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка сервера: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    showMessage('Нет изменений на завтра');
+                    return;
+                }
+                
+                processData(data.values);
+                updateLastUpdateTime();
+                
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        // Обработка данных
+        function processData(rows) {
+            const [headers, ...dataRows] = rows;
+            
+            // Создаем карту заголовков
+            const headerMap = {};
+            headers.forEach((header, index) => {
+                headerMap[header.trim()] = index;
+            });
+            
+            // Проверяем обязательные столбцы
+            const requiredColumns = ['Класс', 'Урок', 'Изменения'];
+            for (const column of requiredColumns) {
+                if (!headerMap.hasOwnProperty(column)) {
+                    throw new Error(`Отсутствует обязательный столбец: ${column}`);
+                }
+            }
+            
+            // Формируем HTML
+            elements.tbody.innerHTML = dataRows
+                .filter(row => row[headerMap['Класс']]) // Фильтруем пустые строки
+                .map((row, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${row[headerMap['Класс']] || ''}</td>
+                        <td>${row[headerMap['Урок']] || ''}</td>
+                        <td>${row[headerMap['Изменения']] || ''}</td>
+                        <td>${row[headerMap['Примечание']] || ''}</td>
+                    </tr>
+                `)
+                .join('');
+            
+            showTable();
+        }
+
+        // Обновление времени последнего обновления
+        function updateLastUpdateTime() {
+            const now = new Date();
+            elements.lastUpdate.textContent = `Обновлено: ${now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })}`;
+        }
+
+        // Управление отображением состояния
+        function showLoading() {
+            elements.loading.style.display = 'block';
+            elements.error.style.display = 'none';
+            elements.table.style.display = 'none';
+        }
+
+        function showTable() {
+            elements.loading.style.display = 'none';
+            elements.error.style.display = 'none';
+            elements.table.style.display = 'table';
+        }
+
+        function showMessage(message) {
+            elements.loading.textContent = message;
+            elements.loading.style.display = 'block';
+            elements.error.style.display = 'none';
+            elements.table.style.display = 'none';
+        }
+
+        function showError(error) {
+            console.error('Ошибка:', error);
+            elements.loading.style.display = 'none';
+            elements.table.style.display = 'none';
+            
+            let errorMessage = 'Ошибка загрузки данных';
+            if (error.message.includes('404')) {
+                errorMessage = 'Таблица не найдена. Проверьте ID таблицы и название листа';
+            } else if (error.message.includes('403')) {
+                errorMessage = 'Доступ запрещен. Проверьте настройки доступа к таблице';
+            }
+            
+            elements.error.innerHTML = `
+                <strong>${errorMessage}</strong><br>
+                ${error.message}<br><br>
+                <small>Попробуйте обновить страницу или обратитесь к администратору</small>
+            `;
+            elements.error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

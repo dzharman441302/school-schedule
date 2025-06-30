@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание уроков - МОУ СОШ № 20</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+        <h2>город Тверь</h2>
+        <div class="date" id="current-date"></div>
+        <a href="changes.html" class="changes-link">Изменения на завтра</a>
+    </header>
+
+    <div class="container">
+        <div class="class-selector">
+            <p>Выберите класс:</p>
+            <div class="class-buttons">
+                <button class="class-btn" data-class="5а">5а</button>
+                <button class="class-btn" data-class="5б">5б</button>
+                <button class="class-btn" data-class="5в">5в</button>
+                <button class="class-btn" data-class="5г">5г</button>
+                <button class="class-btn" data-class="6а">6а</button>
+                <button class="class-btn" data-class="6б">6б</button>
+                <button class="class-btn" data-class="6в">6в</button>
+                <button class="class-btn" data-class="7а">7а</button>
+                <button class="class-btn" data-class="7б">7б</button>
+                <button class="class-btn" data-class="7в">7в</button>
+                <button class="class-btn" data-class="7г">7г</button>
+                <button class="class-btn" data-class="8а">8а</button>
+                <button class="class-btn" data-class="8б">8б</button>
+                <button class="class-btn" data-class="8в">8в</button>
+                <button class="class-btn" data-class="8г">8г</button>
+                <button class="class-btn" data-class="9а">9а</button>
+                <button class="class-btn" data-class="9б">9б</button>
+                <button class="class-btn" data-class="9в">9в</button>
+                <button class="class-btn" data-class="10">10</button>
+                <button class="class-btn" data-class="11">11</button>
+            </div>
+        </div>
+
+        <div class="bells-schedule">
+            <div class="bells-column">
+                <h3>Расписание звонков (ВТ, СР, ПТ)</h3>
+                <ul>
+                    <li>1. 8.30 - 9.15</li>
+                    <li>2. 9.25 - 10.10</li>
+                    <li>3. 10.25 - 11.10</li>
+                    <li>4. 11.30 - 12.15</li>
+                    <li>5. 12.30 - 13.15</li>
+                    <li>6. 13.25 - 14.10</li>
+                    <li>7. 14.20 - 15.05</li>
+                </ul>
+            </div>
+            <div class="bells-column">
+                <h3>Расписание звонков (ПН, ЧТ)</h3>
+                <ul>
+                    <li>1. 8.30 - 9.10</li>
+                    <li>2. 9.20 - 10.00</li>
+                    <li>3. 10.15 - 10.55</li>
+                    <li>4. 11.15 - 11.55</li>
+                    <li>5. 12.10 - 12.50</li>
+                    <li>6. 13.00 - 13.40</li>
+                    <li>7. 13.50 - 14.30</li>
+                    <li>8. 14.35 - 15.15</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="schedule">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Урок</th>
+                        <th>Понедельник</th>
+                        <th>Вторник</th>
+                        <th>Среда</th>
+                        <th>Четверг</th>
+                        <th>Пятница</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>2</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>3</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>4</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>5</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>6</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>7</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>8</td><td></td><td></td><td></td><td></td><td></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>МОУ СОШ № 20</p>
+    </footer>
+
+    <script>
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
+
+        document.querySelectorAll('.class-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const selectedClass = e.target.dataset.class;
+                alert(`Вы выбрали класс: ${selectedClass}`);
+                // Здесь подключается логика подгрузки/отображения расписания
+            });
+        });
+    </script>
+</body>
+</html>
