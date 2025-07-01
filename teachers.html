@@ -137,6 +137,7 @@
       try {
         const res = await fetch(url);
         const data = await res.json();
+        console.log('Получены данные:', data);
         const [headers, ...rows] = data.values;
 
         const teacherNames = [...new Set(rows.map(row => row[0]).filter(name => !!name))];
@@ -151,6 +152,7 @@
       } catch (err) {
         console.error(err);
         document.getElementById('schedule-output').textContent = 'Ошибка загрузки данных.';
+        console.error(err);
       }
     }
 
@@ -203,7 +205,7 @@
             dayMap[headers[i]].push(cell);
           }
         }
-      };
+      });
 
       let html = '';
       
