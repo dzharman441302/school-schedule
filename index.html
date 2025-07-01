@@ -1,111 +1,87 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Расписание классов — МОУ СОШ № 20</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f0f4f8;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-    header {
-      background-color: #1976D2;
-      color: white;
-      padding: 2rem 1rem 1rem;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0.2rem 0;
-      font-size: 1.5rem;
-    }
-    header h2 {
-      font-weight: normal;
-      margin: 0.2rem 0 1rem;
-      font-size: 1rem;
-    }
-    .class-btn {
-      background-color: #E3F2FD;
-      border: none;
-      border-radius: 6px;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #1976D2;
-      cursor: pointer;
-      transition: 0.3s;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .class-btn:hover, .class-btn.active {
-      background-color: #1976D2;
-      color: white;
-    }
-    .btn-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 2rem 1rem 1rem;
-    }
-    .schedule {
-      max-width: 960px;
-      margin: 2rem auto;
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      padding: 1rem;
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
-    th, td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th {
-      background-color: #E3F2FD;
-      font-weight: 600;
-    }
-    tr:hover {
-      background-color: #f9f9f9;
-    }
-    .footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: #1976D2;
-      color: white;
-      font-size: 0.9rem;
-    }
-    .selected-label {
-      text-align: center;
-      font-weight: 600;
-      margin-top: 1rem;
-      color: #555;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Расписание уроков - МОУ СОШ № 20</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>МОУ СОШ № 20</h1>
-    <h2>Расписание занятий</h2>
-    <a href="changes.html" class="class-btn" style="background-color:#FFA000; color:white;">Изменения в расписании</a>
+    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+    <h2>город Тверь</h2>
+    <div class="date" id="current-date"></div>
+    <a href="changes.html" class="changes-link">Изменения на завтра</a>
   </header>
-  <div class="btn-container" id="class-buttons"></div>
-  <p class="selected-label" id="selected-label">Показано расписание для всех классов</p>
-  <div class="schedule" id="schedule"></div>
-  <div class="footer">
-    МОУ СОШ № 20 имени Ивана Андреевича Рыбалко — г. Тверь
+
+  <div class="container">
+    <div class="class-selector">
+      <p>Выберите класс:</p>
+      <div class="class-buttons">
+        <button class="class-btn" data-class="5А">5А</button>
+        <button class="class-btn" data-class="5Б">5Б</button>
+        <button class="class-btn" data-class="5И">5И</button>
+        <button class="class-btn" data-class="5К">5К</button>
+        <button class="class-btn" data-class="6а">6а</button>
+        <button class="class-btn" data-class="6б">6б</button>
+        <button class="class-btn" data-class="6в">6в</button>
+        <button class="class-btn" data-class="7а">7а</button>
+        <button class="class-btn" data-class="7б">7б</button>
+        <button class="class-btn" data-class="7в">7в</button>
+        <button class="class-btn" data-class="7г">7г</button>
+        <button class="class-btn" data-class="8а">8а</button>
+        <button class="class-btn" data-class="8б">8б</button>
+        <button class="class-btn" data-class="8в">8в</button>
+        <button class="class-btn" data-class="8г">8г</button>
+        <button class="class-btn" data-class="9а">9а</button>
+        <button class="class-btn" data-class="9б">9б</button>
+        <button class="class-btn" data-class="9в">9в</button>
+        <button class="class-btn" data-class="10">10</button>
+        <button class="class-btn" data-class="11">11</button>
+      </div>
+    </div>
+
+    <div id="schedule-output"></div>
+
+    <div class="bells-schedule">
+      <div class="bells-column">
+        <h3>Расписание звонков (ВТ, СР, ПТ)</h3>
+        <ul>
+          <li>1. 8.30 - 9.15</li>
+          <li>2. 9.25 - 10.10</li>
+          <li>3. 10.25 - 11.10</li>
+          <li>4. 11.30 - 12.15</li>
+          <li>5. 12.30 - 13.15</li>
+          <li>6. 13.25 - 14.10</li>
+          <li>7. 14.20 - 15.05</li>
+        </ul>
+      </div>
+      <div class="bells-column">
+        <h3>Расписание звонков (ПН, ЧТ)</h3>
+        <ul>
+          <li>1. 8.30 - 9.10</li>
+          <li>2. 9.20 - 10.00</li>
+          <li>3. 10.15 - 10.55</li>
+          <li>4. 11.15 - 11.55</li>
+          <li>5. 12.10 - 12.50</li>
+          <li>6. 13.00 - 13.40</li>
+          <li>7. 13.50 - 14.30</li>
+          <li>8. 14.35 - 15.15</li>
+        </ul>
+      </div>
+    </div>
   </div>
+
+  <footer>
+    <p>МОУ СОШ № 20</p>
+  </footer>
+
+  <script>
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
+  </script>
+
   <script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
@@ -113,83 +89,48 @@
       API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
     };
 
-    const CLASSES = ['5А','5Б','5И','5К','6А','6Б','6В','7А','7Б','7В','7Г','8А','8Б','8В','8Г','9А','9Б','9Г','10А','10Б','11'];
-    const btnContainer = document.getElementById('class-buttons');
-    const scheduleBlock = document.getElementById('schedule');
-    const label = document.getElementById('selected-label');
-    let selectedClass = localStorage.getItem('selectedScheduleClass') || '';
+    document.querySelectorAll('.class-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const selectedClass = e.target.dataset.class.toUpperCase();
+        const output = document.getElementById('schedule-output');
+        output.innerHTML = 'Загрузка...';
 
-    function updateButtons() {
-      btnContainer.innerHTML = '';
-      const allBtn = document.createElement('button');
-      allBtn.className = 'class-btn' + (!selectedClass ? ' active' : '');
-      allBtn.textContent = 'Все';
-      allBtn.onclick = () => {
-        selectedClass = '';
-        localStorage.setItem('selectedScheduleClass', '');
-        loadSchedule();
-      };
-      btnContainer.appendChild(allBtn);
-
-      CLASSES.forEach(cls => {
-        const btn = document.createElement('button');
-        btn.className = 'class-btn' + (cls === selectedClass ? ' active' : '');
-        btn.textContent = cls;
-        btn.onclick = () => {
-          selectedClass = cls;
-          localStorage.setItem('selectedScheduleClass', cls);
-          loadSchedule();
-        };
-        btnContainer.appendChild(btn);
-      });
-    }
-
-    function renderSchedule(data, map) {
-      let rows = data.filter(r => !selectedClass || (r[map['класс']] || '').toUpperCase() === selectedClass);
-      if (!rows.length) {
-        scheduleBlock.innerHTML = '<p style="text-align:center">Нет данных</p>';
-        label.textContent = 'Расписание не найдено';
-        return;
-      }
-      label.textContent = selectedClass ? `Расписание для класса ${selectedClass}` : 'Показано расписание для всех классов';
-      const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ'];
-      const grouped = {};
-      rows.forEach(r => {
-        const cls = r[map['класс']];
-        const lesson = r[map['урок']];
-        if (!grouped[cls]) grouped[cls] = [];
-        grouped[cls].push({
-          lesson,
-          days: days.map((day, i) => r[map[day.toLowerCase()]] || '')
-        });
-      });
-      let html = '';
-      for (let cls in grouped) {
-        html += `<h2 style="text-align:center; color:#1976D2">Класс ${cls}</h2><table><thead><tr><th>Урок</th>${days.map(d => `<th>${d}</th>`).join('')}</tr></thead><tbody>`;
-        grouped[cls].forEach(r => {
-          html += `<tr><td>${r.lesson}</td>${r.days.map(d => `<td>${d}</td>`).join('')}</tr>`;
-        });
-        html += '</tbody></table><br/>';
-      }
-      scheduleBlock.innerHTML = html;
-    }
-
-    async function loadSchedule() {
-      updateButtons();
-      try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        const [headers, ...rows] = json.values;
-        const map = {};
-        headers.forEach((h, i) => map[h.trim().toLowerCase()] = i);
-        renderSchedule(rows, map);
-      } catch (e) {
-        scheduleBlock.innerHTML = '<p style="text-align:center; color:red">Ошибка загрузки данных</p>';
-      }
-    }
 
-    document.addEventListener('DOMContentLoaded', loadSchedule);
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          const [headers, ...rows] = data.values;
+
+          const filtered = rows.filter(r => r[0].toUpperCase() === selectedClass);
+
+          if (filtered.length === 0) {
+            output.innerHTML = `<p>Для класса <strong>${selectedClass}</strong> расписание не найдено.</p>`;
+            return;
+          }
+
+          let table = `<h3>Расписание для класса ${selectedClass}</h3><div class="schedule"><table><thead><tr><th>Урок</th>`;
+          for (let i = 2; i < headers.length; i++) {
+            table += `<th>${headers[i]}</th>`;
+          }
+          table += `</tr></thead><tbody>`;
+
+          for (const row of filtered) {
+            table += `<tr><td>${row[1]}</td>`;
+            for (let i = 2; i < headers.length; i++) {
+              table += `<td>${row[i] || ''}</td>`;
+            }
+            table += `</tr>`;
+          }
+
+          table += `</tbody></table></div>`;
+          output.innerHTML = table;
+        } catch (error) {
+          console.error(error);
+          output.innerHTML = 'Ошибка загрузки расписания.';
+        }
+      });
+    });
   </script>
 </body>
 </html>
