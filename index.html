@@ -104,7 +104,6 @@
   </header>
 
   <div class="datetime" id="datetime"></div>
-  <div id="current-lesson" style="margin-top: 0.5rem; font-weight: bold; font-size: 1.1rem;"></div>
 
   <h1 class="main-title">📅 Расписание занятий</h1>
   <p class="subtitle">Добро пожаловать! Здесь вы найдёте актуальное расписание уроков и изменения для всех классов и учителей.</p>
@@ -175,34 +174,5 @@
 
     loadAnnouncements();
   </script>
-
-<script>
-  function displayCurrentLesson() {
-    const now = new Date();
-    const weekday = now.getDay(); // 0=ВС
-    const bells = {
-      short: ['08:30-09:10','09:20-10:00','10:15-10:55','11:15-11:55','12:10-12:50','13:00-13:40','13:50-14:30','14:35-15:15'],
-      long: ['08:30-09:15','09:25-10:10','10:25-11:10','11:30-12:15','12:30-13:15','13:25-14:10','14:20-15:05']
-    };
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    const isShort = [1,4].includes(weekday); // ПН и ЧТ
-    const list = isShort ? bells.short : bells.long;
-    for (let i = 0; i < list.length; i++) {
-      const [start, end] = list[i].split('-');
-      const [h1, m1] = start.split(':').map(Number);
-      const [h2, m2] = end.split(':').map(Number);
-      const from = h1 * 60 + m1;
-      const to = h2 * 60 + m2;
-      if (nowMin >= from && nowMin <= to) {
-        document.getElementById('current-lesson').textContent =
-          `Сейчас идёт: ${i + 1} урок (${start} – ${end})`;
-        break;
-      }
-    }
-  }
-  displayCurrentLesson();
-  setInterval(displayCurrentLesson, 60000);
-</script>
 </body>
-
 </html>
