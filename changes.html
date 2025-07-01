@@ -5,6 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Изменения в расписании - МОУ СОШ № 20</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .changes-block {
+      margin-bottom: 3rem;
+    }
+
+    .changes-block h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2px dashed #ccc;
+      margin: 2rem auto;
+      width: 60%;
+    }
+
+    .info-message {
+      background-color: #fff;
+      color: #d32f2f;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid #d32f2f;
+      border-radius: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -12,175 +49,104 @@
     <h2>город Тверь</h2>
     <div class="date" id="current-date"></div>
     <a href="index.html" class="changes-link">Вернуться к расписанию</a>
-
-    <!-- 🔔 Новое сообщение -->
-    <div class="info-message">
-      <strong>ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</strong>
-    </div>
+    <div class="info-message">ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</div>
   </header>
 
   <div class="container">
-    <h2 class="changes-title">Изменения на <span id="changes-date"></span></h2>
-
-    <div class="changes-table">
-      <div id="loading" class="loading">Загрузка изменений...</div>
-      <div id="error" class="error" style="display: none;"></div>
-
-      <div class="schedule">
-        <table style="display: none;">
-          <thead>
-            <tr>
-              <th>№</th>
-              <th>Класс</th>
-              <th>Урок</th>
-              <th>Изменения</th>
-              <th>Примечание</th>
-            </tr>
-          </thead>
-          <tbody id="changes-body">
-            <!-- Данные из Google Таблицы -->
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <div id="changes-today" class="changes-block"></div>
+    <hr class="divider"/>
+    <div id="changes-tomorrow" class="changes-block"></div>
+    <div id="error" class="error" style="display:none;"></div>
   </div>
 
   <footer>
-    <p>МОУ СОШ № 20</p>
+    <p>МОУ СОШ № 20 имени Ивана Андреевича Рыбалко</p>
   </footer>
 
   <script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
       SHEET_NAME: 'Изменения',
-      API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI',
-      AUTO_REFRESH: 300000
+      API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
     };
 
     const elements = {
-      loading: document.getElementById('loading'),
-      error: document.getElementById('error'),
-      table: document.querySelector('.changes-table table'),
-      tbody: document.getElementById('changes-body'),
       currentDate: document.getElementById('current-date'),
-      changesDate: document.getElementById('changes-date')
+      todayBlock: document.getElementById('changes-today'),
+      tomorrowBlock: document.getElementById('changes-tomorrow'),
+      error: document.getElementById('error')
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-      updateDates();
+      updateDateHeader();
       loadSheetData();
-      if (CONFIG.AUTO_REFRESH > 0) {
-        setInterval(loadSheetData, CONFIG.AUTO_REFRESH);
-      }
     });
 
-    function updateDates() {
+    function updateDateHeader() {
       const now = new Date();
-      const options = {
+      elements.currentDate.textContent = now.toLocaleDateString('ru-RU', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
-      };
-      elements.currentDate.textContent = now.toLocaleDateString('ru-RU', options);
-
-      const tomorrow = new Date();
-      tomorrow.setDate(now.getDate() + 1);
-      elements.changesDate.textContent = tomorrow.toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'numeric',
-        year: 'numeric'
       });
     }
 
     async function loadSheetData() {
       try {
-        showLoading();
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
         const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Ошибка сервера: ${response.status}`);
-        }
         const data = await response.json();
+
         if (!data.values || data.values.length < 2) {
-          showMessage('Нет изменений на завтра');
+          elements.todayBlock.innerHTML = '<p>Нет данных.</p>';
           return;
         }
-        processData(data.values);
+
+        const [headers, ...rows] = data.values;
+        const map = {};
+        headers.forEach((h, i) => map[h.trim().toLowerCase()] = i);
+
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('ru-RU');
+        const tomorrow = new Date();
+        tomorrow.setDate(now.getDate() + 1);
+        const tomorrowStr = tomorrow.toLocaleDateString('ru-RU');
+
+        const todayRows = rows.filter(r => r[map['дата']] === todayStr);
+        const tomorrowRows = rows.filter(r => r[map['дата']] === tomorrowStr);
+
+        elements.todayBlock.innerHTML = renderChangesBlock('Изменения на ' + todayStr, todayRows, map);
+        elements.tomorrowBlock.innerHTML = renderChangesBlock('Изменения на ' + tomorrowStr, tomorrowRows, map);
+
       } catch (error) {
-        showError(error);
+        console.error(error);
+        elements.error.style.display = 'block';
+        elements.error.innerHTML = 'Ошибка загрузки данных: ' + error.message;
       }
     }
 
-    function processData(rows) {
-      const [headers, ...dataRows] = rows;
-      const headerMap = {};
-      headers.forEach((header, index) => {
-        headerMap[header.trim()] = index;
+    function renderChangesBlock(title, rows, map) {
+      if (rows.length === 0) return `<h2>${title}</h2><p style="text-align:center;">Нет изменений</p>`;
+
+      let html = `<h2>${title}</h2><div class="schedule"><table><thead><tr>
+        <th>№</th><th>Класс</th><th>Урок</th><th>Изменения</th><th>Примечание</th>
+      </tr></thead><tbody>`;
+
+      rows.forEach((r, i) => {
+        html += `<tr>
+          <td>${i + 1}</td>
+          <td>${r[map['класс']] || ''}</td>
+          <td>${r[map['урок']] || ''}</td>
+          <td>${r[map['изменения']] || ''}</td>
+          <td>${r[map['примечание']] || ''}</td>
+        </tr>`;
       });
 
-      const requiredColumns = ['Класс', 'Урок', 'Изменения'];
-      for (const column of requiredColumns) {
-        if (!headerMap.hasOwnProperty(column)) {
-          throw new Error(`Отсутствует обязательный столбец: ${column}`);
-        }
-      }
-
-      elements.tbody.innerHTML = dataRows
-        .filter(row => row[headerMap['Класс']])
-        .map((row, index) => `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${row[headerMap['Класс']] || ''}</td>
-            <td>${row[headerMap['Урок']] || ''}</td>
-            <td>${row[headerMap['Изменения']] || ''}</td>
-            <td>${row[headerMap['Примечание']] || ''}</td>
-          </tr>
-        `)
-        .join('');
-
-      showTable();
-    }
-
-    function showLoading() {
-      elements.loading.style.display = 'block';
-      elements.error.style.display = 'none';
-      elements.table.style.display = 'none';
-    }
-
-    function showTable() {
-      elements.loading.style.display = 'none';
-      elements.error.style.display = 'none';
-      elements.table.style.display = 'table';
-    }
-
-    function showMessage(message) {
-      elements.loading.textContent = message;
-      elements.loading.style.display = 'block';
-      elements.error.style.display = 'none';
-      elements.table.style.display = 'none';
-    }
-
-    function showError(error) {
-      console.error('Ошибка:', error);
-      elements.loading.style.display = 'none';
-      elements.table.style.display = 'none';
-
-      let errorMessage = 'Ошибка загрузки данных';
-      if (error.message.includes('404')) {
-        errorMessage = 'Таблица не найдена. Проверьте ID таблицы и название листа';
-      } else if (error.message.includes('403')) {
-        errorMessage = 'Доступ запрещен. Проверьте настройки доступа к таблице';
-      }
-
-      elements.error.innerHTML = `
-        <strong>${errorMessage}</strong><br>
-        ${error.message}<br><br>
-        <small>Попробуйте обновить страницу или обратитесь к администратору</small>
-      `;
-      elements.error.style.display = 'block';
+      html += '</tbody></table></div>';
+      return html;
     }
   </script>
 </body>
