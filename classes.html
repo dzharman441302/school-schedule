@@ -241,7 +241,7 @@
           const data = await response.json();
           const [headers, ...rows] = data.values;
 
-          const filtered = rows.filter(r => r[0].toUpperCase() === selectedClass);
+          const filtered = rows.filter(r => (r[0] || '').trim().toUpperCase() === selectedClass);
 
           if (filtered.length === 0) {
             output.innerHTML = `<p>Для класса <strong>${selectedClass}</strong> расписание не найдено.</p>`;
