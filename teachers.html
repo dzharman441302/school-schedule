@@ -179,10 +179,22 @@
       });
 
       let html = '';
+      
+      const dayNames = {
+        'ПН': 'Понедельник',
+        'ВТ': 'Вторник',
+        'СР': 'Среда',
+        'ЧТ': 'Четверг',
+        'ПТ': 'Пятница',
+        'СБ': 'Суббота',
+        'ВС': 'Воскресенье'
+      };
       for (let day in dayMap) {
+        const dayTitle = dayNames[day] || day;
+    
         if (dayMap[day].length === 0) continue;
         html += `<div class="day-card">
-          <h3>${day}</h3>
+          <h3>${dayTitle}</h3>
           <ul>${dayMap[day].map((entry, i) => `<li><strong>${i + 1}.</strong> ${entry}</li>`).join('')}</ul>
         </div>`;
       }
