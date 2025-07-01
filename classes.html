@@ -267,7 +267,6 @@
           }
 
           let html = '';
-          
           const dayNames = {
             'ПН': 'Понедельник',
             'ВТ': 'Вторник',
@@ -277,19 +276,18 @@
             'СБ': 'Суббота',
             'ВС': 'Воскресенье'
           };
+          const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+          const todayName = weekdayNames[new Date().getDay()];
           for (let day in dayMap) {
             const dayTitle = dayNames[day] || day;
-    
             if (dayMap[day].length === 0) continue;
-            const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
-const todayName = weekdayNames[new Date().getDay()];
-html += `<div class="day-card${day === todayName ? ' today' : ''}">`;
+            const isToday = dayTitle === todayName;
+            html += `<div class="day-card${isToday ? ' today' : ''}">
               <h3>${dayTitle}</h3>
               <ul>${dayMap[day].map(item => `<li>${item}</li>`).join('')}</ul>
             </div>`;
           }
-
-          output.innerHTML = html;
+           html;
         } catch (error) {
           console.error(error);
           output.innerHTML = 'Ошибка загрузки расписания.';
