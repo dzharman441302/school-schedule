@@ -6,25 +6,119 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Расписание учителей - МОУ СОШ № 20</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .teacher-selector {
+      margin: 2rem auto;
+      text-align: center;
+    }
+
+    .class-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .class-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #43a047;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .class-btn:hover {
+      background-color: #2e7d32;
+    }
+
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .day-card {
+      background: #fffde7;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+      width: 280px;
+    }
+
+    .day-card h3 {
+      margin: 0 0 0.3rem;
+      font-size: 1.1rem;
+      color: #333;
+    }
+
+    .day-card ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .day-card li {
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem 0;
+      background-color: #1e88e5;
+      color: white;
+      margin-top: 2rem;
+    }
+
+    .link-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .changes-link {
+      display: inline-block;
+      padding: 0.8rem 1.5rem;
+      background-color: #ff9800;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .changes-link:hover {
+      background-color: #f57c00;
+    }
+  </style>
 </head>
 <body>
   <header>
     <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
     <h2>город Тверь</h2>
     <div class="date" id="current-date"></div>
-    <a href="index.html" class="changes-link">Вернуться на главную</a>
+    <div class="link-buttons">
+      <a href="index.html" class="changes-link">На главную</a>
+    </div>
   </header>
 
   <div class="container">
-    <div class="class-selector">
+    <div class="teacher-selector">
       <p>Выберите учителя:</p>
       <div class="class-buttons" id="teacher-buttons"></div>
     </div>
-    <div id="schedule-output" class="schedule"></div>
+    <div id="schedule-output" class="card-grid"></div>
   </div>
 
   <footer>
-    <p>МОУ СОШ № 20</p>
+    <p>МОУ СОШ № 20 © Воронков М. Е.</p>
   </footer>
 
   <script>
@@ -70,22 +164,30 @@
         return;
       }
 
-      let table = `<h3>Расписание для ${name}</h3><div class="schedule"><table><thead><tr>`;
+      let dayMap = {};
       days.forEach(day => {
-        table += `<th>${day}</th>`;
+        dayMap[day] = [];
       });
-      table += `</tr></thead><tbody>`;
 
       teacherRows.forEach(row => {
-        table += '<tr>';
         for (let i = 1; i < headers.length; i++) {
-          table += `<td>${row[i] || ''}</td>`;
+          const cell = row[i];
+          if (cell) {
+            dayMap[headers[i]].push(cell);
+          }
         }
-        table += '</tr>';
       });
 
-      table += '</tbody></table></div>';
-      output.innerHTML = table;
+      let html = '';
+      for (let day in dayMap) {
+        if (dayMap[day].length === 0) continue;
+        html += `<div class="day-card">
+          <h3>${day}</h3>
+          <ul>${dayMap[day].map((entry, i) => `<li><strong>${i + 1}.</strong> ${entry}</li>`).join('')}</ul>
+        </div>`;
+      }
+
+      output.innerHTML = html;
     }
 
     loadTeachers();
