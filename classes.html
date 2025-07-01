@@ -287,7 +287,7 @@
               <ul>${dayMap[day].map(item => `<li>${item}</li>`).join('')}</ul>
             </div>`;
           }
-           output.innerHTML = html;
+           output.innerHTML = output.innerHTML = html;
         } catch (error) {
           console.error(error);
           output.innerHTML = 'Ошибка загрузки расписания.';
