@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Главная - Расписание занятий</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background-color: #2e7d32;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    .main-title {
+      font-family: 'Brush Script MT', cursive;
+      font-size: 3rem;
+      margin-top: 3rem;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      padding: 1rem 2rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border: 4px solid white;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      text-decoration: none;
+    }
+    .nav-btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+    .datetime {
+      margin-top: 1.5rem;
+      font-size: 1.2rem;
+    }
+    .banner {
+      margin: 2rem auto;
+      max-width: 90%;
+      padding: 1rem;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="datetime" id="datetime"></div>
+
+  <h1 class="main-title">Расписание занятий</h1>
+
+  <div class="button-container">
+    <a href="classes.html" class="nav-btn">КЛАССЫ</a>
+    <a href="teachers.html" class="nav-btn">УЧИТЕЛЯ</a>
+  </div>
+
+  <div class="banner" id="announcement-banner">
+    Здесь будет отображаться важное школьное объявление.
+  </div>
+
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      const options = {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      };
+      document.getElementById('datetime').textContent = now.toLocaleDateString('ru-RU', options);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+  </script>
+</body>
+</html>

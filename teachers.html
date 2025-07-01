@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Расписание учителей - МОУ СОШ № 20</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+    <h2>город Тверь</h2>
+    <div class="date" id="current-date"></div>
+    <a href="index.html" class="changes-link">Вернуться на главную</a>
+  </header>
+
+  <div class="container">
+    <div class="class-selector">
+      <p>Выберите учителя:</p>
+      <div class="class-buttons" id="teacher-buttons"></div>
+    </div>
+    <div id="schedule-output" class="schedule"></div>
+  </div>
+
+  <footer>
+    <p>МОУ СОШ № 20</p>
+  </footer>
+
+  <script>
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
+
+    const CONFIG = {
+      SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
+      SHEET_NAME: 'Учителя',
+      API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
+    };
+
+    async function loadTeachers() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const [headers, ...rows] = data.values;
+
+        const teacherNames = [...new Set(rows.map(row => row[0]).filter(name => !!name))];
+        const container = document.getElementById('teacher-buttons');
+        teacherNames.forEach(name => {
+          const btn = document.createElement('button');
+          btn.textContent = name;
+          btn.className = 'class-btn';
+          btn.addEventListener('click', () => renderSchedule(name, rows, headers));
+          container.appendChild(btn);
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('schedule-output').textContent = 'Ошибка загрузки данных.';
+      }
+    }
+
+    function renderSchedule(name, rows, headers) {
+      const output = document.getElementById('schedule-output');
+      const days = headers.slice(1);
+      const teacherRows = rows.filter(row => row[0] === name);
+
+      if (teacherRows.length === 0) {
+        output.innerHTML = `<p>Расписание для <strong>${name}</strong> не найдено.</p>`;
+        return;
+      }
+
+      let table = `<h3>Расписание для ${name}</h3><div class="schedule"><table><thead><tr>`;
+      days.forEach(day => {
+        table += `<th>${day}</th>`;
+      });
+      table += `</tr></thead><tbody>`;
+
+      teacherRows.forEach(row => {
+        table += '<tr>';
+        for (let i = 1; i < headers.length; i++) {
+          table += `<td>${row[i] || ''}</td>`;
+        }
+        table += '</tr>';
+      });
+
+      table += '</tbody></table></div>';
+      output.innerHTML = table;
+    }
+
+    loadTeachers();
+  </script>
+</body>
+</html>
