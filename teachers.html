@@ -4,13 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Расписание учителей - МОУ СОШ № 20</title>
+  <title>Расписание уроков - МОУ СОШ № 20</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .teacher-selector {
-      margin: 2rem auto;
+    .class-selector {
+      margin-bottom: 1.5rem;
       text-align: center;
     }
+
     .class-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -18,19 +19,22 @@
       gap: 0.5rem;
       margin-top: 1rem;
     }
+
     .class-btn {
       padding: 0.5rem 1rem;
       border: none;
       border-radius: 6px;
-      background-color: #43a047;
+      background-color: #1e88e5;
       color: white;
       font-weight: bold;
       cursor: pointer;
       transition: background-color 0.3s;
     }
+
     .class-btn:hover {
-      background-color: #2e7d32;
+      background-color: #1565c0;
     }
+
     .card-grid {
       display: flex;
       flex-wrap: wrap;
@@ -38,6 +42,7 @@
       gap: 1rem;
       margin-top: 2rem;
     }
+
     .day-card {
   transition: background-color 0.3s, border 0.3s;
 }
@@ -56,19 +61,53 @@
       box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
       width: 280px;
     }
+
     .day-card h3 {
       margin: 0 0 0.3rem;
       font-size: 1.1rem;
       color: #333;
     }
+
+    .day-card span {
+      display: block;
+      font-size: 0.9rem;
+      color: #777;
+      margin-bottom: 0.5rem;
+    }
+
     .day-card ul {
       list-style: none;
       padding-left: 0;
     }
+
     .day-card li {
       font-size: 0.95rem;
       margin-bottom: 0.4rem;
     }
+
+    .bells-schedule {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .bells-column {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin: 0.5rem;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .bells-column h3 {
+      margin-top: 0;
+      color: #1e88e5;
+      text-align: center;
+    }
+
     footer {
       text-align: center;
       padding: 1rem 0;
@@ -76,6 +115,7 @@
       color: white;
       margin-top: 2rem;
     }
+
     .link-buttons {
       display: flex;
       flex-direction: column;
@@ -83,6 +123,7 @@
       gap: 0.5rem;
       margin-top: 1rem;
     }
+
     .changes-link {
       display: inline-block;
       padding: 0.8rem 1.5rem;
@@ -93,6 +134,7 @@
       font-weight: bold;
       transition: background-color 0.3s;
     }
+
     .changes-link:hover {
       background-color: #f57c00;
     }
@@ -104,17 +146,69 @@
     <h2>город Тверь</h2>
     <div class="date" id="current-date"></div>
     <div class="link-buttons">
-      <a href="index.html" class="changes-link">На главную</a>
+      <a href="changes.html" class="changes-link">Изменения на завтра</a>
+      <a href="index.html" class="changes-link" style="background-color:#2196f3;">На главную</a>
     </div>
   </header>
 
   <div class="container">
-    <div class="teacher-selector">
-      <p>Выберите учителя:</p>
-      <div class="class-buttons" id="teacher-buttons"></div>
+    <div class="class-selector">
+      <p>Выберите класс:</p>
+      <div class="class-buttons">
+        <button class="class-btn" data-class="5А">5А</button>
+        <button class="class-btn" data-class="5Б">5Б</button>
+        <button class="class-btn" data-class="5И">5И</button>
+        <button class="class-btn" data-class="5К">5К</button>
+        <button class="class-btn" data-class="6А">6А</button>
+        <button class="class-btn" data-class="6Б">6Б</button>
+        <button class="class-btn" data-class="6В">6В</button>
+        <button class="class-btn" data-class="7А">7А</button>
+        <button class="class-btn" data-class="7Б">7Б</button>
+        <button class="class-btn" data-class="7В">7В</button>
+        <button class="class-btn" data-class="7Г">7Г</button>
+        <button class="class-btn" data-class="8А">8А</button>
+        <button class="class-btn" data-class="8Б">8Б</button>
+        <button class="class-btn" data-class="8В">8В</button>
+        <button class="class-btn" data-class="8Г">8Г</button>
+        <button class="class-btn" data-class="9А">9А</button>
+        <button class="class-btn" data-class="9Б">9Б</button>
+        <button class="class-btn" data-class="9В">9В</button>
+        <button class="class-btn" data-class="10А">10А</button>
+        <button class="class-btn" data-class="10Б">10Б</button>
+        <button class="class-btn" data-class="11">11</button>
+      </div>
     </div>
+
     <div id="current-lesson" style="text-align:center; font-weight:bold; font-size:1.1rem; margin-top:1rem;"></div>
     <div id="schedule-output" class="card-grid"></div>
+
+    <div class="bells-schedule">
+      <div class="bells-column">
+        <h3>Расписание звонков (ВТ, СР, ПТ)</h3>
+        <ul>
+          <li>1. 8.30 - 9.15</li>
+          <li>2. 9.25 - 10.10</li>
+          <li>3. 10.25 - 11.10</li>
+          <li>4. 11.30 - 12.15</li>
+          <li>5. 12.30 - 13.15</li>
+          <li>6. 13.25 - 14.10</li>
+          <li>7. 14.20 - 15.05</li>
+        </ul>
+      </div>
+      <div class="bells-column">
+        <h3>Расписание звонков (ПН, ЧТ)</h3>
+        <ul>
+          <li>1. 8.30 - 9.10</li>
+          <li>2. 9.20 - 10.00</li>
+          <li>3. 10.15 - 10.55</li>
+          <li>4. 11.15 - 11.55</li>
+          <li>5. 12.10 - 12.50</li>
+          <li>6. 13.00 - 13.40</li>
+          <li>7. 13.50 - 14.30</li>
+          <li>8. 14.35 - 15.15</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -125,72 +219,113 @@
     const now = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
-    const bells = {
-      'short': ['08:30-09:10','09:20-10:00','10:15-10:55','11:15-11:55','12:10-12:50','13:00-13:40','13:50-14:30','14:35-15:15'],
-      'long': ['08:30-09:15','09:25-10:10','10:25-11:10','11:30-12:15','12:30-13:15','13:25-14:10','14:20-15:05']
-    };
-    const weekday = now.getDay();
-    const isShort = [1, 4].includes(weekday); // ПН, ЧТ
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const list = isShort ? bells.short : bells.long;
-    for (let i = 0; i < list.length; i++) {
-      const [start, end] = list[i].split('-');
-      const [h1, m1] = start.split(':').map(Number);
-      const [h2, m2] = end.split(':').map(Number);
-      const from = h1 * 60 + m1;
-      const to = h2 * 60 + m2;
-      if (nowMinutes >= from && nowMinutes <= to) {
-        document.getElementById('current-lesson').textContent = `Сейчас идёт: ${i + 1} урок (${start} – ${end})`;
-        break;
-      }
-    }
+  </script>
 
+  <script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-      SHEET_NAME: 'Учителя',
+      SHEET_NAME: 'Расписание',
       API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
     };
 
-    async function loadTeachers() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log('DATA:', data);
+    document.querySelectorAll('.class-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const selectedClass = e.target.dataset.class.toUpperCase();
+        const output = document.getElementById('schedule-output');
+        output.innerHTML = 'Загрузка...';
 
-        const [headers, ...rows] = data.values;
-        const teacherMap = {};
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
 
-        rows.forEach(row => {
-          const name = row[0];
-          const lessonNum = row[1];
-          if (!name || !lessonNum) return;
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+          const [headers, ...rows] = data.values;
 
-          if (!teacherMap[name]) teacherMap[name] = {};
-          for (let i = 2; i < headers.length; i++) {
-            const day = headers[i];
-            const cell = row[i];
-            if (cell) {
-              if (!teacherMap[name][day]) teacherMap[name][day] = [];
-              teacherMap[name][day].push(`${lessonNum}. ${cell}`);
+          const filtered = rows.filter(r => (r[0] || '').trim().toUpperCase() === selectedClass);
+
+          if (filtered.length === 0) {
+            output.innerHTML = `<p>Для класса <strong>${selectedClass}</strong> расписание не найдено.</p>`;
+            return;
+          }
+
+          let days = headers.slice(2);  // A: класс, B: урок, остальное — дни недели
+
+          let dayMap = {};
+          days.forEach((day, i) => {
+            dayMap[day] = [];
+          });
+
+          for (const row of filtered) {
+            const lessonNum = row[1];
+            for (let i = 2; i < headers.length; i++) {
+              const content = row[i];
+              if (content) {
+                const day = headers[i];
+                dayMap[day].push(`<strong>${lessonNum}.</strong> ${content}`);
+              }
             }
           }
-        });
 
-        const container = document.getElementById('teacher-buttons');
-        Object.keys(teacherMap).forEach(name => {
-          const btn = document.createElement('button');
-          btn.textContent = name;
-          btn.className = 'class-btn';
-          btn.addEventListener('click', () => renderSchedule(name, teacherMap[name]));
-          container.appendChild(btn);
-        });
+          let html = '';
+          const dayNames = {
+            'ПН': 'Понедельник',
+            'ВТ': 'Вторник',
+            'СР': 'Среда',
+            'ЧТ': 'Четверг',
+            'ПТ': 'Пятница',
+            'СБ': 'Суббота',
+            'ВС': 'Воскресенье'
+          };
+          const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+          const todayName = weekdayNames[new Date().getDay()];
+          for (let day in dayMap) {
+            const dayTitle = dayNames[day] || day;
+            if (dayMap[day].length === 0) continue;
+            const isToday = dayTitle === todayName;
+            html += `<div class="day-card${isToday ? ' today' : ''}">
+              <h3>${dayTitle}</h3>
+              <ul>${dayMap[day].map(item => `<li>${item}</li>`).join('')}</ul>
+            </div>`;
+          }
+           output.innerHTML = output.innerHTML = html;
+        } catch (error) {
+          console.error(error);
+          output.innerHTML = 'Ошибка загрузки расписания.';
+        }
+      });
+    });
+  
+function getCurrentLesson() {
+  const now = new Date();
+  const weekday = now.getDay(); // 0 = Sunday, 1 = Monday...
 
-      } catch (err) {
-        console.error('Ошибка:', err);
-        document.getElementById('schedule-output').textContent = 'Ошибка загрузки данных.';
-      }
+  const bells = {
+    'short': ['08:30-09:10','09:20-10:00','10:15-10:55','11:15-11:55','12:10-12:50','13:00-13:40','13:50-14:30','14:35-15:15'],
+    'long': ['08:30-09:15','09:25-10:10','10:25-11:10','11:30-12:15','12:30-13:15','13:25-14:10','14:20-15:05']
+  };
+
+  const isShort = [1, 4].includes(weekday); // ПН, ЧТ
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const list = isShort ? bells.short : bells.long;
+
+  for (let i = 0; i < list.length; i++) {
+    const [start, end] = list[i].split('-');
+    const [h1, m1] = start.split(':').map(Number);
+    const [h2, m2] = end.split(':').map(Number);
+    const from = h1 * 60 + m1;
+    const to = h2 * 60 + m2;
+    if (nowMinutes >= from && nowMinutes <= to) {
+      return `${i + 1} урок (${start} – ${end})`;
     }
+  }
+  return null;
+}
 
-    function renderSchedule(name, data) {
-      
+const current = getCurrentLesson();
+if (current) {
+  document.getElementById('current-lesson').textContent = `Сейчас идёт: ${current}`;
+}
+
+</script>
+</body>
+</html>
