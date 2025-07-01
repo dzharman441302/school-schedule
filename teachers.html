@@ -154,7 +154,18 @@
       }
     }
 
+    
     function renderSchedule(name, rows, headers) {
+      const dayNames = {
+        'ПН': 'Понедельник',
+        'ВТ': 'Вторник',
+        'СР': 'Среда',
+        'ЧТ': 'Четверг',
+        'ПТ': 'Пятница',
+        'СБ': 'Суббота',
+        'ВС': 'Воскресенье'
+      };
+    
       const output = document.getElementById('schedule-output');
       const days = headers.slice(1);
       const teacherRows = rows.filter(row => row[0] === name);
@@ -169,7 +180,23 @@
         dayMap[day] = [];
       });
 
+      
+      const lessonIndex = headers.findIndex(h => h.toLowerCase().includes('урок'));
+
       teacherRows.forEach(row => {
+        const lessonNumber = row[lessonIndex];
+        for (let i = 0; i < headers.length; i++) {
+          const header = headers[i];
+          if (['ФИО', 'Фамилия', 'Фамилия Имя', 'ФИО учителя'].includes(header.trim()) || i === lessonIndex) continue;
+          const cell = row[i];
+          if (cell) {
+            const dayLabel = dayNames[header] || header;
+            if (!dayMap[dayLabel]) dayMap[dayLabel] = [];
+            dayMap[dayLabel].push(lessonNumber ? `${lessonNumber}. ${cell}` : `${cell}`);
+          }
+        }
+      });
+    
         for (let i = 1; i < headers.length; i++) {
           const cell = row[i];
           if (cell) {
