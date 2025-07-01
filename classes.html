@@ -241,7 +241,7 @@
           const data = await response.json();
           const [headers, ...rows] = data.values;
 
-          const filtered = rows.filter(r => (r[0] || '').trim().toUpperCase() === selectedClass);
+          const filtered = rows.filter(r => r[0].toUpperCase() === selectedClass);
 
           if (filtered.length === 0) {
             output.innerHTML = `<p>Для класса <strong>${selectedClass}</strong> расписание не найдено.</p>`;
@@ -267,6 +267,7 @@
           }
 
           let html = '';
+          
           const dayNames = {
             'ПН': 'Понедельник',
             'ВТ': 'Вторник',
@@ -276,18 +277,19 @@
             'СБ': 'Суббота',
             'ВС': 'Воскресенье'
           };
-          const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
-          const todayName = weekdayNames[new Date().getDay()];
           for (let day in dayMap) {
             const dayTitle = dayNames[day] || day;
+    
             if (dayMap[day].length === 0) continue;
-            const isToday = dayTitle === todayName;
-            html += `<div class="day-card${isToday ? ' today' : ''}">
+            const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+const todayName = weekdayNames[new Date().getDay()];
+html += `<div class="day-card${day === todayName ? ' today' : ''}">`;
               <h3>${dayTitle}</h3>
               <ul>${dayMap[day].map(item => `<li>${item}</li>`).join('')}</ul>
             </div>`;
           }
-           output.innerHTML = output.innerHTML = html;
+
+          output.innerHTML = html;
         } catch (error) {
           console.error(error);
           output.innerHTML = 'Ошибка загрузки расписания.';
