@@ -2,140 +2,123 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Изменения в расписании - МОУ СОШ № 20</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f0f4f8;
-      margin: 0;
-      padding: 0;
-      color: #333;
-    }
-    header {
-      background-color: #1976D2;
-      color: white;
-      padding: 1.5rem 1rem;
-      text-align: center;
-    }
-    header h1 {
-      font-size: 1.5rem;
-      margin: 0.2rem 0;
-    }
-    header h2 {
-      font-weight: normal;
-      font-size: 1rem;
-      margin: 0.2rem 0 0.8rem;
-    }
-    .changes-link {
-      display: inline-block;
-      background-color: #FFA000;
-      color: white;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .info-message {
-      background-color: #FFF3E0;
-      color: #EF6C00;
-      text-align: center;
-      padding: 1rem;
-      margin: 1rem auto 0;
-      font-weight: 600;
-      border-left: 5px solid #EF6C00;
-    }
-    .container {
-      max-width: 960px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-    .filter-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .filter-btn {
-      background-color: #E3F2FD;
-      color: #1976D2;
-      border: none;
-      border-radius: 6px;
-      padding: 0.5rem 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .filter-btn.active, .filter-btn:hover {
-      background-color: #1976D2;
-      color: white;
-    }
-    .selected-label {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      font-weight: 600;
-      color: #555;
-    }
     .changes-block {
-      background-color: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      padding: 1rem;
-      margin-bottom: 2rem;
-      overflow-x: auto;
+      margin-bottom: 3rem;
     }
+
     .changes-block h2 {
       text-align: center;
       margin-bottom: 1rem;
-      color: #1976D2;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-      table-layout: auto;
+
+    .divider {
+      border: none;
+      border-top: 2px dashed #ccc;
+      margin: 2rem auto;
+      width: 60%;
     }
-    th, td {
-      padding: 0.5rem;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th {
-      background-color: #E3F2FD;
-      font-weight: 600;
-    }
-    tr:hover {
-      background-color: #f9f9f9;
-    }
-    footer {
+
+    .info-message {
+      background-color: #fff;
+      color: #d32f2f;
+      font-size: 1.2rem;
+      font-weight: bold;
       text-align: center;
       padding: 1rem;
-      background-color: #1976D2;
+      margin-top: 1rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid #d32f2f;
+      border-radius: 8px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .filter-buttons {
+      text-align: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      display: inline-block;
+      margin: 0.3rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #1e88e5;
       color: white;
-      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background-color: #0d47a1;
+    }
+
+    #selected-class-label {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>МОУ СОШ № 20</h1>
-    <h2>г. Тверь</h2>
-    <a href="index.html" class="changes-link">Назад к расписанию</a>
+    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
+    <h2>город Тверь</h2>
+    <div class="date" id="current-date"></div>
+    <a href="index.html" class="changes-link">Вернуться к расписанию</a>
+    <div class="info-message">ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</div>
   </header>
-  <div class="info-message">ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</div>
+
   <div class="container">
-    <div class="filter-buttons" id="class-filter"></div>
-    <p class="selected-label" id="selected-class-label"></p>
+
+    <div class="filter-buttons" id="class-filter">
+      <button class="filter-btn" data-class="">Все</button>
+      <button class="filter-btn" data-class="5А">5А</button>
+      <button class="filter-btn" data-class="5Б">5Б</button>
+      <button class="filter-btn" data-class="5И">5И</button>
+      <button class="filter-btn" data-class="5К">5К</button>
+      <button class="filter-btn" data-class="6А">6А</button>
+      <button class="filter-btn" data-class="6Б">6Б</button>
+      <button class="filter-btn" data-class="6В">6В</button>
+      <button class="filter-btn" data-class="7А">7А</button>
+      <button class="filter-btn" data-class="7Б">7Б</button>
+      <button class="filter-btn" data-class="7В">7В</button>
+      <button class="filter-btn" data-class="7Г">7Г</button>
+      <button class="filter-btn" data-class="8А">8А</button>
+      <button class="filter-btn" data-class="8Б">8Б</button>
+      <button class="filter-btn" data-class="8В">8В</button>
+      <button class="filter-btn" data-class="8Г">8Г</button>
+      <button class="filter-btn" data-class="9А">9А</button>
+      <button class="filter-btn" data-class="9Б">9Б</button>
+      <button class="filter-btn" data-class="9Г">9Г</button>
+      <button class="filter-btn" data-class="10А">10А</button>
+      <button class="filter-btn" data-class="10Б">10Б</button>
+      <button class="filter-btn" data-class="11">11</button>
+    </div>
+
+    <p id="selected-class-label"></p>
+
     <div id="changes-today" class="changes-block"></div>
+    <hr class="divider"/>
     <div id="changes-tomorrow" class="changes-block"></div>
-    <div id="error" class="error" style="display:none;color:red;text-align:center;"></div>
+    <div id="error" class="error" style="display:none;"></div>
   </div>
+
   <footer>
-    МОУ СОШ № 20 — Тверь
+    <p>МОУ СОШ № 20</p>
   </footer>
+
   <script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
@@ -143,97 +126,119 @@
       API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
     };
 
-    const CLASSES = ['5А','5Б','5И','5К','6А','6Б','6В','7А','7Б','7В','7Г','8А','8Б','8В','8Г','9А','9Б','9Г','10А','10Б','11'];
-    const filterContainer = document.getElementById('class-filter');
+    const elements = {
+      currentDate: document.getElementById('current-date'),
+      todayBlock: document.getElementById('changes-today'),
+      tomorrowBlock: document.getElementById('changes-tomorrow'),
+      error: document.getElementById('error'),
+      filterButtons: document.querySelectorAll('.filter-btn'),
+      selectedLabel: document.getElementById('selected-class-label')
+    };
+
     let activeClass = localStorage.getItem('selectedClass') || '';
 
-    CLASSES.forEach(cls => {
-      const btn = document.createElement('button');
-      btn.className = 'filter-btn';
-      btn.textContent = cls;
-      btn.dataset.class = cls;
-      filterContainer.appendChild(btn);
+    document.addEventListener('DOMContentLoaded', () => {
+      updateDateHeader();
+      updateSelectedClassLabel();
+      loadSheetData();
+
+      elements.filterButtons.forEach(btn => {
+        if (btn.dataset.class === activeClass) {
+          btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', () => {
+          activeClass = btn.dataset.class;
+          localStorage.setItem('selectedClass', activeClass);
+          updateSelectedClassLabel();
+
+          elements.filterButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          loadSheetData();
+        });
+      });
     });
 
-    const allBtn = document.createElement('button');
-    allBtn.className = 'filter-btn';
-    allBtn.textContent = 'Все';
-    allBtn.dataset.class = '';
-    filterContainer.prepend(allBtn);
-
-    const selectedLabel = document.getElementById('selected-class-label');
-    const todayBlock = document.getElementById('changes-today');
-    const tomorrowBlock = document.getElementById('changes-tomorrow');
-    const errorBlock = document.getElementById('error');
-
-    function updateLabel() {
-      selectedLabel.textContent = activeClass ? `Выбранный класс: ${activeClass}` : 'Показаны все классы';
-    }
-
-    function setActiveButton() {
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.class === activeClass);
+    function updateDateHeader() {
+      const now = new Date();
+      elements.currentDate.textContent = now.toLocaleDateString('ru-RU', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
 
-    filterContainer.addEventListener('click', e => {
-      if (e.target.classList.contains('filter-btn')) {
-        activeClass = e.target.dataset.class;
-        localStorage.setItem('selectedClass', activeClass);
-        updateLabel();
-        setActiveButton();
-        loadData();
+    function updateSelectedClassLabel() {
+      if (activeClass) {
+        elements.selectedLabel.textContent = 'Выбранный класс: ' + activeClass;
+      } else {
+        elements.selectedLabel.textContent = 'Показаны все классы';
       }
-    });
-
-    function renderTable(title, rows, map) {
-      if (!rows.length) return `<h2>${title}</h2><p style='text-align:center'>Нет изменений</p>`;
-      let html = `<h2>${title}</h2><table><thead><tr>
-        <th>№</th><th>Класс</th><th>Урок</th><th>Изменения</th><th>Примечание</th>
-      </tr></thead><tbody>`;
-      rows.forEach((r, i) => {
-        html += `<tr><td>${i+1}</td><td>${r[map['класс']] || ''}</td><td>${r[map['урок']] || ''}</td><td>${r[map['изменения']] || ''}</td><td>${r[map['примечание']] || ''}</td></tr>`;
-      });
-      html += '</tbody></table>';
-      return html;
     }
 
-    function filterByClass(rows, map) {
-      return activeClass ? rows.filter(r => (r[map['класс']] || '').toUpperCase() === activeClass) : rows;
-    }
-
-    async function loadData() {
+    async function loadSheetData() {
       try {
-        errorBlock.style.display = 'none';
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.values || data.values.length < 2) {
+          elements.todayBlock.innerHTML = '<p>Нет данных.</p>';
+          return;
+        }
+
         const [headers, ...rows] = data.values;
         const map = {};
         headers.forEach((h, i) => map[h.trim().toLowerCase()] = i);
 
         const now = new Date();
         const todayStr = now.toLocaleDateString('ru-RU');
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrow = new Date();
+        tomorrow.setDate(now.getDate() + 1);
         const tomorrowStr = tomorrow.toLocaleDateString('ru-RU');
 
         const todayRows = filterByClass(rows.filter(r => r[map['дата']] === todayStr), map);
         const tomorrowRows = filterByClass(rows.filter(r => r[map['дата']] === tomorrowStr), map);
 
-        todayBlock.innerHTML = renderTable('Изменения на ' + todayStr, todayRows, map);
-        tomorrowBlock.innerHTML = renderTable('Изменения на ' + tomorrowStr, tomorrowRows, map);
-      } catch (err) {
-        errorBlock.style.display = 'block';
-        errorBlock.textContent = 'Ошибка загрузки данных: ' + err.message;
+        elements.todayBlock.innerHTML = renderChangesBlock('Изменения на ' + todayStr, todayRows, map);
+        elements.tomorrowBlock.innerHTML = renderChangesBlock('Изменения на ' + tomorrowStr, tomorrowRows, map);
+
+      } catch (error) {
+        console.error(error);
+        elements.error.style.display = 'block';
+        elements.error.innerHTML = 'Ошибка загрузки данных: ' + error.message;
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      updateLabel();
-      setActiveButton();
-      loadData();
-    });
+    function filterByClass(rows, map) {
+      if (!activeClass) return rows;
+      return rows.filter(r => r[map['класс']]?.toUpperCase() === activeClass);
+    }
+
+    function renderChangesBlock(title, rows, map) {
+      if (rows.length === 0) return `<h2>${title}</h2><p style="text-align:center;">Нет изменений</p>`;
+
+      let html = `<h2>${title}</h2><div class="schedule"><table><thead><tr>
+        <th>№</th><th>Класс</th><th>Урок</th><th>Изменения</th><th>Примечание</th>
+      </tr></thead><tbody>`;
+
+      rows.forEach((r, i) => {
+        html += `<tr>
+          <td>${i + 1}</td>
+          <td>${r[map['класс']] || ''}</td>
+          <td>${r[map['урок']] || ''}</td>
+          <td>${r[map['изменения']] || ''}</td>
+          <td>${r[map['примечание']] || ''}</td>
+        </tr>`;
+      });
+
+      html += '</tbody></table></div>';
+      return html;
+    }
   </script>
 </body>
 </html>
