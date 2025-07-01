@@ -41,6 +41,34 @@
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+
+    .filter-buttons {
+      text-align: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      display: inline-block;
+      margin: 0.3rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #1e88e5;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background-color: #0d47a1;
+    }
+
+    #selected-class-label {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -53,6 +81,34 @@
   </header>
 
   <div class="container">
+
+    <div class="filter-buttons" id="class-filter">
+      <button class="filter-btn" data-class="">Все</button>
+      <button class="filter-btn" data-class="5А">5А</button>
+      <button class="filter-btn" data-class="5Б">5Б</button>
+      <button class="filter-btn" data-class="5И">5И</button>
+      <button class="filter-btn" data-class="5К">5К</button>
+      <button class="filter-btn" data-class="6А">6А</button>
+      <button class="filter-btn" data-class="6Б">6Б</button>
+      <button class="filter-btn" data-class="6В">6В</button>
+      <button class="filter-btn" data-class="7А">7А</button>
+      <button class="filter-btn" data-class="7Б">7Б</button>
+      <button class="filter-btn" data-class="7В">7В</button>
+      <button class="filter-btn" data-class="7Г">7Г</button>
+      <button class="filter-btn" data-class="8А">8А</button>
+      <button class="filter-btn" data-class="8Б">8Б</button>
+      <button class="filter-btn" data-class="8В">8В</button>
+      <button class="filter-btn" data-class="8Г">8Г</button>
+      <button class="filter-btn" data-class="9А">9А</button>
+      <button class="filter-btn" data-class="9Б">9Б</button>
+      <button class="filter-btn" data-class="9Г">9Г</button>
+      <button class="filter-btn" data-class="10А">10А</button>
+      <button class="filter-btn" data-class="10Б">10Б</button>
+      <button class="filter-btn" data-class="11">11</button>
+    </div>
+
+    <p id="selected-class-label"></p>
+
     <div id="changes-today" class="changes-block"></div>
     <hr class="divider"/>
     <div id="changes-tomorrow" class="changes-block"></div>
@@ -74,12 +130,34 @@
       currentDate: document.getElementById('current-date'),
       todayBlock: document.getElementById('changes-today'),
       tomorrowBlock: document.getElementById('changes-tomorrow'),
-      error: document.getElementById('error')
+      error: document.getElementById('error'),
+      filterButtons: document.querySelectorAll('.filter-btn'),
+      selectedLabel: document.getElementById('selected-class-label')
     };
+
+    let activeClass = localStorage.getItem('selectedClass') || '';
 
     document.addEventListener('DOMContentLoaded', () => {
       updateDateHeader();
+      updateSelectedClassLabel();
       loadSheetData();
+
+      elements.filterButtons.forEach(btn => {
+        if (btn.dataset.class === activeClass) {
+          btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', () => {
+          activeClass = btn.dataset.class;
+          localStorage.setItem('selectedClass', activeClass);
+          updateSelectedClassLabel();
+
+          elements.filterButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          loadSheetData();
+        });
+      });
     });
 
     function updateDateHeader() {
@@ -92,6 +170,14 @@
         hour: '2-digit',
         minute: '2-digit'
       });
+    }
+
+    function updateSelectedClassLabel() {
+      if (activeClass) {
+        elements.selectedLabel.textContent = 'Выбранный класс: ' + activeClass;
+      } else {
+        elements.selectedLabel.textContent = 'Показаны все классы';
+      }
     }
 
     async function loadSheetData() {
@@ -115,8 +201,8 @@
         tomorrow.setDate(now.getDate() + 1);
         const tomorrowStr = tomorrow.toLocaleDateString('ru-RU');
 
-        const todayRows = rows.filter(r => r[map['дата']] === todayStr);
-        const tomorrowRows = rows.filter(r => r[map['дата']] === tomorrowStr);
+        const todayRows = filterByClass(rows.filter(r => r[map['дата']] === todayStr), map);
+        const tomorrowRows = filterByClass(rows.filter(r => r[map['дата']] === tomorrowStr), map);
 
         elements.todayBlock.innerHTML = renderChangesBlock('Изменения на ' + todayStr, todayRows, map);
         elements.tomorrowBlock.innerHTML = renderChangesBlock('Изменения на ' + tomorrowStr, tomorrowRows, map);
@@ -126,6 +212,11 @@
         elements.error.style.display = 'block';
         elements.error.innerHTML = 'Ошибка загрузки данных: ' + error.message;
       }
+    }
+
+    function filterByClass(rows, map) {
+      if (!activeClass) return rows;
+      return rows.filter(r => r[map['класс']]?.toUpperCase() === activeClass);
     }
 
     function renderChangesBlock(title, rows, map) {
