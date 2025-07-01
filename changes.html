@@ -84,6 +84,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       padding: 1rem;
       margin-bottom: 2rem;
+      overflow-x: auto;
     }
     .changes-block h2 {
       text-align: center;
@@ -94,11 +95,13 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
+      table-layout: auto;
     }
     th, td {
       padding: 0.5rem;
       border-bottom: 1px solid #ddd;
       text-align: left;
+      white-space: nowrap;
     }
     th {
       background-color: #E3F2FD;
@@ -133,7 +136,6 @@
   <footer>
     МОУ СОШ № 20 — Тверь
   </footer>
-
   <script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
