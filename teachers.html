@@ -193,31 +193,35 @@
     }
 
     function renderSchedule(name, data) {
-      const dayNames = {
-        'ПН': 'Понедельник',
-        'ВТ': 'Вторник',
-        'СР': 'Среда',
-        'ЧТ': 'Четверг',
-        'ПТ': 'Пятница',
-        'СБ': 'Суббота',
-        'ВС': 'Воскресенье'
-      };
+  const dayNames = {
+    'ПН': 'Понедельник',
+    'ВТ': 'Вторник',
+    'СР': 'Среда',
+    'ЧТ': 'Четверг',
+    'ПТ': 'Пятница',
+    'СБ': 'Суббота',
+    'ВС': 'Воскресенье'
+  };
 
-      const output = document.getElementById('schedule-output');
-      let html = '';
+  const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  const todayName = weekdayNames[new Date().getDay()];
 
-      for (let day in data) {
-        const prettyDay = dayNames[day] || day;
-        html += `const weekdayNames = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
-const todayName = weekdayNames[new Date().getDay()];
-html += `<div class="day-card${prettyDay === todayName ? ' today' : ''}">`;
-          <h3>${prettyDay}</h3>
-          <ul>${data[day].map(item => `<li>${item}</li>`).join('')}</ul>
-        </div>`;
-      }
+  const output = document.getElementById('schedule-output');
+  let html = '';
 
-      output.innerHTML = html;
-    }
+  for (let day in data) {
+    const prettyDay = dayNames[day] || day;
+    const isToday = prettyDay === todayName;
+
+    html += `<div class="day-card${isToday ? ' today' : ''}">`;
+    html += `<h3>${prettyDay}</h3>`;
+    html += `<ul>${data[day].map(item => `<li>${item}</li>`).join('')}</ul>`;
+    html += `</div>`;
+  }
+
+  output.innerHTML = html;
+}
+
 
     loadTeachers();
   </script>
