@@ -1,178 +1,25 @@
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Главная - Расписание занятий</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      background-color: #1e88e5;
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
-    header h1 {
-      margin-top: 1rem;
-      font-size: 1.8rem;
-      line-height: 1.3;
-    }
-    header h2 {
-      font-size: 1.2rem;
-      margin-top: 0.5rem;
-      font-weight: normal;
-    }
-    .main-title {
-      font-size: 2.2rem;
-      margin-top: 1.2rem;
-      font-weight: bold;
-    }
-    .subtitle {
-      font-size: 1.1rem;
-      margin-top: 0.5rem;
-      color: #f0f0f0;
-    }
-    .button-container {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin-top: 2rem;
-      flex-wrap: wrap;
-    }
-    .nav-btn {
-      padding: 1rem 2rem;
-      font-size: 1.5rem;
-      font-weight: bold;
-      border: 3px solid white;
-      background-color: transparent;
-      color: white;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.2s;
-      text-decoration: none;
-    }
-    .nav-btn:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-      transform: scale(1.05);
-    }
-    .datetime {
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
-    .banner {
-      margin: 2rem auto 1rem;
-      max-width: 90%;
-      padding: 1rem 2rem;
-      background-color: #ffffff;
-      color: #333;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      text-align: left;
-    }
-    .banner ul {
-      list-style-type: disc;
-      padding-left: 1.2rem;
-      margin: 0;
-    }
-    .banner li {
-      margin-bottom: 0.5rem;
-      font-weight: bold;
-    }
-    .today-info {
-      margin-top: 1rem;
-      font-size: 1.1rem;
-    }
-    footer {
-      text-align: center;
-      padding: 1rem 0;
-      margin-top: 2rem;
-      background-color: #1565c0;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>
-      Муниципальное общеобразовательное учреждение<br>
-      "Средняя общеобразовательная школа № 20"<br>
-      имени Ивана Андреевича Рыбалко
-    </h1>
-    <h2>г. Тверь</h2>
-  </header>
-
-  <div class="datetime" id="datetime"></div>
-
-  <h1 class="main-title">📅 Расписание занятий</h1>
-  <p class="subtitle">Добро пожаловать! Здесь вы найдёте актуальное расписание уроков и изменения для всех классов и учителей.</p>
-
-  <div class="button-container">
-    <a href="classes.html" class="nav-btn">📚 КЛАССЫ</a>
-    <a href="teachers.html" class="nav-btn">👨‍🏫 УЧИТЕЛЯ</a>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>СОШ №20 г. Тверь — расписание и школьная жизнь</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
+  <div class="wrapper header-inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <div class="school-crest">20</div>
+      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <a href="index.html" class="active">Главная</a>
+      <a href="classes.html" >Расписание</a>
+      <a href="classes.html">Классы</a>
+      <a href="teachers.html" >Учителя</a>
+      <a href="changes.html" >Изменения</a>
+      <a href="vector20.html" >Вектор 20</a>
+      <a href="vector20.html#news">Новости</a>
+      <a href="vector20.html#contacts">Контакты</a>
+    </nav>
   </div>
-
-  <div class="banner" id="announcement-banner">
-    <ul id="announcement-list"><li>Загрузка объявлений...</li></ul>
-  </div>
-
-  <div class="today-info" id="today-info"></div>
-
-  <div style="margin-top: 1.5rem;">
-    <a href="changes.html" class="nav-btn" style="background-color: #ff9800;">🔔 Изменения на сегодня</a>
-  </div>
-
-  <footer>
-    <p>МОУ СОШ № 20 © Воронков М. Е.</p>
-  </footer>
-
-  <script>
-    function updateDateTime() {
-      const now = new Date();
-      const options = {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      };
-      document.getElementById('datetime').textContent = now.toLocaleDateString('ru-RU', options);
-
-      const weekday = now.toLocaleDateString('ru-RU', { weekday: 'long' });
-      document.getElementById('today-info').textContent = `Сегодня ${weekday} — используйте кнопки выше, чтобы перейти к расписанию.`;
-    }
-    updateDateTime();
-    setInterval(updateDateTime, 60000);
-
-    async function loadAnnouncements() {
-      const CONFIG = {
-        SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-        SHEET_NAME: 'Объявления',
-        API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
-      };
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const rows = data.values || [];
-
-        const list = document.getElementById('announcement-list');
-        list.innerHTML = "";
-
-        if (rows.length < 1) {
-          list.innerHTML = "<li>Объявлений пока нет.</li>";
-          return;
-        }
-
-        rows.forEach(row => {
-          const li = document.createElement('li');
-          li.textContent = row[0];
-          list.appendChild(li);
-        });
-      } catch (err) {
-        document.getElementById('announcement-list').innerHTML = "<li>Ошибка загрузки объявлений.</li>";
-      }
-    }
-
-    loadAnnouncements();
-  </script>
-</body>
-</html>
+</header>
+<section class="hero"><div class="wrapper hero-inner"><div><div class="hero-title-row"><img class="hero-school-logo" src="assets/school-logo.jpg" alt="Логотип МОУ СОШ №20"><div><div class="eyebrow">Официальный сайт</div><h1 class="school-main-title">МОУ СОШ №20</h1><div class="lead">имени И. А. Рыбалко, г. Тверь</div></div></div><div class="script">Расписание и школьная жизнь в одном месте</div><p style="max-width:760px;color:#263959;font-weight:650;line-height:1.55">Быстрый доступ к расписанию уроков, изменениям, классам, учителям и школьному сообществу развития «Вектор 20».</p><div class="hero-actions"><a class="btn btn-primary" href="classes.html">Открыть расписание</a><a class="btn btn-orange" href="changes.html">Изменения на сегодня</a><a class="btn btn-light" href="vector20.html">Вектор 20</a></div><div class="date" id="datetime"></div></div><aside class="hero-panel"><h3>Быстрый доступ</h3><div class="grid grid-2" style="grid-template-columns:1fr 1fr;gap:10px"><a class="btn btn-light" href="classes.html">📚 Классы</a><a class="btn btn-light" href="teachers.html">👨‍🏫 Учителя</a><a class="btn btn-light" href="changes.html">🔔 Изменения</a><a class="btn btn-light" href="vector20.html">🏆 Достижения</a></div><div class="hero-icons"><div class="mini-icon"><span>📅</span>Расписание</div><div class="mini-icon"><span>🔔</span>Изменения</div><div class="mini-icon"><span>🏆</span>Конкурсы</div><div class="mini-icon"><span>📖</span>Учёба</div><div class="mini-icon"><span>👥</span>Школа</div></div></aside></div></section>
+<main class="wrapper page-section"><div class="section-title"><div><h2>Основные разделы</h2><p>То, что чаще всего нужно ученикам, родителям и педагогам.</p></div></div><div class="grid grid-4"><a class="card card-pad direction-card blue" href="classes.html"><div class="dir-icon">📚</div><h3>Расписание классов</h3><p>Выберите класс и посмотрите расписание по дням недели.</p></a><a class="card card-pad direction-card green" href="teachers.html"><div class="dir-icon">👨‍🏫</div><h3>Расписание учителей</h3><p>Быстрый просмотр расписания по педагогам.</p></a><a class="card card-pad direction-card orange" href="changes.html"><div class="dir-icon">🔔</div><h3>Изменения</h3><p>Только изменённые уроки. Остальные проходят по основному расписанию.</p></a><a class="card card-pad direction-card purple" href="vector20.html"><div class="dir-icon">🏆</div><h3>Вектор 20</h3><p>Олимпиады, конкурсы, проекты, достижения и школьные инициативы.</p></a></div>
+<div class="split" style="margin-top:18px"><section class="card card-pad"><h2 style="margin-top:0">Объявления</h2><ul id="announcement-list" class="check-list"><li>Загрузка объявлений...</li></ul></section><section class="card card-pad"><h2 style="margin-top:0">Сегодня</h2><p id="today-info" style="font-weight:750;color:#263959"></p><div class="quick-line"><a href="classes.html" class="btn btn-primary">Расписание</a><a href="changes.html" class="btn btn-light">Изменения</a></div></section></div></main><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
+<script>
+function updateDateTime(){const now=new Date();const options={weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'};document.getElementById('datetime').textContent=now.toLocaleDateString('ru-RU',options);const weekday=now.toLocaleDateString('ru-RU',{weekday:'long'});document.getElementById('today-info').textContent=`Сегодня ${weekday}. Используйте быстрые разделы, чтобы перейти к расписанию или изменениям.`}updateDateTime();setInterval(updateDateTime,60000);
+async function loadAnnouncements(){const CONFIG={SHEET_ID:'1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',SHEET_NAME:'Объявления',API_KEY:'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'};const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;try{const res=await fetch(url);const data=await res.json();const rows=data.values||[];const list=document.getElementById('announcement-list');list.innerHTML='';if(rows.length<1){list.innerHTML='<li>Объявлений пока нет.</li>';return}rows.forEach(row=>{const li=document.createElement('li');li.innerHTML='<span class="check">✓</span><span>'+row[0]+'</span>';list.appendChild(li)})}catch(err){document.getElementById('announcement-list').innerHTML='<li>Ошибка загрузки объявлений.</li>'}}loadAnnouncements();
+</script></body></html>

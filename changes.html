@@ -1,128 +1,24 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Изменения в расписании - МОУ СОШ № 20</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .changes-block {
-      margin-bottom: 3rem;
-    }
-
-    .changes-block h2 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    .divider {
-      border: none;
-      border-top: 2px dashed #ccc;
-      margin: 2rem auto;
-      width: 60%;
-    }
-
-    .info-message {
-      background-color: #fff;
-      color: #d32f2f;
-      font-size: 1.2rem;
-      font-weight: bold;
-      text-align: center;
-      padding: 1rem;
-      margin-top: 1rem;
-      margin-bottom: 1.5rem;
-      border: 2px solid #d32f2f;
-      border-radius: 8px;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
-
-    .filter-buttons {
-      text-align: center;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .filter-btn {
-      display: inline-block;
-      margin: 0.3rem;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 5px;
-      background-color: #1e88e5;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .filter-btn.active {
-      background-color: #0d47a1;
-    }
-
-    #selected-class-label {
-      text-align: center;
-      font-weight: bold;
-      margin-bottom: 1rem;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
-    <h2>город Тверь</h2>
-    <div class="date" id="current-date"></div>
-    <div style="display:flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-  <a href="index.html" class="changes-link">Вернуться к расписанию</a>
-  <a href="index.html" class="changes-link" style="background-color:#2196f3;">На главную</a>
-</div>
-    <div class="info-message">ВСЕ ИЗМЕНЕНИЯ ОБНОВЛЯЮТСЯ ДО 15:00</div>
-    <div class="info-message">ВАЖНО! ПОКАЗАНЫ ТОЛЬКО УРОКИ С ИЗМЕНЕНИЯМИ, ОСТАЛЬНЫЕ УРОКИ ПО ОСНОВНОМУ РАСПИСАНИЮ!</div>
-  </header>
-
-  <div class="container">
-
-    <div class="filter-buttons" id="class-filter">
-      <button class="filter-btn" data-class="">Все</button>
-      <button class="filter-btn" data-class="5А">5А</button>
-      <button class="filter-btn" data-class="5Б">5Б</button>
-      <button class="filter-btn" data-class="5И">5И</button>
-      <button class="filter-btn" data-class="5К">5К</button>
-      <button class="filter-btn" data-class="6А">6А</button>
-      <button class="filter-btn" data-class="6Б">6Б</button>
-      <button class="filter-btn" data-class="6В">6В</button>
-      <button class="filter-btn" data-class="7А">7А</button>
-      <button class="filter-btn" data-class="7Б">7Б</button>
-      <button class="filter-btn" data-class="7В">7В</button>
-      <button class="filter-btn" data-class="7Г">7Г</button>
-      <button class="filter-btn" data-class="8А">8А</button>
-      <button class="filter-btn" data-class="8Б">8Б</button>
-      <button class="filter-btn" data-class="8В">8В</button>
-      <button class="filter-btn" data-class="8Г">8Г</button>
-      <button class="filter-btn" data-class="9А">9А</button>
-      <button class="filter-btn" data-class="9Б">9Б</button>
-      <button class="filter-btn" data-class="9В">9В</button>
-      <button class="filter-btn" data-class="10А">10А</button>
-      <button class="filter-btn" data-class="11А">11А</button>
-    </div>
-
-    <p id="selected-class-label"></p>
-
-    <div id="changes-today" class="changes-block"></div>
-    <hr class="divider"/>
-    <div id="changes-tomorrow" class="changes-block"></div>
-    <div id="error" class="error" style="display:none;"></div>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Изменения в расписании — СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
+  <div class="wrapper header-inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <div class="school-crest">20</div>
+      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <a href="index.html" >Главная</a>
+      <a href="classes.html" >Расписание</a>
+      <a href="classes.html">Классы</a>
+      <a href="teachers.html" >Учителя</a>
+      <a href="changes.html" class="active">Изменения</a>
+      <a href="vector20.html" >Вектор 20</a>
+      <a href="vector20.html#news">Новости</a>
+      <a href="vector20.html#contacts">Контакты</a>
+    </nav>
   </div>
-
-  <footer>
-    <p>МОУ СОШ № 20</p>
-  </footer>
-
-  <script>
+</header>
+<main class="wrapper page-hero"><section class="page-heading"><div><h1>Изменения в расписании</h1><p>Показаны только уроки с изменениями. Остальные уроки идут по основному расписанию.</p><div class="date" id="current-date"></div></div><div class="quick-line"><a href="classes.html" class="btn btn-primary">Основное расписание</a><a href="index.html" class="btn btn-light">На главную</a></div></section><div class="notice">Все изменения обновляются до 15:00.</div><div class="notice notice-blue">Важно: если урока нет в списке изменений, он проходит по основному расписанию.</div></main>
+<div class="wrapper page-section"><section class="selector-card"><p class="selector-title">Фильтр по классу</p><div class="filter-buttons" id="class-filter"><button class="filter-btn" data-class="">Все</button><button class="filter-btn" data-class="5А">5А</button><button class="filter-btn" data-class="5Б">5Б</button><button class="filter-btn" data-class="5И">5И</button><button class="filter-btn" data-class="5К">5К</button><button class="filter-btn" data-class="6А">6А</button><button class="filter-btn" data-class="6Б">6Б</button><button class="filter-btn" data-class="6В">6В</button><button class="filter-btn" data-class="7А">7А</button><button class="filter-btn" data-class="7Б">7Б</button><button class="filter-btn" data-class="7В">7В</button><button class="filter-btn" data-class="7Г">7Г</button><button class="filter-btn" data-class="8А">8А</button><button class="filter-btn" data-class="8Б">8Б</button><button class="filter-btn" data-class="8В">8В</button><button class="filter-btn" data-class="8Г">8Г</button><button class="filter-btn" data-class="9А">9А</button><button class="filter-btn" data-class="9Б">9Б</button><button class="filter-btn" data-class="9В">9В</button><button class="filter-btn" data-class="10А">10А</button><button class="filter-btn" data-class="11А">11А</button></div><p id="selected-class-label"></p></section><div id="changes-today" class="changes-block"></div><div id="changes-tomorrow" class="changes-block"></div><div id="error" class="error" style="display:none;"></div></div><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
+<script>
     const CONFIG = {
       SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
       SHEET_NAME: 'Изменения',
@@ -243,5 +139,4 @@
       return html;
     }
   </script>
-</body>
-</html>
+</body></html>

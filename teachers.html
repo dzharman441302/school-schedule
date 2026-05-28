@@ -1,115 +1,24 @@
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Расписание учителей - МОУ СОШ № 20</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .teacher-selector {
-      margin: 2rem auto;
-      text-align: center;
-    }
-    .class-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    .class-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #43a047;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .class-btn:hover {
-      background-color: #2e7d32;
-    }
-    .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-    .day-card {
-      background: #fffde7;
-      padding: 1rem;
-      border-radius: 12px;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-      width: 280px;
-    }
-    .day-card h3 {
-      margin: 0 0 0.3rem;
-      font-size: 1.1rem;
-      color: #333;
-    }
-    .day-card ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    .day-card li {
-      font-size: 0.95rem;
-      margin-bottom: 0.4rem;
-    }
-    footer {
-      text-align: center;
-      padding: 1rem 0;
-      background-color: #1e88e5;
-      color: white;
-      margin-top: 2rem;
-    }
-    .link-buttons {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    .changes-link {
-      display: inline-block;
-      padding: 0.8rem 1.5rem;
-      background-color: #ff9800;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-    .changes-link:hover {
-      background-color: #f57c00;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Муниципальное общеобразовательное учреждение<br>"Средняя общеобразовательная школа № 20"<br>имени Ивана Андреевича Рыбалко</h1>
-    <h2>город Тверь</h2>
-    <div class="date" id="current-date"></div>
-    <div class="link-buttons">
-      <a href="index.html" class="changes-link">На главную</a>
-    </div>
-  </header>
-
-  <div class="container">
-    <div class="teacher-selector">
-      <p>Выберите учителя:</p>
-      <div class="class-buttons" id="teacher-buttons"></div>
-    </div>
-    <div id="schedule-output" class="card-grid"></div>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Расписание учителей — СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
+  <div class="wrapper header-inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <div class="school-crest">20</div>
+      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <a href="index.html" >Главная</a>
+      <a href="classes.html" >Расписание</a>
+      <a href="classes.html">Классы</a>
+      <a href="teachers.html" class="active">Учителя</a>
+      <a href="changes.html" >Изменения</a>
+      <a href="vector20.html" >Вектор 20</a>
+      <a href="vector20.html#news">Новости</a>
+      <a href="vector20.html#contacts">Контакты</a>
+    </nav>
   </div>
-
-  <footer>
-    <p>МОУ СОШ № 20 © Воронков М. Е.</p>
-  </footer>
-
-  <script>
+</header>
+<main class="wrapper page-hero"><section class="page-heading"><div><h1>Расписание учителей</h1><p>Выберите педагога, чтобы открыть расписание по дням недели.</p><div class="date" id="current-date"></div></div><div class="quick-line"><a href="classes.html" class="btn btn-primary">Классы</a><a href="index.html" class="btn btn-light">На главную</a></div></section></main>
+<div class="wrapper page-section"><section class="selector-card"><p class="selector-title">Выберите учителя</p><div class="class-buttons" id="teacher-buttons"></div></section><div id="schedule-output" class="card-grid"></div></div><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
+<script>
     const now = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
@@ -188,5 +97,4 @@
 
     loadTeachers();
   </script>
-</body>
-</html>
+</body></html>
