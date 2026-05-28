@@ -1,100 +1,11 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Расписание учителей — СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
-  <div class="wrapper header-inner">
-    <a class="brand" href="index.html" aria-label="На главную">
-      <div class="school-crest">20</div>
-      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
-    </a>
-    <nav class="main-nav" aria-label="Основная навигация">
-      <a href="index.html" >Главная</a>
-      <a href="classes.html" >Расписание</a>
-      <a href="classes.html">Классы</a>
-      <a href="teachers.html" class="active">Учителя</a>
-      <a href="changes.html" >Изменения</a>
-      <a href="vector20.html" >Вектор 20</a>
-      <a href="vector20.html#news">Новости</a>
-      <a href="vector20.html#contacts">Контакты</a>
-    </nav>
-  </div>
-</header>
-<main class="wrapper page-hero"><section class="page-heading"><div><h1>Расписание учителей</h1><p>Выберите педагога, чтобы открыть расписание по дням недели.</p><div class="date" id="current-date"></div></div><div class="quick-line"><a href="classes.html" class="btn btn-primary">Классы</a><a href="index.html" class="btn btn-light">На главную</a></div></section></main>
-<div class="wrapper page-section"><section class="selector-card"><p class="selector-title">Выберите учителя</p><div class="class-buttons" id="teacher-buttons"></div></section><div id="schedule-output" class="card-grid"></div></div><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
-<script>
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
-
-    const CONFIG = {
-      SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-      SHEET_NAME: 'Учителя',
-      API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
-    };
-
-    async function loadTeachers() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log('DATA:', data);
-
-        const [headers, ...rows] = data.values;
-        const teacherMap = {};
-
-        rows.forEach(row => {
-          const name = row[0];
-          const lessonNum = row[1];
-          if (!name || !lessonNum) return;
-
-          if (!teacherMap[name]) teacherMap[name] = {};
-          for (let i = 2; i < headers.length; i++) {
-            const day = headers[i];
-            const cell = row[i];
-            if (cell) {
-              if (!teacherMap[name][day]) teacherMap[name][day] = [];
-              teacherMap[name][day].push(`${lessonNum}. ${cell}`);
-            }
-          }
-        });
-
-        const container = document.getElementById('teacher-buttons');
-        Object.keys(teacherMap).forEach(name => {
-          const btn = document.createElement('button');
-          btn.textContent = name;
-          btn.className = 'class-btn';
-          btn.addEventListener('click', () => renderSchedule(name, teacherMap[name]));
-          container.appendChild(btn);
-        });
-
-      } catch (err) {
-        console.error('Ошибка:', err);
-        document.getElementById('schedule-output').textContent = 'Ошибка загрузки данных.';
-      }
-    }
-
-    function renderSchedule(name, data) {
-      const dayNames = {
-        'ПН': 'Понедельник',
-        'ВТ': 'Вторник',
-        'СР': 'Среда',
-        'ЧТ': 'Четверг',
-        'ПТ': 'Пятница',
-        'СБ': 'Суббота',
-        'ВС': 'Воскресенье'
-      };
-
-      const output = document.getElementById('schedule-output');
-      let html = '';
-
-      for (let day in data) {
-        const prettyDay = dayNames[day] || day;
-        html += `<div class="day-card">
-          <h3>${prettyDay}</h3>
-          <ul>${data[day].map(item => `<li>${item}</li>`).join('')}</ul>
-        </div>`;
-      }
-
-      output.innerHTML = html;
-    }
-
-    loadTeachers();
-  </script>
-</body></html>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Расписание учителей — МОУ СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><div class="site-shell">
+<header class="topbar"><div class="container topbar-inner"><a class="brand" href="index.html"><img class="brand-logo" src="assets/school-logo.jpg" alt="Логотип школы"><span><span class="brand-title">МОУ СОШ №20</span><span class="brand-subtitle">имени И. А. Рыбалко<br>г. Тверь</span></span></a><button class="menu-btn" data-menu-btn>Меню</button><nav class="nav" data-nav><a href="index.html">Главная</a><a href="classes.html">Расписание</a><a href="classes.html">Классы</a><a class="active" href="teachers.html">Учителя</a><a href="changes.html">Изменения</a><a href="vector20.html">Вектор 20</a><a href="news.html">Новости</a></nav></div></header>
+<main><section class="page-hero"><div class="container"><div class="breadcrumb">Главная / Учителя</div><h1>Расписание учителей</h1><p>Выберите педагога из списка или воспользуйтесь поиском. Расписание загружается из школьной таблицы.</p></div></section>
+<section class="section"><div class="container"><div class="panel"><div class="toolbar"><input class="search-input" id="teacher-search" placeholder="Поиск учителя..."><span class="sr-note" data-datetime></span></div><div class="teacher-buttons" id="teacher-buttons"><p class="sr-note">Загрузка списка учителей...</p></div></div><div style="height:20px"></div><div id="schedule-output" class="card-grid"><div class="empty-state" style="grid-column:1/-1"><span class="big">👩‍🏫</span>Выберите учителя, чтобы увидеть расписание.</div></div></div></section></main>
+<footer class="footer"><div class="container footer-inner"><p>© МОУ СОШ №20 имени И. А. Рыбалко</p><p><a style="color:#fff" href="classes.html">Расписание классов</a></p></div></footer></div><script src="app.js"></script><script>
+const btnBox=document.getElementById('teacher-buttons'), output=document.getElementById('schedule-output'), search=document.getElementById('teacher-search');let teacherMap={};
+loadTeachers(); search.addEventListener('input',renderTeacherButtons);
+async function loadTeachers(){try{const rows=await loadSheet('Учителя');const [headers,...data]=rows;teacherMap={};data.forEach(row=>{const name=row[0];const lesson=row[1];if(!name||!lesson)return;if(!teacherMap[name])teacherMap[name]={};for(let i=2;i<headers.length;i++){if(row[i]){const day=headers[i];if(!teacherMap[name][day])teacherMap[name][day]=[];teacherMap[name][day].push(`${escapeHtml(lesson)}. ${escapeHtml(row[i])}`)}}});renderTeacherButtons();}catch(e){btnBox.innerHTML='<p class="sr-note">Ошибка загрузки списка учителей.</p>';}}
+function renderTeacherButtons(){const q=(search.value||'').toLowerCase();const names=Object.keys(teacherMap).filter(n=>n.toLowerCase().includes(q)).sort((a,b)=>a.localeCompare(b,'ru'));btnBox.innerHTML='';if(!names.length){btnBox.innerHTML='<p class="sr-note">Учителя не найдены.</p>';return;}names.forEach(name=>{const b=document.createElement('button');b.className='class-btn';b.textContent=name;b.onclick=()=>{document.querySelectorAll('.class-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderSchedule(name,teacherMap[name])};btnBox.appendChild(b);});}
+function renderSchedule(name,data){const dayNames={'ПН':'Понедельник','ВТ':'Вторник','СР':'Среда','ЧТ':'Четверг','ПТ':'Пятница','СБ':'Суббота','ВС':'Воскресенье'};const todayCode=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][new Date().getDay()];output.innerHTML=`<div class="panel" style="grid-column:1/-1"><h2>${escapeHtml(name)}</h2><p class="sr-note">Расписание по дням недели</p></div>`+Object.entries(data).map(([day,items])=>`<div class="day-card ${day===todayCode?'today':''}"><h3>${dayNames[day]||day}</h3><span>${day===todayCode?'Сегодня':''}</span><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`).join('');}
+</script></body></html>

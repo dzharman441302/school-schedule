@@ -1,25 +1,47 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>СОШ №20 г. Тверь — расписание и школьная жизнь</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
-  <div class="wrapper header-inner">
-    <a class="brand" href="index.html" aria-label="На главную">
-      <div class="school-crest">20</div>
-      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
-    </a>
-    <nav class="main-nav" aria-label="Основная навигация">
-      <a href="index.html" class="active">Главная</a>
-      <a href="classes.html" >Расписание</a>
-      <a href="classes.html">Классы</a>
-      <a href="teachers.html" >Учителя</a>
-      <a href="changes.html" >Изменения</a>
-      <a href="vector20.html" >Вектор 20</a>
-      <a href="vector20.html#news">Новости</a>
-      <a href="vector20.html#contacts">Контакты</a>
-    </nav>
-  </div>
-</header>
-<section class="hero"><div class="wrapper hero-inner"><div><div class="hero-title-row"><img class="hero-school-logo" src="assets/school-logo.jpg" alt="Логотип МОУ СОШ №20"><div><div class="eyebrow">Официальный сайт</div><h1 class="school-main-title">МОУ СОШ №20</h1><div class="lead">имени И. А. Рыбалко, г. Тверь</div></div></div><div class="script">Расписание и школьная жизнь в одном месте</div><p style="max-width:760px;color:#263959;font-weight:650;line-height:1.55">Быстрый доступ к расписанию уроков, изменениям, классам, учителям и школьному сообществу развития «Вектор 20».</p><div class="hero-actions"><a class="btn btn-primary" href="classes.html">Открыть расписание</a><a class="btn btn-orange" href="changes.html">Изменения на сегодня</a><a class="btn btn-light" href="vector20.html">Вектор 20</a></div><div class="date" id="datetime"></div></div><aside class="hero-panel"><h3>Быстрый доступ</h3><div class="grid grid-2" style="grid-template-columns:1fr 1fr;gap:10px"><a class="btn btn-light" href="classes.html">📚 Классы</a><a class="btn btn-light" href="teachers.html">👨‍🏫 Учителя</a><a class="btn btn-light" href="changes.html">🔔 Изменения</a><a class="btn btn-light" href="vector20.html">🏆 Достижения</a></div><div class="hero-icons"><div class="mini-icon"><span>📅</span>Расписание</div><div class="mini-icon"><span>🔔</span>Изменения</div><div class="mini-icon"><span>🏆</span>Конкурсы</div><div class="mini-icon"><span>📖</span>Учёба</div><div class="mini-icon"><span>👥</span>Школа</div></div></aside></div></section>
-<main class="wrapper page-section"><div class="section-title"><div><h2>Основные разделы</h2><p>То, что чаще всего нужно ученикам, родителям и педагогам.</p></div></div><div class="grid grid-4"><a class="card card-pad direction-card blue" href="classes.html"><div class="dir-icon">📚</div><h3>Расписание классов</h3><p>Выберите класс и посмотрите расписание по дням недели.</p></a><a class="card card-pad direction-card green" href="teachers.html"><div class="dir-icon">👨‍🏫</div><h3>Расписание учителей</h3><p>Быстрый просмотр расписания по педагогам.</p></a><a class="card card-pad direction-card orange" href="changes.html"><div class="dir-icon">🔔</div><h3>Изменения</h3><p>Только изменённые уроки. Остальные проходят по основному расписанию.</p></a><a class="card card-pad direction-card purple" href="vector20.html"><div class="dir-icon">🏆</div><h3>Вектор 20</h3><p>Олимпиады, конкурсы, проекты, достижения и школьные инициативы.</p></a></div>
-<div class="split" style="margin-top:18px"><section class="card card-pad"><h2 style="margin-top:0">Объявления</h2><ul id="announcement-list" class="check-list"><li>Загрузка объявлений...</li></ul></section><section class="card card-pad"><h2 style="margin-top:0">Сегодня</h2><p id="today-info" style="font-weight:750;color:#263959"></p><div class="quick-line"><a href="classes.html" class="btn btn-primary">Расписание</a><a href="changes.html" class="btn btn-light">Изменения</a></div></section></div></main><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
-<script>
-function updateDateTime(){const now=new Date();const options={weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'};document.getElementById('datetime').textContent=now.toLocaleDateString('ru-RU',options);const weekday=now.toLocaleDateString('ru-RU',{weekday:'long'});document.getElementById('today-info').textContent=`Сегодня ${weekday}. Используйте быстрые разделы, чтобы перейти к расписанию или изменениям.`}updateDateTime();setInterval(updateDateTime,60000);
-async function loadAnnouncements(){const CONFIG={SHEET_ID:'1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',SHEET_NAME:'Объявления',API_KEY:'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'};const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;try{const res=await fetch(url);const data=await res.json();const rows=data.values||[];const list=document.getElementById('announcement-list');list.innerHTML='';if(rows.length<1){list.innerHTML='<li>Объявлений пока нет.</li>';return}rows.forEach(row=>{const li=document.createElement('li');li.innerHTML='<span class="check">✓</span><span>'+row[0]+'</span>';list.appendChild(li)})}catch(err){document.getElementById('announcement-list').innerHTML='<li>Ошибка загрузки объявлений.</li>'}}loadAnnouncements();
-</script></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>МОУ СОШ №20 имени И. А. Рыбалко — Тверь</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body><div class="site-shell">
+  <header class="topbar"><div class="container topbar-inner">
+    <a class="brand" href="index.html"><img class="brand-logo" src="assets/school-logo.jpg" alt="Логотип школы"><span><span class="brand-title">МОУ СОШ №20</span><span class="brand-subtitle">имени И. А. Рыбалко<br>г. Тверь</span></span></a>
+    <button class="menu-btn" data-menu-btn>Меню</button>
+    <nav class="nav" data-nav><a class="active" href="index.html">Главная</a><a href="classes.html">Расписание</a><a href="classes.html">Классы</a><a href="teachers.html">Учителя</a><a href="changes.html">Изменения</a><a href="vector20.html">Вектор 20</a><a href="news.html">Новости</a></nav>
+  </div></header>
+  <main>
+    <section class="hero"><div class="container hero-inner">
+      <div>
+        <span class="hero-kicker">🏫 Муниципальная школа • Тверь</span>
+        <h1 class="hero-school">МОУ «Средняя общеобразовательная школа №20» имени Ивана Андреевича Рыбалко</h1>
+        <p>Расписание, изменения, школьные события, достижения и сообщество развития «Вектор 20» — в одном удобном месте для учеников, родителей и педагогов.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="classes.html">Открыть расписание</a><a class="btn btn-secondary" href="changes.html">Изменения на сегодня</a><a class="btn btn-outline" href="vector20.html">Вектор 20</a></div>
+        <p style="margin-top:18px;font-weight:900" data-datetime></p>
+      </div>
+      <div class="quick-panel"><h2>Быстрый доступ</h2><div class="quick-grid">
+        <a class="quick-link" href="classes.html"><span class="quick-icon">📚</span>Классы</a>
+        <a class="quick-link" href="teachers.html"><span class="quick-icon">👩‍🏫</span>Учителя</a>
+        <a class="quick-link" href="changes.html"><span class="quick-icon">🔔</span>Изменения</a>
+        <a class="quick-link" href="vector20.html"><span class="quick-icon">🚀</span>Вектор 20</a>
+        <a class="quick-link" href="news.html"><span class="quick-icon">📰</span>Новости</a>
+        <a class="quick-link" href="#announcements"><span class="quick-icon">🏆</span>Достижения</a>
+      </div></div>
+    </div></section>
+    <section class="section"><div class="container"><div class="section-title"><div><h2>Основные разделы</h2><p class="lead">То, что чаще всего нужно ученикам, родителям и педагогам.</p></div></div>
+      <div class="cards">
+        <a class="card" href="classes.html" style="--tint:#eef2ff;text-decoration:none;color:inherit"><div class="card-icon">📚</div><h3>Расписание классов</h3><p>Выберите класс и посмотрите расписание по дням недели.</p></a>
+        <a class="card" href="teachers.html" style="--tint:#ecfdf5;text-decoration:none;color:inherit"><div class="card-icon">👩‍🏫</div><h3>Расписание учителей</h3><p>Быстрый просмотр расписания по педагогам.</p></a>
+        <a class="card" href="changes.html" style="--tint:#fff7ed;text-decoration:none;color:inherit"><div class="card-icon">🔔</div><h3>Изменения</h3><p>Только изменённые уроки. Остальное — по основному расписанию.</p></a>
+        <a class="card" href="vector20.html" style="--tint:#f5f3ff;text-decoration:none;color:inherit"><div class="card-icon">🚀</div><h3>Вектор 20</h3><p>Олимпиады, конкурсы, проекты, достижения и школьные инициативы.</p></a>
+      </div>
+    </div></section>
+    <section class="section"><div class="container two-col">
+      <div class="panel" id="announcements"><div class="panel-title"><h2>Объявления и новости</h2><a class="small-link" href="news.html">Все новости →</a></div><div id="announcement-list" class="news-list"><p class="sr-note">Загрузка объявлений...</p></div></div>
+      <div class="panel"><div class="panel-title"><h2>Сегодня</h2></div><p style="font-weight:800">Используйте быстрые разделы, чтобы перейти к расписанию, изменениям или школьным инициативам.</p><div class="soft-divider"></div><div class="event-list"><div class="event-item"><div class="event-date-box"><span>ВСОШ</span></div><div><h3>Олимпиады и конкурсы</h3><p>Готовим участие по всем предметным направлениям.</p></div></div><div class="event-item"><div class="event-date-box"><span>20</span></div><div><h3>Вектор 20</h3><p>Открытая система участия и достижений для каждого ученика.</p></div></div></div></div>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="container footer-inner"><p>© МОУ СОШ №20 имени И. А. Рыбалко, г. Тверь</p><p>Расписание и школьная жизнь в одном месте</p></div></footer>
+</div><script src="app.js"></script></body></html>

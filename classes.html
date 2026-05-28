@@ -1,103 +1,13 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Расписание классов — СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><header class="site-header">
-  <div class="wrapper header-inner">
-    <a class="brand" href="index.html" aria-label="На главную">
-      <div class="school-crest">20</div>
-      <div><div class="brand-title">СОШ 20</div><div class="brand-subtitle">г. Тверь</div></div>
-    </a>
-    <nav class="main-nav" aria-label="Основная навигация">
-      <a href="index.html" >Главная</a>
-      <a href="classes.html" class="active">Расписание</a>
-      <a href="classes.html">Классы</a>
-      <a href="teachers.html" >Учителя</a>
-      <a href="changes.html" >Изменения</a>
-      <a href="vector20.html" >Вектор 20</a>
-      <a href="vector20.html#news">Новости</a>
-      <a href="vector20.html#contacts">Контакты</a>
-    </nav>
-  </div>
-</header>
-<main class="wrapper page-hero"><section class="page-heading"><div><h1>Расписание классов</h1><p>Выберите класс, чтобы открыть расписание по дням недели.</p><div class="date" id="current-date"></div></div><div class="quick-line"><a href="changes.html" class="btn btn-orange">Изменения</a><a href="index.html" class="btn btn-light">На главную</a></div></section></main>
-<div class="wrapper page-section"><section class="selector-card"><p class="selector-title">Выберите класс</p><div class="class-buttons">
-<button class="class-btn" data-class="5А">5А</button><button class="class-btn" data-class="5Б">5Б</button><button class="class-btn" data-class="5И">5И</button><button class="class-btn" data-class="5К">5К</button><button class="class-btn" data-class="6А">6А</button><button class="class-btn" data-class="6Б">6Б</button><button class="class-btn" data-class="6В">6В</button><button class="class-btn" data-class="7А">7А</button><button class="class-btn" data-class="7Б">7Б</button><button class="class-btn" data-class="7В">7В</button><button class="class-btn" data-class="7Г">7Г</button><button class="class-btn" data-class="8А">8А</button><button class="class-btn" data-class="8Б">8Б</button><button class="class-btn" data-class="8В">8В</button><button class="class-btn" data-class="8Г">8Г</button><button class="class-btn" data-class="9А">9А</button><button class="class-btn" data-class="9Б">9Б</button><button class="class-btn" data-class="9В">9В</button><button class="class-btn" data-class="10А">10А</button><button class="class-btn" data-class="11А">11А</button>
-</div></section><div id="schedule-output" class="card-grid"></div><section class="bells-schedule"><div class="bells-column"><h3>Расписание звонков (ВТ, СР, ПТ)</h3><ul><li>1. 8.30 - 9.15</li><li>2. 9.25 - 10.10</li><li>3. 10.25 - 11.10</li><li>4. 11.30 - 12.15</li><li>5. 12.30 - 13.15</li><li>6. 13.25 - 14.10</li><li>7. 14.20 - 15.05</li></ul></div><div class="bells-column"><h3>Расписание звонков (ПН, ЧТ)</h3><ul><li>1. 8.30 - 9.10</li><li>2. 9.20 - 10.00</li><li>3. 10.15 - 10.55</li><li>4. 11.15 - 11.55</li><li>5. 12.10 - 12.50</li><li>6. 13.00 - 13.40</li><li>7. 13.50 - 14.30</li><li>8. 14.35 - 15.15</li></ul></div></section></div><footer class="footer"><div class="wrapper footer-inner"><strong>МОУ СОШ №20, Тверь</strong><p>Расписание, изменения и школьное сообщество «Вектор 20»</p></div></footer>
-<script>
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('current-date').textContent = now.toLocaleDateString('ru-RU', options);
-  </script>
-
-  <script>
-    const CONFIG = {
-      SHEET_ID: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-      SHEET_NAME: 'Расписание',
-      API_KEY: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI'
-    };
-
-    document.querySelectorAll('.class-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const selectedClass = e.target.dataset.class.toUpperCase();
-        const output = document.getElementById('schedule-output');
-        output.innerHTML = 'Загрузка...';
-
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`;
-
-        try {
-          const response = await fetch(url);
-          const data = await response.json();
-          const [headers, ...rows] = data.values;
-
-          const filtered = rows.filter(r => r[0].toUpperCase() === selectedClass);
-
-          if (filtered.length === 0) {
-            output.innerHTML = `<p>Для класса <strong>${selectedClass}</strong> расписание не найдено.</p>`;
-            return;
-          }
-
-          let days = headers.slice(2);  // A: класс, B: урок, остальное — дни недели
-
-          let dayMap = {};
-          days.forEach((day, i) => {
-            dayMap[day] = [];
-          });
-
-          for (const row of filtered) {
-            const lessonNum = row[1];
-            for (let i = 2; i < headers.length; i++) {
-              const content = row[i];
-              if (content) {
-                const day = headers[i];
-                dayMap[day].push(`<strong>${lessonNum}.</strong> ${content}`);
-              }
-            }
-          }
-
-          let html = '';
-          
-          const dayNames = {
-            'ПН': 'Понедельник',
-            'ВТ': 'Вторник',
-            'СР': 'Среда',
-            'ЧТ': 'Четверг',
-            'ПТ': 'Пятница',
-            'СБ': 'Суббота',
-            'ВС': 'Воскресенье'
-          };
-          for (let day in dayMap) {
-            const dayTitle = dayNames[day] || day;
-    
-            if (dayMap[day].length === 0) continue;
-            html += `<div class="day-card">
-              <h3>${dayTitle}</h3>
-              <ul>${dayMap[day].map(item => `<li>${item}</li>`).join('')}</ul>
-            </div>`;
-          }
-
-          output.innerHTML = html;
-        } catch (error) {
-          console.error(error);
-          output.innerHTML = 'Ошибка загрузки расписания.';
-        }
-      });
-    });
-  </script>
-</body></html>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Расписание классов — МОУ СОШ №20</title><link rel="stylesheet" href="style.css"></head><body><div class="site-shell">
+<header class="topbar"><div class="container topbar-inner"><a class="brand" href="index.html"><img class="brand-logo" src="assets/school-logo.jpg" alt="Логотип школы"><span><span class="brand-title">МОУ СОШ №20</span><span class="brand-subtitle">имени И. А. Рыбалко<br>г. Тверь</span></span></a><button class="menu-btn" data-menu-btn>Меню</button><nav class="nav" data-nav><a href="index.html">Главная</a><a class="active" href="classes.html">Расписание</a><a href="classes.html">Классы</a><a href="teachers.html">Учителя</a><a href="changes.html">Изменения</a><a href="vector20.html">Вектор 20</a><a href="news.html">Новости</a></nav></div></header>
+<main><section class="page-hero"><div class="container"><div class="breadcrumb">Главная / Расписание</div><h1>Расписание классов</h1><p>Выберите класс, чтобы посмотреть расписание уроков по дням недели. Данные загружаются из школьной таблицы.</p></div></section>
+<section class="section"><div class="container schedule-layout"><div>
+<div class="panel"><div class="panel-title"><h2>Выберите класс</h2><span class="sr-note" data-datetime></span></div><div class="class-buttons" id="class-buttons"></div></div>
+<div style="height:20px"></div><div id="schedule-output" class="card-grid"><div class="empty-state" style="grid-column:1/-1"><span class="big">📚</span>Выберите класс выше, чтобы увидеть расписание.</div></div>
+</div><aside class="panel"><h2>Расписание звонков</h2><p class="sr-note">ВТ, СР, ПТ</p><div class="bells-list"><div class="bell-row"><span>1 урок</span><strong>8:30–9:15</strong></div><div class="bell-row"><span>2 урок</span><strong>9:25–10:10</strong></div><div class="bell-row"><span>3 урок</span><strong>10:25–11:10</strong></div><div class="bell-row"><span>4 урок</span><strong>11:30–12:15</strong></div><div class="bell-row"><span>5 урок</span><strong>12:30–13:15</strong></div><div class="bell-row"><span>6 урок</span><strong>13:25–14:10</strong></div><div class="bell-row"><span>7 урок</span><strong>14:20–15:05</strong></div></div><div class="soft-divider"></div><p class="sr-note">ПН, ЧТ</p><div class="bells-list"><div class="bell-row"><span>1 урок</span><strong>8:30–9:10</strong></div><div class="bell-row"><span>2 урок</span><strong>9:20–10:00</strong></div><div class="bell-row"><span>3 урок</span><strong>10:15–10:55</strong></div><div class="bell-row"><span>4 урок</span><strong>11:15–11:55</strong></div><div class="bell-row"><span>5 урок</span><strong>12:10–12:50</strong></div><div class="bell-row"><span>6 урок</span><strong>13:00–13:40</strong></div><div class="bell-row"><span>7 урок</span><strong>13:50–14:30</strong></div><div class="bell-row"><span>8 урок</span><strong>14:35–15:15</strong></div></div></aside></div></section></main>
+<footer class="footer"><div class="container footer-inner"><p>© МОУ СОШ №20 имени И. А. Рыбалко</p><p><a style="color:#fff" href="changes.html">Изменения в расписании</a></p></div></footer></div><script src="app.js"></script><script>
+const CLASSES=['5А','5Б','5И','5К','6А','6Б','6В','7А','7Б','7В','7Г','8А','8Б','8В','8Г','9А','9Б','9В','10А','11А'];
+const buttons=document.getElementById('class-buttons'); const output=document.getElementById('schedule-output');
+CLASSES.forEach(cls=>{const b=document.createElement('button');b.className='class-btn';b.textContent=cls;b.onclick=()=>loadClass(cls,b);buttons.appendChild(b)});
+async function loadClass(selectedClass, btn){document.querySelectorAll('.class-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');output.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="big">⏳</span>Загрузка расписания...</div>';try{const rows=await loadSheet('Расписание');const [headers,...data]=rows;const filtered=data.filter(r=>(r[0]||'').toUpperCase()===selectedClass);if(!filtered.length){output.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><span class="big">📭</span>Для класса <strong>${selectedClass}</strong> расписание не найдено.</div>`;return;}const dayNames={'ПН':'Понедельник','ВТ':'Вторник','СР':'Среда','ЧТ':'Четверг','ПТ':'Пятница','СБ':'Суббота','ВС':'Воскресенье'};const todayIdx=new Date().getDay();const todayCode=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][todayIdx];let dayMap={};headers.slice(2).forEach(day=>dayMap[day]=[]);filtered.forEach(row=>{const lesson=row[1];for(let i=2;i<headers.length;i++){if(row[i]) dayMap[headers[i]].push(`<strong>${escapeHtml(lesson)}.</strong> ${escapeHtml(row[i])}`)}});output.innerHTML=Object.entries(dayMap).map(([day,items])=>`<div class="day-card ${day===todayCode?'today':''}"><h3>${dayNames[day]||day}</h3><span>${day===todayCode?'Сегодня':''}</span><ul>${items.length?items.map(x=>`<li>${x}</li>`).join(''):'<li>Нет уроков</li>'}</ul></div>`).join('');}catch(e){output.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="big">⚠️</span>Ошибка загрузки расписания.</div>';}}
+</script></body></html>
