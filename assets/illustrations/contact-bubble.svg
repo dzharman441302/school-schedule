@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" role="img" aria-labelledby="title desc">
+  <title id="title">Связь со школой</title>
+  <desc id="desc">Сообщение, конверт и отметка ответа.</desc>
+  <defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#263765" flood-opacity=".15"/></filter></defs>
+  <circle cx="86" cy="225" r="58" fill="#fff0bc"/>
+  <circle cx="444" cy="68" r="43" fill="#dff5e9"/>
+  <path d="M92 62h250a34 34 0 0 1 34 34v93a34 34 0 0 1-34 34H210l-69 51 15-51H92a34 34 0 0 1-34-34V96a34 34 0 0 1 34-34Z" fill="#fff" filter="url(#s)"/>
+  <path d="M103 111h224M103 145h174M103 179h130" stroke="#5269e9" stroke-width="12" stroke-linecap="round"/>
+  <rect x="318" y="150" width="142" height="104" rx="26" fill="#263765" filter="url(#s)"/>
+  <path d="m338 177 51 39 51-39" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M338 230l36-30M440 230l-36-30" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+</svg>

@@ -1,47 +1,227 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>МОУ СОШ №20 — Тверь</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Расписание и изменения, школьное научное общество «Вектор 20», новости и документы МОУ СОШ № 20 г. Твери.">
+  <title>МОУ СОШ № 20 г. Твери</title>
+  <link rel="icon" href="assets/school-logo.jpg">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body><div class="site-shell">
-  <header class="topbar"><div class="container topbar-inner">
-    <a class="brand" href="index.html"><img class="brand-logo" src="assets/school-logo.jpg" alt="Логотип школы"><span><span class="brand-title">МОУ СОШ №20</span><span class="brand-subtitle">имени И. А. Рыбалко<br>г. Тверь</span></span></a>
-    <button class="menu-btn" data-menu-btn>Меню</button>
-    <nav class="nav" data-nav><a class="active" href="index.html">Главная</a><a href="classes.html">Расписание</a><a href="classes.html">Классы</a><a href="teachers.html">Учителя</a><a href="changes.html">Изменения</a><a href="vector20.html">Вектор 20</a><a href="news.html">Новости</a></nav>
-  </div></header>
-  <main>
-    <section class="hero"><div class="container hero-inner">
-      <div>
-        <span class="hero-kicker">🏫 Тверь</span>
-        <h1 class="hero-school">МОУ СОШ № 20</h1>
-        <p>Расписание, изменения, школьные события, достижения и сообщество развития «Вектор 20» — в одном удобном месте для учеников, родителей и педагогов.</p>
-        <div class="hero-actions"><a class="btn btn-primary" href="classes.html">Открыть расписание</a><a class="btn btn-secondary" href="changes.html">Изменения на сегодня</a><a class="btn btn-outline" href="vector20.html">Вектор 20</a></div>
-        <p style="margin-top:18px;font-weight:900" data-datetime></p>
+<body>
+<div class="site-shell">
+  <a class="skip-link" href="#main">Перейти к содержанию</a>
+
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="index.html" aria-label="На главную">
+        <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
+        <span class="brand__copy">
+          <strong class="brand__title">МОУ СОШ № 20 г. Твери</strong>
+          <span class="brand__subtitle">Расписание, проекты, информация</span>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Основная навигация" data-nav>
+        <div class="nav__links">
+          <a class="nav__link" href="classes.html">Расписание</a>
+          <a class="nav__link" href="vector20.html">Вектор 20</a>
+          <a class="nav__link" href="news.html">Новости и документы</a>
+        </div>
+        <div class="mobile-external">
+          <a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a>
+          <a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <a class="button button--small" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a>
+        <button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button>
+          <span class="menu-lines" aria-hidden="true"></span>
+        </button>
       </div>
-      <div class="quick-panel"><h2>Быстрый доступ</h2><div class="quick-grid">
-        <a class="quick-link" href="classes.html"><span class="quick-icon">📚</span>Классы</a>
-        <a class="quick-link" href="teachers.html"><span class="quick-icon">👩‍🏫</span>Учителя</a>
-        <a class="quick-link" href="changes.html"><span class="quick-icon">🔔</span>Изменения</a>
-        <a class="quick-link" href="vector20.html"><span class="quick-icon">🚀</span>Вектор 20</a>
-        <a class="quick-link" href="news.html"><span class="quick-icon">📰</span>Новости</a>
-        <a class="quick-link" href="#announcements"><span class="quick-icon">🏆</span>Достижения</a>
-      </div></div>
-    </div></section>
-    <section class="section"><div class="container"><div class="section-title"><div><h2>Основные разделы</h2><p class="lead">То, что чаще всего нужно ученикам, родителям и педагогам.</p></div></div>
-      <div class="cards">
-        <a class="card" href="classes.html" style="--tint:#eef2ff;text-decoration:none;color:inherit"><div class="card-icon">📚</div><h3>Расписание классов</h3><p>Выберите класс и посмотрите расписание по дням недели.</p></a>
-        <a class="card" href="teachers.html" style="--tint:#ecfdf5;text-decoration:none;color:inherit"><div class="card-icon">👩‍🏫</div><h3>Расписание учителей</h3><p>Быстрый просмотр расписания по педагогам.</p></a>
-        <a class="card" href="changes.html" style="--tint:#fff7ed;text-decoration:none;color:inherit"><div class="card-icon">🔔</div><h3>Изменения</h3><p>Только изменённые уроки. Остальное — по основному расписанию.</p></a>
-        <a class="card" href="vector20.html" style="--tint:#f5f3ff;text-decoration:none;color:inherit"><div class="card-icon">🚀</div><h3>Вектор 20</h3><p>Олимпиады, конкурсы, проекты, достижения и школьные инициативы.</p></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="home-hero">
+      <div class="container">
+        <div class="home-hero__panel">
+          <div class="home-hero__copy">
+            <span class="eyebrow">МОУ СОШ № 20 Г. ТВЕРИ</span>
+            <h1>Учимся.<br>Исследуем.<br>Создаём.</h1>
+            <p class="home-hero__lead">Расписание, изменения, школьные проекты, важные новости и документы — в одном понятном пространстве.</p>
+            <div class="hero-actions">
+              <a class="button" href="classes.html">Открыть расписание <span aria-hidden="true">→</span></a>
+              <a class="button button--secondary" href="classes.html#changes">Проверить изменения</a>
+            </div>
+            <p class="hero-note">Изменения публикуются до 15:00</p>
+          </div>
+
+          <div class="hero-visual" aria-hidden="true">
+            <span class="hero-visual__number">20</span>
+            <span class="hero-chip hero-chip--knowledge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"/></svg>
+              Знания
+            </span>
+            <div class="hero-logo-card"><img src="assets/school-logo.jpg" alt=""></div>
+            <img class="hero-students" src="assets/illustrations/hero-students.svg" alt="">
+            <span class="hero-chip hero-chip--research">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v5l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M8 14h8"/></svg>
+              Исследование
+            </span>
+          </div>
+        </div>
       </div>
-    </div></section>
-    <section class="section"><div class="container two-col">
-      <div class="panel" id="announcements"><div class="panel-title"><h2>Объявления и новости</h2><a class="small-link" href="news.html">Все новости →</a></div><div id="announcement-list" class="news-list"><p class="sr-note">Загрузка объявлений...</p></div></div>
-      <div class="panel"><div class="panel-title"><h2>Сегодня</h2></div><p style="font-weight:800">Используйте быстрые разделы, чтобы перейти к расписанию, изменениям или школьным инициативам.</p><div class="soft-divider"></div><div class="event-list"><div class="event-item"><div class="event-date-box"><span>ВСОШ</span></div><div><h3>Олимпиады и конкурсы</h3><p>Готовим участие по всем предметным направлениям.</p></div></div><div class="event-item"><div class="event-date-box"><span>20</span></div><div><h3>Вектор 20</h3><p>Открытая система участия и достижений для каждого ученика.</p></div></div></div></div>
-    </div></section>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__copy">
+            <span class="kicker">Три главных раздела</span>
+            <h2>Всё важное — без лишних переходов</h2>
+          </div>
+          <p class="section-head__side">Каждый блок решает конкретную задачу: узнать расписание, включиться в проект или быстро найти актуальную информацию.</p>
+        </div>
+
+        <div class="home-feature-grid">
+          <article class="feature-card feature-card--schedule">
+            <div class="feature-card__copy">
+              <span class="feature-card__label">Учебный день</span>
+              <h3>Расписание</h3>
+              <p>Основное расписание классов и изменения на два ближайших учебных дня.</p>
+
+              <div class="home-class-control">
+                <label for="home-class">Выберите класс</label>
+                <select class="select-field" id="home-class" data-home-class-select>
+                  <option>Загрузка классов…</option>
+                </select>
+              </div>
+
+              <p style="margin-top:22px;margin-bottom:0">
+                <a class="feature-card__footer-link" href="classes.html" data-home-schedule-link>Открыть расписание →</a>
+              </p>
+            </div>
+
+            <div class="mini-schedule" aria-live="polite">
+              <div class="mini-schedule__head">
+                <div>
+                  <span>Ближайший день</span>
+                  <strong data-home-preview-day>Определяем дату…</strong>
+                </div>
+                <span class="mini-schedule__class" data-home-preview-class>Класс</span>
+              </div>
+              <div class="mini-schedule__list" data-home-schedule-preview>
+                <div class="mini-schedule__empty"><span>Выберите класс — здесь появятся уроки.</span></div>
+              </div>
+              <div class="mini-schedule__notice" data-home-preview-notice>Перед занятиями проверьте изменения.</div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--vector">
+            <div class="feature-card__copy">
+              <span class="feature-card__label">Школьное научное общество</span>
+              <h3>Вектор 20</h3>
+              <p>Пространство для исследований, инженерных решений, олимпиадных проб и собственных проектов.</p>
+              <div class="vector-route-tags" aria-label="Этапы маршрута">
+                <span>Идея</span><span>Проба</span><span>Маршрут</span><span>Результат</span>
+              </div>
+            </div>
+            <div class="vector-card-visual" aria-hidden="true"><img src="assets/illustrations/vector-lamp.svg" alt=""></div>
+            <a class="feature-card__footer-link" href="vector20.html">Найти свой маршрут →</a>
+          </article>
+        </div>
+
+        <article class="feature-card feature-card--news">
+          <div class="feature-card__copy">
+            <span class="feature-card__label">Актуально</span>
+            <h3>Новости, важное и документы</h3>
+            <p>Объявления, ключевые события школы и единый каталог материалов.</p>
+            <a class="feature-card__footer-link" href="news.html">Смотреть всё →</a>
+          </div>
+          <div class="home-news-grid" data-home-news data-limit="3">
+            <div class="loading-state"><strong>Загружаем новости</strong><span>Проверяем школьную таблицу.</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="today-section">
+      <div class="container">
+        <div class="today-panel">
+          <div class="today-head">
+            <span class="kicker">Важно сегодня</span>
+            <h2>Коротко о главном</h2>
+            <p>Сообщения, которые стоит проверить перед учебным днём.</p>
+          </div>
+          <div class="today-grid" data-important-cards data-limit="3">
+            <div class="loading-state"><strong>Загружаем важную информацию</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-section">
+      <div class="container contact-layout">
+        <article class="contact-card">
+          <div class="contact-card__copy">
+            <span class="kicker">Нужна помощь</span>
+            <h2>Связаться со школой</h2>
+            <p>Вопрос по расписанию, материалам или участию в «Векторе 20» можно направить ответственному сотруднику.</p>
+            <div><a class="button" href="https://vk.me/school_20_tver" data-contact-link>Написать сообщение</a></div>
+          </div>
+          <div class="contact-card__illustration" aria-hidden="true"><img src="assets/illustrations/contact-bubble.svg" alt=""></div>
+        </article>
+
+        <div class="quick-links">
+          <a class="quick-link-card" href="https://school.tver.ru/school/20" data-official-link>
+            <span class="quick-link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+            <span class="quick-link-card__copy"><strong>Официальная страница школы</strong><span>Сведения об образовательной организации</span></span>
+            <span class="quick-link-card__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="quick-link-card" href="https://vk.ru/school_20_tver" data-vk-link>
+            <span class="quick-link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7.5c.5 7 4 10 10 10h.7v-4c2.8.3 4.9 1.8 5.8 4h2.5c-1.2-3.3-3.2-5-5-5.7 1.8-1 3.7-2.9 4.3-5.3H20c-.8 2.2-2.7 4.2-5.3 4.4V6.5h-2.2v7.7C8.9 13.5 7 11 6.5 7.5Z"/></svg></span>
+            <span class="quick-link-card__copy"><strong>Паблик школы во ВКонтакте</strong><span>Новости, фотографии и объявления</span></span>
+            <span class="quick-link-card__arrow" aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </section>
   </main>
-  <footer class="footer"><div class="container footer-inner"><p>© МОУ СОШ №20 имени И. А. Рыбалко, г. Тверь</p><p>Расписание и школьная жизнь в одном месте</p></div></footer>
-</div><script src="app.js"></script></body></html>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="assets/school-logo.jpg" alt="">
+        <span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание, проекты и школьная информация</span></span>
+      </div>
+      <div class="footer__column">
+        <h2>Разделы</h2>
+        <nav class="footer__links" aria-label="Разделы сайта">
+          <a href="classes.html">Расписание</a>
+          <a href="vector20.html">Вектор 20</a>
+          <a href="news.html">Новости и документы</a>
+        </nav>
+      </div>
+      <div class="footer__column">
+        <h2>Ссылки</h2>
+        <div class="footer__links">
+          <a href="https://school.tver.ru/school/20" data-official-link>Официальная страница школы</a>
+          <a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a>
+          <a href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a>
+        </div>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <span>© <span data-current-year></span> МОУ СОШ № 20</span>
+      <span>Информационный ресурс для учеников, родителей и педагогов</span>
+    </div>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
