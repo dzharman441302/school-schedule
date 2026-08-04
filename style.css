@@ -1562,12 +1562,6 @@ p {
   font-size: 13px;
 }
 
-.change-context--notice {
-  justify-content: flex-start;
-  color: var(--yellow-ink);
-  background: var(--yellow-soft);
-}
-
 .change-days {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

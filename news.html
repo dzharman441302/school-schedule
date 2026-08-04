@@ -106,12 +106,16 @@
         <div class="section-head">
           <div class="section-head__copy">
             <span class="kicker">Вектор 20</span>
-            <h2>Основные документы</h2>
+            <h2>Полный комплект ШНОУ</h2>
           </div>
-          <p class="section-head__side">Только ключевые материалы: положение, навигаторы и путеводители для участников системы.</p>
+          <p class="section-head__side">Положения, регламенты, рабочие формы, электронный реестр и материалы для всех участников системы.</p>
         </div>
 
-        <div class="document-grid" data-documents aria-live="polite"></div>
+        <div class="news-toolbar document-toolbar">
+          <input class="search-field" type="search" placeholder="Поиск по материалам «Вектора 20»" aria-label="Поиск по материалам Вектора 20" data-vector-document-search>
+          <div class="filter-row" data-document-filters aria-label="Фильтр документов Вектора 20"></div>
+        </div>
+        <div class="document-grid" data-documents-filterable aria-live="polite"></div>
       </div>
     </section>
 

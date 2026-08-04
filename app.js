@@ -8,7 +8,7 @@
   const sheetMeta = new Map();
   const CACHE_TTL = 10 * 60 * 1000;
   const CACHE_MAX_STALE = 7 * 24 * 60 * 60 * 1000;
-  const CACHE_PREFIX = 'school20:sheet:v4:';
+  const CACHE_PREFIX = 'school20:sheet:v3:';
 
   const classCollator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
 
@@ -161,110 +161,9 @@
     });
   }
 
-  function sheetApiUrl(sheetName) {
+  function sheetUrl(sheetName) {
     const sheets = config.googleSheets || {};
-    const params = new URLSearchParams({
-      key: sheets.apiKey || '',
-      majorDimension: 'ROWS',
-      valueRenderOption: 'FORMATTED_VALUE'
-    });
-    return `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheets.spreadsheetId || '')}/values/${encodeURIComponent(sheetName)}?${params}`;
-  }
-
-  function sheetPublicUrl(sheetName) {
-    const sheets = config.googleSheets || {};
-    const params = new URLSearchParams({
-      sheet: sheetName,
-      headers: '1',
-      tqx: 'out:json'
-    });
-    return `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheets.spreadsheetId || '')}/gviz/tq?${params}`;
-  }
-
-  async function fetchWithTimeout(url, { responseType = 'json', timeoutMs = 12000 } = {}) {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetch(url, {
-        signal: controller.signal,
-        cache: 'no-store',
-        credentials: 'omit',
-        headers: { Accept: responseType === 'json' ? 'application/json' : 'text/plain, */*' }
-      });
-
-      if (!response.ok) {
-        let details = '';
-        try {
-          const body = await response.text();
-          const parsed = JSON.parse(body);
-          details = parsed?.error?.message || parsed?.errors?.[0]?.message || body.slice(0, 180);
-        } catch (_) {}
-        throw new Error(`HTTP ${response.status}${details ? `: ${details}` : ''}`);
-      }
-
-      return responseType === 'text' ? response.text() : response.json();
-    } finally {
-      window.clearTimeout(timeout);
-    }
-  }
-
-  function parsePublicSheetResponse(text) {
-    const marker = 'google.visualization.Query.setResponse(';
-    const start = String(text || '').indexOf(marker);
-    const end = String(text || '').lastIndexOf(');');
-    if (start < 0 || end < start) throw new Error('Google Sheets: неизвестный формат публичного ответа');
-
-    const payload = JSON.parse(String(text).slice(start + marker.length, end));
-    if (payload.status !== 'ok') {
-      const error = payload.errors?.[0];
-      throw new Error(error?.detailed_message || error?.message || 'Google Sheets: публичный запрос завершился ошибкой');
-    }
-
-    const columns = Array.isArray(payload.table?.cols) ? payload.table.cols : [];
-    const rawHeaders = columns.map((column) => String(column?.label || '').trim());
-    const hasNamedHeaders = rawHeaders.some(Boolean);
-    const headers = rawHeaders.map((header, index) => header || `Колонка ${index + 1}`);
-    const rows = (Array.isArray(payload.table?.rows) ? payload.table.rows : []).map((row) => {
-      const cells = Array.isArray(row?.c) ? row.c : [];
-      return columns.map((_, index) => {
-        const value = cells[index];
-        if (!value) return '';
-        if (value.f !== undefined && value.f !== null) return String(value.f).trim();
-        if (value.v === undefined || value.v === null) return '';
-        return String(value.v).trim();
-      });
-    });
-
-    return hasNamedHeaders ? [headers, ...rows] : rows;
-  }
-
-  async function fetchSheetRows(sheetName) {
-    const errors = [];
-    const apiKey = String(config.googleSheets?.apiKey || '').trim();
-
-    if (apiKey) {
-      try {
-        const data = await fetchWithTimeout(sheetApiUrl(sheetName));
-        return {
-          rows: Array.isArray(data.values) ? data.values : [],
-          source: 'network-api'
-        };
-      } catch (error) {
-        errors.push(`API: ${String(error?.message || error)}`);
-      }
-    }
-
-    try {
-      const text = await fetchWithTimeout(sheetPublicUrl(sheetName), { responseType: 'text' });
-      return {
-        rows: parsePublicSheetResponse(text),
-        source: 'network-public'
-      };
-    } catch (error) {
-      errors.push(`публичный доступ: ${String(error?.message || error)}`);
-    }
-
-    throw new Error(errors.join('; ') || 'Не удалось загрузить Google Таблицу');
+    return `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheets.spreadsheetId || '')}/values/${encodeURIComponent(sheetName)}?key=${encodeURIComponent(sheets.apiKey || '')}`;
   }
 
   function readStoredCache(cacheKey) {
@@ -300,12 +199,21 @@
       return cached.rows;
     }
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
     try {
-      const result = await fetchSheetRows(sheetName);
-      const rows = result.rows;
+      const response = await fetch(sheetUrl(sheetName), {
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error(`Google Sheets: ${response.status}`);
+      const data = await response.json();
+      const rows = Array.isArray(data.values) ? data.values : [];
       const cacheEntry = { savedAt: Date.now(), rows };
       writeStoredCache(cacheKey, cacheEntry);
-      sheetMeta.set(sheetName, { source: result.source, savedAt: cacheEntry.savedAt, stale: false });
+      sheetMeta.set(sheetName, { source: 'network', savedAt: cacheEntry.savedAt, stale: false });
       return rows;
     } catch (error) {
       if (cached && now - cached.savedAt < CACHE_MAX_STALE) {
@@ -315,6 +223,8 @@
       sheetMeta.set(sheetName, { source: 'error', savedAt: 0, stale: false, error: String(error) });
       if (optional) return [];
       throw error;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 
@@ -915,12 +825,12 @@
     let documents = [];
 
     try {
-      const rows = await loadSheet(sheetName, { optional: true, force: true });
+      const rows = await loadSheet(sheetName, { optional: true });
       documents = parseSchoolDocuments(rows);
     } catch (_) {}
 
     if (!documents.length) {
-      grid.innerHTML = '<div class="empty-state empty-state--large"><strong>Каталог школьных документов пока не заполнен.</strong><span>Основные материалы «Вектора 20» доступны ниже. Остальные документы публикуются по мере обновления.</span></div>';
+      grid.innerHTML = '<div class="empty-state empty-state--large"><strong>Каталог школьных документов пока не заполнен.</strong><span>Добавьте лист «Документы» в Google Таблицу. Материалы «Вектора 20» доступны ниже.</span></div>';
       if (filters) filters.innerHTML = '';
       if (search) search.hidden = true;
       return;
@@ -1104,8 +1014,8 @@
     render();
 
     const [scheduleResult, changesResult] = await Promise.allSettled([
-      loadSheet(scheduleSheet, { optional: true, force: true }),
-      loadSheet(changesSheet, { optional: true, force: true })
+      loadSheet(scheduleSheet, { optional: true }),
+      loadSheet(changesSheet, { optional: true })
     ]);
 
     if (scheduleResult.status === 'fulfilled') rows = scheduleResult.value;

@@ -376,10 +376,6 @@
 
     const firstRows = relevant.filter((row) => normalizeDateValue(row[columns.date]) === firstKey);
     const secondRows = relevant.filter((row) => normalizeDateValue(row[columns.date]) === secondKey);
-    const otherDateRows = relevant.filter((row) => {
-      const key = normalizeDateValue(row[columns.date]);
-      return key && key !== firstKey && key !== secondKey;
-    });
 
     const filterNote = selectedClass
       ? `<span>Показаны изменения для <strong>${site.escapeHtml(selectedClass)}</strong>.</span>`
@@ -390,9 +386,6 @@
         ${filterNote}
         <span>Суббота и воскресенье автоматически пропускаются.</span>
       </div>
-      ${otherDateRows.length ? `<div class="change-context change-context--notice">
-        <span>В таблице есть ${changeCountLabel(otherDateRows.length)} за другие даты. На этой странице выводятся только ${site.escapeHtml(site.formatSchoolDate(windowDates.first))} и ${site.escapeHtml(site.formatSchoolDate(windowDates.second))}.</span>
-      </div>` : ''}
       <div class="change-days">
         ${renderChangeBlock(windowDates.firstLabel, windowDates.first, firstRows, columns)}
         ${renderChangeBlock(windowDates.secondLabel, windowDates.second, secondRows, columns)}
@@ -402,10 +395,10 @@
   function statusText(scheduleSheetName, changesSheetName, failed) {
     const metas = [site.getSheetMeta(scheduleSheetName), site.getSheetMeta(changesSheetName)].filter(Boolean);
     const stale = metas.find((meta) => meta.stale);
-    if (stale) return `Сохранённая версия от ${site.formatCacheTime(stale.savedAt)} — данные из сети недоступны`;
+    if (stale) return `Сохранённая версия: ${site.formatCacheTime(stale.savedAt)}`;
     if (failed) return 'Часть данных недоступна';
     const latest = Math.max(0, ...metas.map((meta) => meta.savedAt || 0));
-    return latest ? `Обновлено из таблицы: ${site.formatCacheTime(latest)}` : 'Данные загружены';
+    return latest ? `Обновлено: ${site.formatCacheTime(latest)}` : 'Данные загружены';
   }
 
   async function loadData({ force = false } = {}) {
@@ -462,8 +455,6 @@
     initViewTabs();
     initClassPicker();
     initRefresh();
-    // Расписание и изменения — критичные данные. При каждом открытии страницы
-    // запрашиваем свежую версию, а локальный кэш используем только как резерв.
-    loadData({ force: true });
+    loadData();
   });
 })();

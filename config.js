@@ -17,8 +17,6 @@ window.SCHOOL_CONFIG = Object.freeze({
 
   googleSheets: {
     spreadsheetId: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
-    // Основной способ чтения. Если ключ временно недоступен, сайт использует
-    // резервный публичный канал Google Sheets. Таблица должна быть открыта на чтение.
     apiKey: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI',
     sheets: {
       schedule: 'Расписание',

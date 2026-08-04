@@ -45,49 +45,146 @@ window.SITE_CONTENT = Object.freeze({
     {
       id: 'documents',
       category: 'Документы',
-      title: 'Ключевые материалы «Вектора 20» собраны в одном разделе',
-      excerpt: 'Положение, навигатор и короткие путеводители для участников системы.',
-      body: 'В публичном каталоге оставлены только основные материалы, которые нужны ученикам, родителям, педагогам и координаторам.',
+      title: 'Материалы «Вектора 20» доступны в едином каталоге',
+      excerpt: 'Положения, памятки, формы, реестр и презентация собраны в одном разделе.',
+      body: 'Документы предназначены для администрации, педагогов, учеников и родителей. Их можно открывать и скачивать непосредственно с сайта.',
       link: 'news.html#vector-documents',
-      linkText: 'Открыть документы'
+      linkText: 'Открыть каталог'
     }
   ],
 
   documents: [
     {
-      category: 'Основной документ',
-      title: 'Положение о ШНОУ «Вектор 20»',
-      description: 'Цели, участники, структура, маршруты, наставничество и управление.',
+      category: 'Основные документы',
+      title: 'Полный комплект документации ШНОУ «Вектор 20»',
+      description: 'Сводный документ со всей системой: концепция, положения, регламенты, материалы и формы.',
       type: 'DOCX',
-      href: 'assets/documents/vector20/regulations.docx'
+      href: 'assets/documents/vector20/full-documentation.docx',
+      featured: true
     },
     {
-      category: 'Навигаторы',
+      category: 'Основные документы',
+      title: 'Полный архив «Вектор 20»',
+      description: 'Все рабочие документы, электронный реестр и презентация в одном архиве.',
+      type: 'ZIP',
+      href: 'assets/documents/vector20/vector20-full-package.zip',
+      featured: true
+    },
+    {
+      category: 'Основные документы',
       title: 'Навигатор по системе',
-      description: 'Краткая схема запуска и работы «Вектора 20» для координатора и администрации.',
+      description: 'Краткая управленческая схема запуска и работы системы.',
       type: 'DOCX',
       href: 'assets/documents/vector20/system-guide.docx'
     },
     {
-      category: 'Навигаторы',
-      title: 'Методический пакет педагога',
-      description: 'Короткие ориентиры по выявлению интересов, первой беседе и сопровождению ученика.',
+      category: 'Основные документы',
+      title: 'Концепция развития ШНОУ',
+      description: 'Целевая модель, принципы, этапы реализации, риски и показатели эффективности.',
       type: 'DOCX',
-      href: 'assets/documents/vector20/teacher-methodological-package.docx'
+      href: 'assets/documents/vector20/development-concept.docx'
     },
     {
-      category: 'Путеводители',
+      category: 'Локальные акты',
+      title: 'Положение о ШНОУ «Вектор 20»',
+      description: 'Цели, участники, структура, маршруты, наставничество и управление.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/regulations.docx',
+      featured: true
+    },
+    {
+      category: 'Локальные акты',
+      title: 'Проект приказа о создании ШНОУ',
+      description: 'Основание для запуска системы в школе.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/creation-order.docx'
+    },
+    {
+      category: 'Локальные акты',
+      title: 'Порядок выявления и сопровождения',
+      description: 'Единый путь от сигнала и образовательной пробы до маршрута и следующего шага.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/identification-and-support.docx'
+    },
+    {
+      category: 'Локальные акты',
+      title: 'Положение о наставничестве',
+      description: 'Роли, пределы нагрузки, контрольные точки и завершение сопровождения.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/mentoring-regulations.docx'
+    },
+    {
+      category: 'Локальные акты',
+      title: 'Положение о конференции «Вектор»',
+      description: 'Порядок подготовки, экспертизы и публичного представления результатов.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/conference-regulations.docx'
+    },
+    {
+      category: 'Локальные акты',
+      title: 'Регламент банка возможностей',
+      description: 'Как отбирать олимпиады, конкурсы, конференции и программы без перегрузки.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/opportunities-bank-regulations.docx'
+    },
+    {
+      category: 'Планирование и учёт',
+      title: 'Годовой план на 2026–2027 учебный год',
+      description: 'Запуск, образовательные пробы, маршруты, промежуточные просмотры и итоговый фестиваль.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/annual-plan-2026-2027.docx'
+    },
+    {
+      category: 'Планирование и учёт',
+      title: 'Реестр и мониторинг',
+      description: 'Электронная книга для сигналов, маршрутов, контрольных точек, возможностей и результатов.',
+      type: 'XLSX',
+      href: 'assets/documents/vector20/registry-and-monitoring.xlsx',
+      featured: true
+    },
+    {
+      category: 'Материалы участникам',
+      title: 'Методический пакет педагога',
+      description: 'Признаки сильных сторон, шаблоны проб, первая беседа, маршрут и экспертная обратная связь.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/teacher-methodological-package.docx',
+      featured: true
+    },
+    {
+      category: 'Материалы участникам',
       title: 'Путеводитель ученика',
       description: 'Как присоединиться, выбрать тему, работать с наставником и представить результат.',
       type: 'DOCX',
-      href: 'assets/documents/vector20/student-guide.docx'
+      href: 'assets/documents/vector20/student-guide.docx',
+      featured: true
     },
     {
-      category: 'Путеводители',
+      category: 'Материалы участникам',
       title: 'Памятка для родителей',
       description: 'Как поддерживать интерес ребёнка, контролировать нагрузку и не подменять его работу.',
       type: 'DOCX',
       href: 'assets/documents/vector20/parent-memo.docx'
+    },
+    {
+      category: 'Материалы участникам',
+      title: 'Формы и шаблоны',
+      description: 'Заявки, маршрутные листы, экспертные формы, согласия и рабочие чек-листы.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/forms-and-templates.docx'
+    },
+    {
+      category: 'Для педагогического совета',
+      title: 'Презентация на педагогический совет',
+      description: 'Готовое представление модели «Вектор 20» для обсуждения и принятия решения.',
+      type: 'PPTX',
+      href: 'assets/documents/vector20/staff-council-presentation.pptx'
+    },
+    {
+      category: 'Для педагогического совета',
+      title: 'Проект критериев стимулирования',
+      description: 'Критерии качества сопровождения и вклада педагога.',
+      type: 'DOCX',
+      href: 'assets/documents/vector20/incentive-criteria-draft.docx'
     }
   ]
 });
