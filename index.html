@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Расписание классов и изменения МОУ СОШ № 20 г. Твери.">
-  <title>Расписание — МОУ СОШ № 20</title>
+  <meta name="description" content="Расписание и изменения, школьное научное общество «Вектор 20», новости и документы МОУ СОШ № 20 г. Твери.">
+  <title>МОУ СОШ № 20 г. Твери</title>
   <link rel="icon" href="assets/school-logo.jpg">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -24,7 +24,7 @@
 
       <nav class="nav" aria-label="Основная навигация" data-nav>
         <div class="nav__links">
-          <a class="nav__link" href="classes.html" aria-current="page">Расписание</a>
+          <a class="nav__link" href="classes.html">Расписание</a>
           <a class="nav__link" href="vector20.html">Вектор 20</a>
           <a class="nav__link" href="news.html">Новости и документы</a>
         </div>
@@ -36,106 +36,114 @@
 
       <div class="header-actions">
         <a class="button button--small" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a>
-        <button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button>
+        <button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button>
+          <span class="menu-lines" aria-hidden="true"></span>
+        </button>
       </div>
     </div>
   </header>
 
   <main id="main">
-    <section class="page-hero page-hero--schedule">
+    <section class="home-hero">
       <div class="container">
-        <div class="page-hero__panel">
-          <div class="page-hero__copy">
-            <span class="eyebrow">Ученикам и родителям</span>
-            <h1>Расписание</h1>
-            <p class="page-hero__lead">Основное расписание и изменения собраны на одной странице. Выбранный класс запоминается на устройстве.</p>
-            <div class="page-meta">
-              <span data-current-datetime>Московское время</span>
-              <span>Изменения обновляются до 15:00</span>
-              <span>Пятница → понедельник</span>
+        <div class="home-hero__panel">
+          <div class="home-hero__copy">
+            <span class="eyebrow">МОУ СОШ № 20 Г. ТВЕРИ</span>
+            <h1>Учимся.<br>Исследуем.<br>Создаём.</h1>
+            <p class="home-hero__lead">Расписание, изменения, школьные проекты, важные новости и документы — в одном понятном пространстве.</p>
+            <div class="hero-actions">
+              <a class="button" href="classes.html">Открыть расписание <span aria-hidden="true">→</span></a>
+              <a class="button button--secondary" href="classes.html#changes">Проверить изменения</a>
             </div>
+            <p class="hero-note">Изменения публикуются до 15:00</p>
           </div>
-          <div class="page-hero__visual" aria-hidden="true"><img src="assets/illustrations/schedule-board.svg" alt=""></div>
+
+          <div class="hero-visual" aria-hidden="true">
+            <span class="hero-visual__number">20</span>
+            <span class="hero-chip hero-chip--knowledge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5v-16Z"/></svg>
+              Знания
+            </span>
+            <div class="hero-logo-card"><img src="assets/school-logo.jpg" alt=""></div>
+            <img class="hero-students" src="assets/illustrations/hero-students.svg" alt="">
+            <span class="hero-chip hero-chip--research">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v5l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M8 14h8"/></svg>
+              Исследование
+            </span>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="schedule-section">
-      <div class="container schedule-shell">
-        <div class="schedule-toolbar">
-          <div>
-            <div class="schedule-toolbar__head">
-              <h2>Выберите класс</h2>
-              <span class="sync-status" data-sync-status>Подключение к таблице…</span>
-            </div>
-            <div class="class-buttons" data-class-buttons></div>
-            <div class="class-select-wrap">
-              <label for="class-select">Класс</label>
-              <select class="select-field" id="class-select" data-class-select></select>
-            </div>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__copy">
+            <span class="kicker">Три главных раздела</span>
+            <h2>Всё важное — без лишних переходов</h2>
           </div>
-          <div class="toolbar-actions">
-            <button class="button button--quiet button--small" type="button" data-clear-class>Сбросить</button>
-            <button class="button button--secondary button--small" type="button" data-refresh>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 1 0 .1 4M20 4v7h-7"/></svg>
-              Обновить
-            </button>
-          </div>
+          <p class="section-head__side">Каждый блок решает конкретную задачу: узнать расписание, включиться в проект или быстро найти актуальную информацию.</p>
         </div>
 
-        <div class="view-tabs" role="tablist" aria-label="Вид расписания">
-          <button class="view-tab" type="button" role="tab" aria-controls="schedule-panel" data-schedule-view="schedule">Основное расписание</button>
-          <button class="view-tab" type="button" role="tab" aria-controls="changes-panel" data-schedule-view="changes">Изменения</button>
+        <div class="home-feature-grid">
+          <article class="feature-card feature-card--schedule">
+            <div class="feature-card__copy">
+              <span class="feature-card__label">Учебный день</span>
+              <h3>Расписание</h3>
+              <p>Основное расписание классов и изменения на два ближайших учебных дня.</p>
+
+              <div class="home-class-control">
+                <label for="home-class">Выберите класс</label>
+                <select class="select-field" id="home-class" data-home-class-select>
+                  <option>Загрузка классов…</option>
+                </select>
+              </div>
+
+              <p style="margin-top:22px;margin-bottom:0">
+                <a class="feature-card__footer-link" href="classes.html" data-home-schedule-link>Открыть расписание →</a>
+              </p>
+            </div>
+
+            <div class="mini-schedule" aria-live="polite">
+              <div class="mini-schedule__head">
+                <div>
+                  <span>Ближайший день</span>
+                  <strong data-home-preview-day>Определяем дату…</strong>
+                </div>
+                <span class="mini-schedule__class" data-home-preview-class>Класс</span>
+              </div>
+              <div class="mini-schedule__list" data-home-schedule-preview>
+                <div class="mini-schedule__empty"><span>Выберите класс — здесь появятся уроки.</span></div>
+              </div>
+              <div class="mini-schedule__notice" data-home-preview-notice>Перед занятиями проверьте изменения.</div>
+            </div>
+          </article>
+
+          <article class="feature-card feature-card--vector">
+            <div class="feature-card__copy">
+              <span class="feature-card__label">Школьное научное общество</span>
+              <h3>Вектор 20</h3>
+              <p>Пространство для исследований, инженерных решений, олимпиадных проб и собственных проектов.</p>
+              <div class="vector-route-tags" aria-label="Этапы маршрута">
+                <span>Идея</span><span>Проба</span><span>Маршрут</span><span>Результат</span>
+              </div>
+            </div>
+            <div class="vector-card-visual" aria-hidden="true"><img src="assets/illustrations/vector-lamp.svg" alt=""></div>
+            <a class="feature-card__footer-link" href="vector20.html">Найти свой маршрут →</a>
+          </article>
         </div>
 
-        <section class="schedule-panel" id="schedule-panel" role="tabpanel" data-schedule-panel="schedule">
-          <div class="schedule-summary">
-            <div>
-              <span class="section-kicker">Учебная неделя</span>
-              <h2 data-selected-class-label>Класс не выбран</h2>
-              <p>Выберите класс выше — расписание загрузится из школьной Google Таблицы.</p>
-            </div>
+        <article class="feature-card feature-card--news">
+          <div class="feature-card__copy">
+            <span class="feature-card__label">Актуально</span>
+            <h3>Новости, важное и документы</h3>
+            <p>Объявления, ключевые события школы и единый каталог материалов.</p>
+            <a class="feature-card__footer-link" href="news.html">Смотреть всё →</a>
           </div>
-          <div class="schedule-grid" data-schedule-output></div>
-
-          <details class="bell-details">
-            <summary>Расписание звонков</summary>
-            <div class="bell-details__content">
-              <div class="bell-column">
-                <h3>Вторник, среда, пятница</h3>
-                <div class="bell-row"><span>1 урок</span><strong>8:30–9:15</strong></div>
-                <div class="bell-row"><span>2 урок</span><strong>9:25–10:10</strong></div>
-                <div class="bell-row"><span>3 урок</span><strong>10:25–11:10</strong></div>
-                <div class="bell-row"><span>4 урок</span><strong>11:30–12:15</strong></div>
-                <div class="bell-row"><span>5 урок</span><strong>12:30–13:15</strong></div>
-                <div class="bell-row"><span>6 урок</span><strong>13:25–14:10</strong></div>
-                <div class="bell-row"><span>7 урок</span><strong>14:20–15:05</strong></div>
-              </div>
-              <div class="bell-column">
-                <h3>Понедельник, четверг</h3>
-                <div class="bell-row"><span>1 урок</span><strong>8:30–9:10</strong></div>
-                <div class="bell-row"><span>2 урок</span><strong>9:20–10:00</strong></div>
-                <div class="bell-row"><span>3 урок</span><strong>10:15–10:55</strong></div>
-                <div class="bell-row"><span>4 урок</span><strong>11:15–11:55</strong></div>
-                <div class="bell-row"><span>5 урок</span><strong>12:10–12:50</strong></div>
-                <div class="bell-row"><span>6 урок</span><strong>13:00–13:40</strong></div>
-                <div class="bell-row"><span>7 урок</span><strong>13:50–14:30</strong></div>
-                <div class="bell-row"><span>8 урок</span><strong>14:35–15:15</strong></div>
-              </div>
-            </div>
-          </details>
-        </section>
-
-        <section class="schedule-panel" id="changes-panel" role="tabpanel" data-schedule-panel="changes">
-          <div class="schedule-summary">
-            <div>
-              <span class="section-kicker">Актуальные замены</span>
-              <h2>Изменения в расписании</h2>
-              <p>Показываются ближайшие два учебных дня. Суббота и воскресенье автоматически пропускаются.</p>
-            </div>
+          <div class="home-news-grid" data-home-news data-limit="3">
+            <div class="loading-state"><strong>Загружаем новости</strong><span>Проверяем школьную таблицу.</span></div>
           </div>
-          <div data-changes-output></div>
-        </section>
+        </article>
       </div>
     </section>
 
@@ -144,10 +152,12 @@
         <div class="today-panel">
           <div class="today-head">
             <span class="kicker">Важно сегодня</span>
-            <h2>Перед занятиями</h2>
-            <p>Короткие организационные сообщения и переходы к нужным разделам.</p>
+            <h2>Коротко о главном</h2>
+            <p>Сообщения, которые стоит проверить перед учебным днём.</p>
           </div>
-          <div class="today-grid" data-important-cards data-limit="3"><div class="loading-state"><strong>Загружаем важную информацию</strong></div></div>
+          <div class="today-grid" data-important-cards data-limit="3">
+            <div class="loading-state"><strong>Загружаем важную информацию</strong></div>
+          </div>
         </div>
       </div>
     </section>
@@ -156,21 +166,24 @@
       <div class="container contact-layout">
         <article class="contact-card">
           <div class="contact-card__copy">
-            <span class="kicker">Есть вопрос</span>
-            <h2>Сообщить о проблеме</h2>
-            <p>Если расписание не загрузилось или вы заметили неточность, направьте сообщение ответственному сотруднику.</p>
-            <div><a class="button" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a></div>
+            <span class="kicker">Нужна помощь</span>
+            <h2>Связаться со школой</h2>
+            <p>Вопрос по расписанию, материалам или участию в «Векторе 20» можно направить ответственному сотруднику.</p>
+            <div><a class="button" href="https://vk.me/school_20_tver" data-contact-link>Написать сообщение</a></div>
           </div>
           <div class="contact-card__illustration" aria-hidden="true"><img src="assets/illustrations/contact-bubble.svg" alt=""></div>
         </article>
+
         <div class="quick-links">
           <a class="quick-link-card" href="https://school.tver.ru/school/20" data-official-link>
             <span class="quick-link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-            <span class="quick-link-card__copy"><strong>Официальная страница школы</strong><span>Основные сведения и контакты</span></span><span class="quick-link-card__arrow">↗</span>
+            <span class="quick-link-card__copy"><strong>Официальная страница школы</strong><span>Сведения об образовательной организации</span></span>
+            <span class="quick-link-card__arrow" aria-hidden="true">↗</span>
           </a>
-          <a class="quick-link-card" href="vector20.html">
-            <span class="quick-link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19 19 5M9 5h10v10"/><circle cx="6" cy="18" r="3"/></svg></span>
-            <span class="quick-link-card__copy"><strong>Вектор 20</strong><span>Исследования, проекты и возможности</span></span><span class="quick-link-card__arrow">→</span>
+          <a class="quick-link-card" href="https://vk.ru/school_20_tver" data-vk-link>
+            <span class="quick-link-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7.5c.5 7 4 10 10 10h.7v-4c2.8.3 4.9 1.8 5.8 4h2.5c-1.2-3.3-3.2-5-5-5.7 1.8-1 3.7-2.9 4.3-5.3H20c-.8 2.2-2.7 4.2-5.3 4.4V6.5h-2.2v7.7C8.9 13.5 7 11 6.5 7.5Z"/></svg></span>
+            <span class="quick-link-card__copy"><strong>Паблик школы во ВКонтакте</strong><span>Новости, фотографии и объявления</span></span>
+            <span class="quick-link-card__arrow" aria-hidden="true">↗</span>
           </a>
         </div>
       </div>
@@ -179,17 +192,36 @@
 
   <footer class="footer">
     <div class="container footer__inner">
-      <div class="footer__brand"><img src="assets/school-logo.jpg" alt=""><span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание, проекты и школьная информация</span></span></div>
-      <div class="footer__column"><h2>Разделы</h2><nav class="footer__links" aria-label="Разделы сайта"><a href="classes.html">Расписание</a><a href="vector20.html">Вектор 20</a><a href="news.html">Новости и документы</a></nav></div>
-      <div class="footer__column"><h2>Ссылки</h2><div class="footer__links"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница школы</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a><a href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a></div></div>
+      <div class="footer__brand">
+        <img src="assets/school-logo.jpg" alt="">
+        <span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание, проекты и школьная информация</span></span>
+      </div>
+      <div class="footer__column">
+        <h2>Разделы</h2>
+        <nav class="footer__links" aria-label="Разделы сайта">
+          <a href="classes.html">Расписание</a>
+          <a href="vector20.html">Вектор 20</a>
+          <a href="news.html">Новости и документы</a>
+        </nav>
+      </div>
+      <div class="footer__column">
+        <h2>Ссылки</h2>
+        <div class="footer__links">
+          <a href="https://school.tver.ru/school/20" data-official-link>Официальная страница школы</a>
+          <a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a>
+          <a href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a>
+        </div>
+      </div>
     </div>
-    <div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс для учеников, родителей и педагогов</span></div>
+    <div class="container footer__bottom">
+      <span>© <span data-current-year></span> МОУ СОШ № 20</span>
+      <span>Информационный ресурс для учеников, родителей и педагогов</span>
+    </div>
   </footer>
 </div>
 
 <script src="config.js"></script>
 <script src="content.js"></script>
 <script src="app.js"></script>
-<script src="schedule.js"></script>
 </body>
 </html>
