@@ -1,1 +1,24 @@
-sosh20tver.ru
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Страница не найдена — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/school-logo.jpg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="site-shell">
+  <header class="topbar"><div class="container topbar__inner"><a class="brand" href="index.html"><img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20"><span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Расписание, проекты, информация</span></span></a><nav class="nav" aria-label="Основная навигация" data-nav><div class="nav__links"><a class="nav__link" href="classes.html">Расписание</a><a class="nav__link" href="vector20.html">Вектор 20</a><a class="nav__link" href="news.html">Новости и документы</a></div><div class="mobile-external"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div></nav><div class="header-actions"><a class="button button--small" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a><button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button></div></div></header>
+  <main id="main">
+    <section class="page-hero page-hero--error">
+      <div class="container"><div class="page-hero__panel"><div class="page-hero__copy"><span class="eyebrow">Ошибка 404</span><h1>Такой страницы нет</h1><p class="page-hero__lead">Адрес мог измениться. Перейдите на главную страницу или откройте один из основных разделов.</p><div class="hero-actions"><a class="button" href="index.html">На главную</a><a class="button button--secondary" href="classes.html">Расписание</a></div></div><div class="page-hero__visual" aria-hidden="true"><img src="assets/illustrations/news-docs.svg" alt=""></div></div></div>
+    </section>
+    <section class="section"><div class="container"><div class="home-feature-grid"><article class="feature-card feature-card--schedule"><div class="feature-card__copy"><span class="feature-card__label">Учебный день</span><h3>Расписание</h3><p>Основное расписание и изменения на ближайшие учебные дни.</p><a class="feature-card__footer-link" href="classes.html">Открыть расписание →</a></div></article><article class="feature-card feature-card--vector"><div class="feature-card__copy"><span class="feature-card__label">Школьное научное общество</span><h3>Вектор 20</h3><p>Исследования, проекты, олимпиады и собственные идеи.</p></div><a class="feature-card__footer-link" href="vector20.html">Перейти в раздел →</a></article></div></div></section>
+  </main>
+  <footer class="footer"><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс для учеников, родителей и педагогов</span></div></footer>
+</div>
+<script src="config.js"></script><script src="content.js"></script><script src="app.js"></script>
+</body>
+</html>
