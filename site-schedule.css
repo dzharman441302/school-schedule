@@ -115,6 +115,71 @@
   font-weight: 800;
 }
 
+/* Крупное расписание звонков ---------------------------------- */
+
+.bell-details--large {
+  margin-top: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.bell-details--large > summary {
+  padding: 24px 28px;
+  color: var(--ink);
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 850;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.bell-details--large .bell-details__content {
+  gap: 22px;
+  padding: 0 28px 28px;
+}
+
+.bell-details--large .bell-column {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-soft);
+}
+
+.bell-details--large .bell-column h3 {
+  margin-bottom: 16px;
+  font-size: 24px;
+}
+
+.bell-details--large .bell-row {
+  min-height: 54px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 18px;
+}
+
+.bell-details--large .bell-row:last-child {
+  border-bottom: 0;
+}
+
+.bell-details--large .bell-row span {
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.bell-details--large .bell-row span em {
+  color: var(--muted);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.bell-details--large .bell-row strong {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .01em;
+}
+
 @media (max-width: 980px) {
   .core-links-grid { grid-template-columns: 1fr; }
   .core-link-card { min-height: 250px; }
@@ -125,4 +190,31 @@
 @media (max-width: 700px) {
   .core-link-card { padding: 26px; }
   .core-link-card__number { font-size: 70px; }
+
+  .bell-details--large > summary {
+    padding: 20px;
+    font-size: 24px;
+  }
+
+  .bell-details--large .bell-details__content {
+    grid-template-columns: 1fr;
+    padding: 0 16px 20px;
+  }
+
+  .bell-details--large .bell-column {
+    padding: 18px;
+  }
+
+  .bell-details--large .bell-column h3 {
+    font-size: 22px;
+  }
+
+  .bell-details--large .bell-row {
+    min-height: 50px;
+    font-size: 17px;
+  }
+
+  .bell-details--large .bell-row strong {
+    font-size: 19px;
+  }
 }
