@@ -1,0 +1,128 @@
+/* Дополнения для упрощённой версии сайта: расписание, изменения, учителя. */
+
+.core-links-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.core-link-card {
+  position: relative;
+  display: flex;
+  min-height: 330px;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.core-link-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card);
+}
+
+.core-link-card--schedule { background: #dfe3ff; }
+.core-link-card--changes { background: var(--yellow-soft); }
+.core-link-card--teachers { background: var(--mint); }
+
+.core-link-card__number {
+  position: absolute;
+  top: 10px;
+  right: 22px;
+  color: rgba(31, 45, 87, .08);
+  font-size: 94px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.core-link-card h3 {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 14px;
+  font-size: clamp(30px, 3vw, 43px);
+}
+
+.core-link-card p {
+  position: relative;
+  z-index: 1;
+  max-width: 360px;
+  margin-bottom: 28px;
+  color: var(--muted);
+}
+
+.core-link-card > strong {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  color: var(--primary-dark);
+  font-size: 14px;
+}
+
+.core-link-card--teachers > strong { color: var(--mint-ink); }
+.core-link-card--changes > strong { color: var(--yellow-ink); }
+
+.footer__inner--compact {
+  grid-template-columns: minmax(280px, 1.3fr) minmax(180px, .7fr) minmax(180px, .7fr);
+}
+
+.teacher-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.teacher-chip {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--ink-2);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.teacher-chip.is-active {
+  border-color: var(--primary);
+  color: #fff;
+  background: var(--primary);
+}
+
+.teacher-select-wrap {
+  display: none;
+}
+
+.teacher-select-wrap label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.teacher-page .page-hero__panel {
+  background: var(--mint);
+}
+
+.teacher-page .sync-status {
+  color: var(--mint-ink);
+  background: #e8f7f1;
+}
+
+.teacher-schedule-grid .lesson-name {
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .core-links-grid { grid-template-columns: 1fr; }
+  .core-link-card { min-height: 250px; }
+  .teacher-buttons { display: none; }
+  .teacher-select-wrap { display: block; }
+}
+
+@media (max-width: 700px) {
+  .core-link-card { padding: 26px; }
+  .core-link-card__number { font-size: 70px; }
+}
