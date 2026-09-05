@@ -1,8 +1,8 @@
-/* Дополнения для упрощённой версии сайта: расписание, изменения, учителя. */
+/* Дополнения для упрощённой версии сайта: расписание и изменения. */
 
 .core-links-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
@@ -24,7 +24,6 @@
 
 .core-link-card--schedule { background: #dfe3ff; }
 .core-link-card--changes { background: var(--yellow-soft); }
-.core-link-card--teachers { background: var(--mint); }
 
 .core-link-card__number {
   position: absolute;
@@ -59,60 +58,10 @@
   font-size: 14px;
 }
 
-.core-link-card--teachers > strong { color: var(--mint-ink); }
 .core-link-card--changes > strong { color: var(--yellow-ink); }
 
 .footer__inner--compact {
   grid-template-columns: minmax(280px, 1.3fr) minmax(180px, .7fr) minmax(180px, .7fr);
-}
-
-.teacher-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.teacher-chip {
-  min-height: 40px;
-  padding: 0 13px;
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  color: var(--ink-2);
-  background: #fff;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.teacher-chip.is-active {
-  border-color: var(--primary);
-  color: #fff;
-  background: var(--primary);
-}
-
-.teacher-select-wrap {
-  display: none;
-}
-
-.teacher-select-wrap label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.teacher-page .page-hero__panel {
-  background: var(--mint);
-}
-
-.teacher-page .sync-status {
-  color: var(--mint-ink);
-  background: #e8f7f1;
-}
-
-.teacher-schedule-grid .lesson-name {
-  font-weight: 800;
 }
 
 /* Крупное расписание звонков ---------------------------------- */
@@ -183,8 +132,6 @@
 @media (max-width: 980px) {
   .core-links-grid { grid-template-columns: 1fr; }
   .core-link-card { min-height: 250px; }
-  .teacher-buttons { display: none; }
-  .teacher-select-wrap { display: block; }
 }
 
 @media (max-width: 700px) {
