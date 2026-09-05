@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Расписание классов и изменения МОУ СОШ № 20 г. Твери.">
+  <title>Расписание — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/school-logo.jpg">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="site-schedule.css">
+</head>
+<body>
+<div class="site-shell">
+  <a class="skip-link" href="#main">Перейти к содержанию</a>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="index.html" aria-label="На главную">
+        <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
+        <span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Расписание и изменения</span></span>
+      </a>
+      <nav class="nav" aria-label="Основная навигация" data-nav>
+        <div class="nav__links">
+          <a class="nav__link" href="schedule.html" aria-current="page">Расписание</a>
+          <a class="nav__link" href="schedule.html#changes">Изменения</a>
+        </div>
+        <div class="mobile-external"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div>
+      </nav>
+      <div class="header-actions"><a class="button button--small" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a><button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button></div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero page-hero--schedule">
+      <div class="container"><div class="page-hero__panel"><div class="page-hero__copy"><span class="eyebrow">Ученикам и родителям</span><h1>Расписание</h1><p class="page-hero__lead">Основное расписание и изменения собраны на одной странице. Выбранный класс запоминается на устройстве.</p><div class="page-meta"><span data-current-datetime>Московское время</span><span>Изменения обновляются до 15:00</span><span>Пятница → понедельник</span></div></div><div class="page-hero__visual" aria-hidden="true"><img src="assets/illustrations/schedule-board.svg" alt=""></div></div></div>
+    </section>
+
+    <section class="schedule-section">
+      <div class="container schedule-shell">
+        <div class="schedule-toolbar">
+          <div><div class="schedule-toolbar__head"><h2>Выберите класс</h2><span class="sync-status" data-sync-status>Подключение к таблице…</span></div><div class="class-buttons" data-class-buttons></div><div class="class-select-wrap"><label for="class-select">Класс</label><select class="select-field" id="class-select" data-class-select></select></div></div>
+          <div class="toolbar-actions"><button class="button button--quiet button--small" type="button" data-clear-class>Сбросить</button><button class="button button--secondary button--small" type="button" data-refresh><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 1 0 .1 4M20 4v7h-7"/></svg>Обновить</button></div>
+        </div>
+
+        <div class="view-tabs" role="tablist" aria-label="Вид расписания"><button class="view-tab" type="button" role="tab" aria-controls="schedule-panel" data-schedule-view="schedule">Основное расписание</button><button class="view-tab" type="button" role="tab" aria-controls="changes-panel" data-schedule-view="changes">Изменения</button></div>
+
+        <section class="schedule-panel" id="schedule-panel" role="tabpanel" data-schedule-panel="schedule">
+          <div class="schedule-summary"><div><span class="section-kicker">Учебная неделя</span><h2 data-selected-class-label>Класс не выбран</h2><p>Выберите класс выше — расписание загрузится из школьной Google Таблицы.</p></div></div>
+          <div class="schedule-grid" data-schedule-output></div>
+
+          <details class="bell-details bell-details--large">
+            <summary>Расписание звонков 2026–2027</summary>
+            <div class="bell-details__content">
+              <div class="bell-column">
+                <h3>Общее — 1 смена</h3>
+                <div class="bell-row"><span>1 урок</span><strong>8:00–8:40</strong></div>
+                <div class="bell-row"><span>2 урок</span><strong>8:50–9:30</strong></div>
+                <div class="bell-row"><span>3 урок</span><strong>9:45–10:25</strong></div>
+                <div class="bell-row"><span>4 урок</span><strong>10:45–11:25</strong></div>
+                <div class="bell-row"><span>5 урок</span><strong>11:40–12:20</strong></div>
+                <div class="bell-row"><span>6 урок</span><strong>12:30–13:10</strong></div>
+              </div>
+              <div class="bell-column">
+                <h3>Общее — 2 смена</h3>
+                <div class="bell-row"><span>1 урок <em>(7)</em></span><strong>13:20–14:00</strong></div>
+                <div class="bell-row"><span>2 урок <em>(8)</em></span><strong>14:15–14:55</strong></div>
+                <div class="bell-row"><span>3 урок <em>(9)</em></span><strong>15:10–15:50</strong></div>
+                <div class="bell-row"><span>4 урок <em>(10)</em></span><strong>16:05–16:45</strong></div>
+                <div class="bell-row"><span>5 урок <em>(11)</em></span><strong>17:00–17:40</strong></div>
+                <div class="bell-row"><span>6 урок <em>(12)</em></span><strong>17:50–18:30</strong></div>
+              </div>
+              <div class="bell-column">
+                <h3>Начальная школа — 1 смена</h3>
+                <div class="bell-row"><span>1 урок</span><strong>8:00–8:40</strong></div>
+                <div class="bell-row"><span>2 урок</span><strong>8:50–9:30</strong></div>
+                <div class="bell-row"><span>3 урок</span><strong>9:45–10:25</strong></div>
+                <div class="bell-row"><span>4 урок</span><strong>10:45–11:25</strong></div>
+                <div class="bell-row"><span>5 урок</span><strong>11:40–12:20</strong></div>
+              </div>
+              <div class="bell-column">
+                <h3>Начальная школа — 2 смена</h3>
+                <div class="bell-row"><span>1 урок</span><strong>13:20–14:00</strong></div>
+                <div class="bell-row"><span>2 урок</span><strong>14:15–14:55</strong></div>
+                <div class="bell-row"><span>3 урок</span><strong>15:10–15:50</strong></div>
+                <div class="bell-row"><span>4 урок</span><strong>16:05–16:45</strong></div>
+                <div class="bell-row"><span>5 урок</span><strong>17:00–17:40</strong></div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="schedule-panel" id="changes-panel" role="tabpanel" data-schedule-panel="changes"><div class="schedule-summary"><div><span class="section-kicker">Актуальные замены</span><h2>Изменения в расписании</h2><p>Показываются ближайшие два учебных дня. Суббота и воскресенье автоматически пропускаются.</p></div></div><div data-changes-output></div></section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="container footer__inner footer__inner--compact"><div class="footer__brand"><img src="assets/school-logo.jpg" alt=""><span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание и оперативные изменения</span></span></div><div class="footer__column"><h2>Разделы</h2><nav class="footer__links" aria-label="Разделы сайта"><a href="schedule.html">Расписание</a><a href="schedule.html#changes">Изменения</a></nav></div><div class="footer__column"><h2>Школа</h2><div class="footer__links"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div></div></div><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс школы</span></div></footer>
+</div>
+<script src="config.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+<script src="schedule.js"></script>
+</body>
+</html>
