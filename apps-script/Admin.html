@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--navy:#102552;--blue:#3154df;--blue2:#eef2ff;--bg:#f6f7fb;--line:#dfe4f0;--muted:#667393;--green:#0b8c62;--greenbg:#e9f8f2;--red:#c43434;--redbg:#fff0f0;--shadow:0 12px 32px rgba(18,37,86,.08)}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#172646} button,input,select{font:inherit}
+    .wrap{max-width:1180px;margin:0 auto;padding:22px}.card{background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .login{max-width:460px;margin:7vh auto;padding:28px}.login h1{margin:0 0 8px;color:var(--navy);font-size:30px}.login p{color:var(--muted);line-height:1.55}.field{display:grid;gap:7px}.field label{font-size:13px;font-weight:800;color:#4d5c7a}.field input,.field select{width:100%;border:1px solid #cfd6e6;border-radius:12px;padding:12px 13px;background:#fff;color:#172646;outline:none}.field input:focus,.field select:focus{border-color:#8297f4;box-shadow:0 0 0 3px #edf0ff}
+    .btn{border:0;border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer;background:var(--blue);color:white}.btn:disabled{opacity:.55;cursor:not-allowed}.btn.secondary{background:#eef2ff;color:#2447cf}.btn.quiet{background:white;color:#445372;border:1px solid var(--line)}.btn.danger{background:var(--redbg);color:var(--red)}.btn.small{padding:8px 10px;border-radius:10px;font-size:13px}.btn.success{background:var(--green)}
+    .login .btn{width:100%;margin-top:14px;padding:13px}.error{color:var(--red);font-size:13px;min-height:20px;margin-top:8px}
+    .app[hidden],.login[hidden]{display:none}.top{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;margin-bottom:16px}.top h1{margin:0 0 5px;color:var(--navy);font-size:30px}.top p{margin:0;color:var(--muted)}.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .controls{padding:18px;display:grid;grid-template-columns:190px 180px 1fr auto;gap:12px;align-items:end;margin-bottom:16px}.date-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.status{min-height:46px;display:flex;align-items:center;padding:10px 12px;border-radius:12px;background:#f7f8fc;color:#5f6d89;font-size:13px}.status.ok{background:var(--greenbg);color:var(--green)}.status.bad{background:var(--redbg);color:var(--red)}
+    .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.8fr);gap:16px}.panel{padding:18px}.panel h2{margin:0;color:var(--navy);font-size:21px}.panel-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--blue2);color:#2b4ed4;font-weight:800;font-size:12px}
+    .lessons{display:grid;gap:8px}.lesson{border:1px solid var(--line);border-radius:14px;padding:10px;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center}.lesson.changed{border-color:#aebbf8;background:#f8f9ff}.lesson-no{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:#eef2ff;color:#2448d4;font-weight:900}.base{font-weight:750;color:#233457}.base small{display:block;margin-top:3px;color:var(--muted);font-weight:500}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.editor{grid-column:2 / -1;display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;padding-top:8px;border-top:1px dashed #d7ddeb}.editor[hidden]{display:none}.editor input{border:1px solid #cfd6e6;border-radius:10px;padding:9px 10px;min-width:0}.current-change{grid-column:2/-1;display:flex;gap:8px;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:10px;padding:8px 10px;color:#263f9d;font-size:13px}.current-change strong{color:#1a337f}
+    .summary-list{display:grid;gap:8px}.change-item{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;grid-template-columns:58px 48px 1fr auto;gap:8px;align-items:center}.change-item strong{color:var(--navy)}.change-item small{display:block;color:var(--muted);margin-top:2px}.empty{padding:28px 12px;text-align:center;color:var(--muted);border:1px dashed #cfd6e6;border-radius:14px}.publish{position:sticky;bottom:12px;margin-top:14px;padding:12px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;display:grid;gap:8px}.publish .btn{width:100%;padding:13px}.publish-note{font-size:12px;color:var(--muted);text-align:center}.dirty{color:#b15f00;font-weight:800}.toast{position:fixed;right:18px;bottom:18px;max-width:380px;background:#122958;color:white;border-radius:13px;padding:12px 15px;box-shadow:0 16px 38px rgba(17,38,86,.25);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+    @media(max-width:900px){.controls{grid-template-columns:1fr 1fr}.status{grid-column:1/-1}.layout{grid-template-columns:1fr}.summary-panel{order:-1}.top{grid-template-columns:1fr}.editor{grid-template-columns:1fr 1fr}.editor .btn{width:100%}}
+    @media(max-width:620px){.wrap{padding:10px}.card{border-radius:14px}.controls{grid-template-columns:1fr}.lesson{grid-template-columns:42px 1fr}.actions{grid-column:1/-1;justify-content:stretch}.actions .btn{flex:1}.editor{grid-column:1/-1;grid-template-columns:1fr}.current-change{grid-column:1/-1}.change-item{grid-template-columns:50px 42px 1fr}.change-item .btn{grid-column:1/-1;width:100%}.top h1{font-size:25px}.panel{padding:13px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card login" id="login-view">
+    <h1>Вход в панель</h1>
+    <p>Введите PIN администратора. После входа сессия действует до 6 часов и автоматически продлевается при работе.</p>
+    <div class="field"><label for="pin">PIN-код</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••"></div>
+    <button class="btn" id="login-button">Войти</button>
+    <div class="error" id="login-error"></div>
+  </section>
+
+  <main class="app" id="app-view" hidden>
+    <div class="top">
+      <div><h1>Изменения в расписании</h1><p id="school-name">МОУ СОШ № 20</p></div>
+      <div class="top-actions"><button class="btn quiet small" id="reload-button">Обновить данные</button><button class="btn quiet small" id="logout-button">Выйти</button></div>
+    </div>
+
+    <section class="card controls">
+      <div class="field"><label for="date">Дата изменений</label><input id="date" type="date"><div class="date-tools"><button class="btn quiet small" data-date-offset="0">Сегодня</button><button class="btn quiet small" data-date-offset="1">Завтра</button></div></div>
+      <div class="field"><label for="class-select">Класс</label><select id="class-select"></select></div>
+      <div class="status" id="status">Готово к работе</div>
+      <button class="btn danger" id="clear-day">Очистить день</button>
+    </section>
+
+    <div class="layout">
+      <section class="card panel">
+        <div class="panel-head"><div><h2 id="schedule-title">Уроки класса</h2></div><span class="badge" id="day-badge">—</span></div>
+        <div class="lessons" id="lessons"></div>
+      </section>
+
+      <aside class="card panel summary-panel">
+        <div class="panel-head"><h2>Изменения дня</h2><span class="badge" id="count-badge">0</span></div>
+        <div class="summary-list" id="changes-list"></div>
+        <div class="publish">
+          <button class="btn success" id="publish-button">Опубликовать изменения</button>
+          <div class="publish-note" id="publish-note">Изменения сохранятся напрямую в лист «Изменения».</div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+<datalist id="subjects-list"></datalist>
+<div class="toast" id="toast"></div>
+<script>
+(() => {
+  'use strict';
+  const state = { token:'', classes:[], subjects:[], changes:[], schedule:[], dirty:false, today:'' };
+  const $ = (s) => document.querySelector(s);
+  const loginView = $('#login-view');
+  const appView = $('#app-view');
+  const pinInput = $('#pin');
+  const loginButton = $('#login-button');
+  const loginError = $('#login-error');
+  const dateInput = $('#date');
+  const classSelect = $('#class-select');
+  const status = $('#status');
+  const lessonsEl = $('#lessons');
+  const changesEl = $('#changes-list');
+  const countBadge = $('#count-badge');
+  const dayBadge = $('#day-badge');
+  const scheduleTitle = $('#schedule-title');
+  const publishButton = $('#publish-button');
+  const publishNote = $('#publish-note');
+  const subjectsList = $('#subjects-list');
+
+  function call(name, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(error => reject(new Error(error && error.message ? error.message : String(error))))[name](...args);
+    });
+  }
+  function esc(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function normalizeClass(value){return String(value||'').trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,'');}
+  function classGrade(value){const m=String(value||'').match(/^\d+/);return m?Number(m[0]):0;}
+  function setStatus(text, type=''){ status.textContent=text; status.className='status'+(type?' '+type:''); }
+  function showToast(text){ const el=$('#toast'); el.textContent=text; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3200); }
+  function setDirty(value){ state.dirty=!!value; publishNote.innerHTML=state.dirty?'<span class="dirty">Есть неопубликованные изменения.</span> Нажмите «Опубликовать изменения».':'Изменения сохранены в Google Таблице.'; }
+  function formatDate(date){ return date.toISOString().slice(0,10); }
+  function addDays(iso, count){ const d=new Date((iso||state.today)+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+count); return formatDate(d); }
+  function key(c,l){return normalizeClass(c)+'|'+Number(l);}
+  function findChange(c,l){const k=key(c,l);return state.changes.find(item=>key(item.className,item.lesson)===k)||null;}
+  function upsertChange(item){ const k=key(item.className,item.lesson); const index=state.changes.findIndex(x=>key(x.className,x.lesson)===k); if(index>=0) state.changes[index]=item; else state.changes.push(item); setDirty(true); renderAll(); }
+  function removeChange(c,l){ const k=key(c,l); state.changes=state.changes.filter(item=>key(item.className,item.lesson)!==k); setDirty(true); renderAll(); }
+
+  async function login(){
+    loginError.textContent=''; loginButton.disabled=true;
+    try{
+      const result=await call('login',pinInput.value);
+      state.token=result.token; sessionStorage.setItem('school20:adminSession',state.token); pinInput.value=''; await initApp();
+    }catch(error){loginError.textContent=error.message;}
+    finally{loginButton.disabled=false;}
+  }
+
+  async function initApp(){
+    try{
+      const data=await call('getInitialData',state.token);
+      state.classes=data.classes||[]; state.subjects=data.subjects||[]; state.today=data.today; $('#school-name').textContent=data.schoolName||'МОУ СОШ № 20';
+      classSelect.innerHTML=state.classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      subjectsList.innerHTML=state.subjects.map(s=>`<option value="${esc(s)}"></option>`).join('');
+      dateInput.value=state.today;
+      loginView.hidden=true; appView.hidden=false;
+      await loadDate(true);
+    }catch(error){ state.token=''; sessionStorage.removeItem('school20:adminSession'); loginView.hidden=false; appView.hidden=true; loginError.textContent=error.message; }
+  }
+
+  async function loadDate(force=false){
+    if(state.dirty&&!force&&!confirm('Есть неопубликованные изменения. Перейти к другой дате и потерять их?')) return false;
+    setStatus('Загружаю изменения…');
+    try{
+      state.changes=await call('getDateChanges',state.token,dateInput.value); setDirty(false); await loadSchedule(); renderSummary(); setStatus('Данные загружены','ok'); return true;
+    }catch(error){handleError(error);return false;}
+  }
+
+  async function loadSchedule(){
+    const cls=classSelect.value; if(!cls)return;
+    setStatus('Загружаю расписание '+cls+'…');
+    try{
+      const data=await call('getClassSchedule',state.token,dateInput.value,cls); state.schedule=data.lessons||[]; dayBadge.textContent=data.dayName||'—'; scheduleTitle.textContent='Уроки '+cls; renderLessons(); setStatus('Расписание загружено','ok');
+    }catch(error){handleError(error);}
+  }
+
+  function visibleLessons(){
+    const grade=classGrade(classSelect.value); const base=(grade===7||grade===8)?Array.from({length:9},(_,i)=>i+4):Array.from({length:8},(_,i)=>i+1);
+    const scheduleNums=state.schedule.filter(x=>x.subject).map(x=>Number(x.lesson));
+    const changedNums=state.changes.filter(x=>normalizeClass(x.className)===normalizeClass(classSelect.value)).map(x=>Number(x.lesson));
+    return [...new Set([...base,...scheduleNums,...changedNums])].filter(n=>n>=1&&n<=12).sort((a,b)=>a-b);
+  }
+
+  function renderLessons(){
+    const cls=classSelect.value; const byLesson=new Map(state.schedule.map(x=>[Number(x.lesson),x.subject]));
+    lessonsEl.innerHTML=visibleLessons().map(lesson=>{
+      const base=byLesson.get(lesson)||''; const current=findChange(cls,lesson);
+      return `<article class="lesson${current?' changed':''}" data-lesson="${lesson}">
+        <div class="lesson-no">${lesson}</div>
+        <div class="base">${base?esc(base):'Урок не указан'}<small>${current?'Есть изменение':'Основное расписание'}</small></div>
+        <div class="actions"><button class="btn danger small" data-cancel>Отмена</button><button class="btn secondary small" data-edit>Изменить</button></div>
+        ${current?`<div class="current-change"><span><strong>${esc(current.change)}</strong>${current.note?` · ${esc(current.note)}`:''}</span><button class="btn quiet small" data-remove>Удалить</button></div>`:''}
+        <div class="editor" hidden><input data-change-input list="subjects-list" placeholder="Что будет вместо урока"><input data-note-input placeholder="Примечание / кабинет"><button class="btn small" data-save>Сохранить</button><button class="btn quiet small" data-close>Закрыть</button></div>
+      </article>`;
+    }).join('') || '<div class="empty">Для выбранной даты уроков нет.</div>';
+  }
+
+  function renderSummary(){
+    const sorted=[...state.changes].sort((a,b)=>String(a.className).localeCompare(String(b.className),'ru',{numeric:true})||Number(a.lesson)-Number(b.lesson));
+    countBadge.textContent=String(sorted.length);
+    changesEl.innerHTML=sorted.length?sorted.map(item=>`<div class="change-item"><strong>${esc(item.className)}</strong><span>${esc(item.lesson)}</span><div>${esc(item.change)}${item.note?`<small>${esc(item.note)}</small>`:''}</div><button class="btn quiet small" data-summary-remove data-class="${esc(item.className)}" data-lesson="${item.lesson}">Удалить</button></div>`).join(''):'<div class="empty">На эту дату изменений пока нет.</div>';
+  }
+  function renderAll(){renderLessons();renderSummary();}
+
+  lessonsEl.addEventListener('click',event=>{
+    const row=event.target.closest('[data-lesson]'); if(!row)return; const lesson=Number(row.dataset.lesson); const cls=classSelect.value;
+    if(event.target.closest('[data-cancel]')){upsertChange({className:cls,lesson,change:'отмена',note:''});return;}
+    if(event.target.closest('[data-remove]')){removeChange(cls,lesson);return;}
+    const editor=row.querySelector('.editor');
+    if(event.target.closest('[data-edit]')){ const existing=findChange(cls,lesson); editor.hidden=false; row.querySelector('[data-change-input]').value=existing&&existing.change!=='отмена'?existing.change:''; row.querySelector('[data-note-input]').value=existing?existing.note:''; row.querySelector('[data-change-input]').focus(); return; }
+    if(event.target.closest('[data-close]')){editor.hidden=true;return;}
+    if(event.target.closest('[data-save]')){ const change=row.querySelector('[data-change-input]').value.trim(); const note=row.querySelector('[data-note-input]').value.trim(); if(!change){showToast('Укажите, что изменилось');return;} upsertChange({className:cls,lesson,change,note}); }
+  });
+
+  changesEl.addEventListener('click',event=>{const btn=event.target.closest('[data-summary-remove]');if(btn)removeChange(btn.dataset.class,Number(btn.dataset.lesson));});
+  classSelect.addEventListener('change',loadSchedule);
+  dateInput.addEventListener('change',async()=>{const previous=dateInput.dataset.previous||state.today; const ok=await loadDate(); if(ok)dateInput.dataset.previous=dateInput.value; else dateInput.value=previous;});
+  document.querySelectorAll('[data-date-offset]').forEach(btn=>btn.addEventListener('click',async()=>{if(state.dirty&&!confirm('Есть неопубликованные изменения. Перейти к другой дате и потерять их?'))return; dateInput.value=addDays(state.today,Number(btn.dataset.dateOffset)); dateInput.dataset.previous=dateInput.value; state.dirty=false; await loadDate(true);}));
+
+  $('#clear-day').addEventListener('click',()=>{if(!state.changes.length)return;if(confirm('Удалить все изменения выбранного дня? Они исчезнут из таблицы после публикации.')){state.changes=[];setDirty(true);renderAll();}});
+  $('#reload-button').addEventListener('click',()=>loadDate());
+  $('#logout-button').addEventListener('click',async()=>{try{await call('logout',state.token);}catch(_){} sessionStorage.removeItem('school20:adminSession');location.reload();});
+
+  publishButton.addEventListener('click',async()=>{
+    publishButton.disabled=true; setStatus('Публикую изменения…');
+    try{
+      const result=await call('publishChanges',state.token,dateInput.value,state.changes); setDirty(false); setStatus(`Опубликовано: ${result.count}. Время ${result.savedAt}`,'ok'); showToast(`Готово: опубликовано ${result.count} изменений`);
+      try{window.parent.postMessage({type:'school20-changes-published',date:dateInput.value,count:result.count},'*');}catch(_){}
+    }catch(error){handleError(error);}finally{publishButton.disabled=false;}
+  });
+
+  function handleError(error){ const text=error.message||String(error); setStatus(text,'bad'); if(/сессия|PIN/i.test(text)){sessionStorage.removeItem('school20:adminSession');state.token='';loginView.hidden=false;appView.hidden=true;loginError.textContent=text;} }
+  window.addEventListener('beforeunload',event=>{if(state.dirty){event.preventDefault();event.returnValue='';}});
+  loginButton.addEventListener('click',login); pinInput.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+
+  const saved=sessionStorage.getItem('school20:adminSession'); if(saved){state.token=saved;initApp();}
+})();
+</script>
+</body>
+</html>
