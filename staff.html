@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="Актуальная сетка изменений для учителей МОУ СОШ № 20 г. Твери.">
+  <title>Изменения для учителей — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/school-logo.jpg">
+  <link rel="stylesheet" href="style.css?v=staff-1">
+  <link rel="stylesheet" href="staff.css?v=staff-1">
+</head>
+<body>
+<div class="site-shell">
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="schedule.html" aria-label="К расписанию">
+        <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
+        <span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Изменения для учителей</span></span>
+      </a>
+      <div class="header-actions"><a class="button button--small" href="schedule.html#changes">Расписание учеников</a></div>
+    </div>
+  </header>
+
+  <main class="staff-page">
+    <div class="container staff-shell">
+      <section class="staff-hero">
+        <div><span class="eyebrow" style="color:#bcd0ff">Сотрудникам</span><h1>Актуальная сетка учителей</h1><p>Белые клетки — основное расписание. Отмены, новые назначения и смена кабинета выделяются прямо в сетке, как на бумажном листе замен.</p></div>
+        <span class="staff-hero__badge">Обновляется после публикации замен</span>
+      </section>
+
+      <section class="staff-controls">
+        <div class="staff-field"><label for="staff-date">Дата</label><input id="staff-date" type="date"><div class="staff-date-actions"><button class="button button--quiet button--small" type="button" data-date="today">Сегодня</button><button class="button button--quiet button--small" type="button" data-date="tomorrow">Завтра</button></div></div>
+        <div class="staff-status" data-status>Загружаем сетку…</div>
+        <div class="staff-field"><label for="staff-search">Найти учителя</label><input id="staff-search" type="search" placeholder="Например, Крымская"></div>
+        <div class="staff-actions"><button class="button button--secondary button--small" type="button" data-refresh>Обновить</button><button class="button button--quiet button--small" type="button" data-print>Печать</button></div>
+      </section>
+
+      <div class="staff-legend"><strong>Обозначения:</strong><span><i class="legend-dot normal"></i>без изменений</span><span><i class="legend-dot cancelled"></i>отмена / окно</span><span><i class="legend-dot changed"></i>замена</span><span><i class="legend-dot room"></i>новый кабинет</span><span><i class="legend-dot added"></i>добавленный урок</span></div>
+
+      <section class="staff-grid-card">
+        <div class="staff-grid-toolbar"><div class="staff-grid-toolbar__left"><span class="staff-day-title" data-day-title>—</span><label class="staff-toggle"><input type="checkbox" data-only-changed> Только изменённые учителя</label></div><div class="staff-grid-toolbar__right"><span class="staff-note" data-publish-note></span></div></div>
+        <div class="staff-grid-scroll"><div class="staff-grid" data-grid></div></div>
+      </section>
+
+      <section class="staff-mobile">
+        <div class="staff-mobile-head"><div class="staff-field"><label for="teacher-select">Учитель</label><select id="teacher-select"></select></div><label class="staff-toggle"><input type="checkbox" data-mobile-only-changed> Только изменённые уроки</label></div>
+        <div class="teacher-cards" data-teacher-cards></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Служебная страница изменений</span></div></footer>
+</div>
+<script src="config.js?v=staff-1"></script>
+<script src="content.js?v=staff-1"></script>
+<script src="app.js?v=staff-1"></script>
+<script src="staff.js?v=staff-1"></script>
+</body>
+</html>
