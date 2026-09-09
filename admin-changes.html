@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="Панель внесения изменений в расписание МОУ СОШ № 20 г. Твери.">
+  <title>Панель изменений — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/school-logo.jpg">
+  <link rel="stylesheet" href="style.css?v=admin-1">
+  <style>
+    body { background:#f6f7fb; }
+    .admin-page { padding:32px 0 48px; }
+    .admin-card { background:#fff; border:1px solid #dfe4f0; border-radius:22px; box-shadow:0 14px 38px rgba(18,37,86,.08); overflow:hidden; }
+    .admin-card__head { padding:24px 28px 18px; border-bottom:1px solid #e8ebf3; display:flex; gap:18px; justify-content:space-between; align-items:flex-start; }
+    .admin-card__head h1 { margin:0 0 6px; font-size:clamp(1.7rem,4vw,2.5rem); color:#0d2452; }
+    .admin-card__head p { margin:0; color:#667393; max-width:760px; }
+    .admin-chip { display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border-radius:999px; background:#eef2ff; color:#2b50dd; font-weight:700; font-size:.86rem; white-space:nowrap; }
+    .admin-setup { padding:28px; display:grid; gap:16px; }
+    .admin-setup[hidden], .admin-frame-wrap[hidden] { display:none !important; }
+    .admin-setup__box { max-width:860px; padding:22px; border:1px solid #dfe4f0; border-radius:18px; background:#f9faff; }
+    .admin-setup h2 { margin:0 0 8px; color:#122958; }
+    .admin-setup ol { margin:12px 0 18px 22px; color:#4f5e7e; }
+    .admin-url-row { display:flex; gap:10px; flex-wrap:wrap; }
+    .admin-url-row input { min-width:260px; flex:1; border:1px solid #cfd6e6; border-radius:12px; padding:12px 14px; font:inherit; }
+    .admin-frame-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; background:#f8f9fd; border-bottom:1px solid #e7eaf2; }
+    .admin-frame-toolbar span { color:#5d6b89; font-size:.92rem; }
+    .admin-frame { width:100%; height:calc(100vh - 190px); min-height:720px; border:0; display:block; background:#f6f7fb; }
+    .admin-link-button { appearance:none; border:0; background:transparent; color:#3154df; font:inherit; font-weight:700; cursor:pointer; padding:8px 10px; }
+    .admin-note { margin-top:18px; color:#667393; font-size:.92rem; }
+    @media (max-width:720px) {
+      .admin-page { padding:12px 0 24px; }
+      .admin-card { border-radius:16px; }
+      .admin-card__head { padding:18px; display:block; }
+      .admin-chip { margin-top:12px; }
+      .admin-setup { padding:18px; }
+      .admin-frame { height:calc(100vh - 150px); min-height:640px; }
+      .admin-frame-toolbar { align-items:flex-start; flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+<div class="site-shell">
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="schedule.html" aria-label="К расписанию">
+        <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
+        <span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Панель изменений</span></span>
+      </a>
+      <div class="header-actions"><a class="button button--small" href="schedule.html#changes">Открыть сайт</a></div>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div class="container">
+      <section class="admin-card">
+        <div class="admin-card__head">
+          <div>
+            <h1>Панель изменений</h1>
+            <p>Быстрый ввод замен и отмен без ручного редактирования листа «Изменения». Основное расписание подставляется автоматически.</p>
+          </div>
+          <span class="admin-chip">Закрытая страница</span>
+        </div>
+
+        <div class="admin-setup" data-admin-setup hidden>
+          <div class="admin-setup__box">
+            <h2>Первичная настройка</h2>
+            <p>Панель на сайте уже готова. Осталось один раз подключить защищённый Google Apps Script.</p>
+            <ol>
+              <li>Создайте Apps Script по инструкции <code>ADMIN_SETUP.md</code> в репозитории.</li>
+              <li>Разверните его как веб-приложение.</li>
+              <li>Вставьте полученный адрес ниже. Он сохранится только в этом браузере.</li>
+            </ol>
+            <div class="admin-url-row">
+              <input type="url" placeholder="https://script.google.com/macros/s/.../exec" data-admin-url autocomplete="off">
+              <button class="button" type="button" data-save-admin-url>Подключить</button>
+            </div>
+            <p class="admin-note" data-admin-error></p>
+          </div>
+        </div>
+
+        <div class="admin-frame-wrap" data-admin-frame-wrap hidden>
+          <div class="admin-frame-toolbar">
+            <span>Панель работает через защищённый Apps Script и записывает изменения прямо в школьную Google Таблицу.</span>
+            <button class="admin-link-button" type="button" data-reset-admin-url>Изменить адрес панели</button>
+          </div>
+          <iframe class="admin-frame" title="Панель внесения изменений" data-admin-frame allow="clipboard-write"></iframe>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+(() => {
+  'use strict';
+  const KEY = 'school20:adminAppsScriptUrl';
+  const setup = document.querySelector('[data-admin-setup]');
+  const wrap = document.querySelector('[data-admin-frame-wrap]');
+  const frame = document.querySelector('[data-admin-frame]');
+  const input = document.querySelector('[data-admin-url]');
+  const error = document.querySelector('[data-admin-error]');
+
+  function isValid(url) {
+    return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/.test(String(url || '').trim());
+  }
+
+  function showSetup(message = '') {
+    setup.hidden = false;
+    wrap.hidden = true;
+    error.textContent = message;
+    try { input.value = localStorage.getItem(KEY) || ''; } catch (_) {}
+  }
+
+  function showPanel(url) {
+    setup.hidden = true;
+    wrap.hidden = false;
+    frame.src = url;
+  }
+
+  function save(url) {
+    const value = String(url || '').trim();
+    if (!isValid(value)) {
+      showSetup('Нужен адрес развернутого Apps Script вида https://script.google.com/macros/s/.../exec');
+      return;
+    }
+    try { localStorage.setItem(KEY, value); } catch (_) {}
+    showPanel(value);
+  }
+
+  const params = new URLSearchParams(location.search);
+  const paramUrl = params.get('app');
+  if (paramUrl && isValid(paramUrl)) save(paramUrl);
+  else {
+    let stored = '';
+    try { stored = localStorage.getItem(KEY) || ''; } catch (_) {}
+    if (isValid(stored)) showPanel(stored); else showSetup();
+  }
+
+  document.querySelector('[data-save-admin-url]').addEventListener('click', () => save(input.value));
+  input.addEventListener('keydown', (event) => { if (event.key === 'Enter') save(input.value); });
+  window.addEventListener('message', (event) => {
+    if (!event.data || event.data.type !== 'school20-changes-published') return;
+    try {
+      localStorage.removeItem('school20:sheet:v3:Изменения');
+      localStorage.removeItem('school20:sheet:v4:Изменения');
+    } catch (_) {}
+  });
+
+  document.querySelector('[data-reset-admin-url]').addEventListener('click', () => {
+    try { localStorage.removeItem(KEY); } catch (_) {}
+    frame.src = 'about:blank';
+    showSetup();
+  });
+})();
+</script>
+</body>
+</html>
