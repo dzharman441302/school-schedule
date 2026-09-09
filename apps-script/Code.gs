@@ -88,16 +88,19 @@ function publishChanges(token, dateIso, changes) {
     if (!sheet) throw new Error('Не найден лист «' + CONFIG.changesSheet + '»');
 
     const values = sheet.getDataRange().getValues();
-    for (let row = values.length; row >= 2; row--) {
-      if (normalizeDate_(values[row - 1][0]) === dateIso) sheet.deleteRow(row);
-    }
+    const preserved = values.slice(1).filter(row => {
+      if (!row.some(cell => String(cell || '').trim())) return false;
+      return normalizeDate_(row[0]) !== dateIso;
+    });
 
-    if (normalized.length) {
-      const rows = normalized
-        .sort((a, b) => classCompare_(a.className, b.className) || a.lesson - b.lesson)
-        .map(item => [formatRuDate_(dateIso), item.className, item.lesson, item.change, item.note]);
-      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 5).setValues(rows);
-    }
+    const newRows = normalized
+      .sort((a, b) => classCompare_(a.className, b.className) || a.lesson - b.lesson)
+      .map(item => [formatRuDate_(dateIso), item.className, item.lesson, item.change, item.note]);
+
+    const output = preserved.concat(newRows);
+    const clearRows = Math.max(sheet.getMaxRows() - 1, 1);
+    sheet.getRange(2, 1, clearRows, 5).clearContent();
+    if (output.length) sheet.getRange(2, 1, output.length, 5).setValues(output);
 
     SpreadsheetApp.flush();
     return {
