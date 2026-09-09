@@ -7,7 +7,7 @@
   <meta name="description" content="Панель внесения изменений в расписание МОУ СОШ № 20 г. Твери.">
   <title>Панель изменений — МОУ СОШ № 20</title>
   <link rel="icon" href="assets/school-logo.jpg">
-  <link rel="stylesheet" href="style.css?v=admin-1">
+  <link rel="stylesheet" href="style.css?v=admin-2">
   <style>
     body { background:#f6f7fb; }
     .admin-page { padding:32px 0 48px; }
@@ -47,7 +47,7 @@
         <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
         <span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Панель изменений</span></span>
       </a>
-      <div class="header-actions"><a class="button button--small" href="schedule.html#changes">Открыть сайт</a></div>
+      <div class="header-actions"><a class="button button--secondary button--small" href="staff.html" target="_blank" rel="noopener">Сетка для учителей</a><a class="button button--small" href="schedule.html#changes">Сайт учеников</a></div>
     </div>
   </header>
 
@@ -57,7 +57,7 @@
         <div class="admin-card__head">
           <div>
             <h1>Панель изменений</h1>
-            <p>Быстрый ввод замен и отмен без ручного редактирования листа «Изменения». Основное расписание подставляется автоматически.</p>
+            <p>Изменения вносятся прямо в учительскую сетку. После публикации автоматически обновляются и список для учеников, и отдельная сетка для учителей.</p>
           </div>
           <span class="admin-chip">Закрытая страница</span>
         </div>
@@ -81,7 +81,7 @@
 
         <div class="admin-frame-wrap" data-admin-frame-wrap hidden>
           <div class="admin-frame-toolbar">
-            <span>Панель работает через защищённый Apps Script и записывает изменения прямо в школьную Google Таблицу.</span>
+            <span>Панель записывает изменения в Google Таблицу и формирует две публикации: для учеников и для учителей.</span>
             <button class="admin-link-button" type="button" data-reset-admin-url>Изменить адрес панели</button>
           </div>
           <iframe class="admin-frame" title="Панель внесения изменений" data-admin-frame allow="clipboard-write"></iframe>
@@ -142,7 +142,9 @@
     if (!event.data || event.data.type !== 'school20-changes-published') return;
     try {
       localStorage.removeItem('school20:sheet:v3:Изменения');
+      localStorage.removeItem('school20:sheet:v3:Учителя_сайт');
       localStorage.removeItem('school20:sheet:v4:Изменения');
+      localStorage.removeItem('school20:sheet:v4:Учителя_сайт');
     } catch (_) {}
   });
 
