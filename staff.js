@@ -42,6 +42,7 @@
     return td.map(r=>{const teacher=String(r[teacherIx]||'').trim(),lesson=Number(r[lessonIx])||0;if(!teacher||lesson<1||lesson>12||dayIx<0)return null;const tc=parseTeacherCell(r[dayIx]);const sp=parseStudent(scheduleMap[tc.className+'|'+lesson]||'');return{teacher,lesson,className:tc.className,subject:tc.subject||sp.subject,room:tc.room||sp.room,status:'normal',oldClass:'',oldSubject:'',oldRoom:'',note:''};}).filter(Boolean);
   }
 
+  function teacherOrderFromBase(){return [...new Set(baseCells().map(c=>c.teacher).filter(Boolean))];}
   function relationMap(cells){
     const cancelled=new Map(), added=new Map();
     cells.forEach(c=>{if(c.status==='cancelled'&&c.oldClass)cancelled.set(c.oldClass+'|'+c.lesson,c.teacher);if(['changed','added'].includes(c.status)&&c.className)added.set(c.className+'|'+c.lesson,c.teacher);});
@@ -73,7 +74,9 @@
   }
 
   function render(){
-    state.teachers=[...new Set(state.cells.map(c=>c.teacher).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));
+    const present=[...new Set(state.cells.map(c=>c.teacher).filter(Boolean))];
+    const baseOrder=teacherOrderFromBase();
+    state.teachers=[...baseOrder.filter(t=>present.includes(t)),...present.filter(t=>!baseOrder.includes(t))];
     const code=dateCode(state.date);$('[data-day-title]').textContent=`${DAY_NAMES[code]||code}, ${ruDate(state.date)}`;$('[data-publish-note]').textContent=publicCellsForDate().length?'Показана опубликованная сетка изменений.':'Изменения на эту дату ещё не публиковались — показано основное расписание.';
     renderGrid();renderMobile();
   }
