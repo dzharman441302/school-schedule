@@ -19,6 +19,8 @@ window.SCHOOL_CONFIG = Object.freeze({
       changes: 'Изменения',
       teachersPublic: 'Учителя_сайт',
       publicationStatus: 'Статус_публикации',
+      notices: 'Оповещения',
+      siteSettings: 'Настройки_сайта',
       news: 'Новости',
       announcements: 'Объявления',
       important: 'Важное',
@@ -37,12 +39,15 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
 
-// Общий модуль: московское время, текущий урок, свежесть данных, QR, PWA и уведомления.
-(() => {
-  if (window.__school20FeatureLoader) return;
-  window.__school20FeatureLoader = true;
-  const script = document.createElement('script');
-  script.src = 'school-day.js?v=features-16';
-  script.defer = true;
-  document.head.appendChild(script);
-})();
+// QR-коды удалены. Общий модуль добавляет только полезный оперативный слой:
+// московское время, обратный отсчёт до звонка, свежесть публикации,
+// оповещения и отметку просмотра учительской страницы.
+if (!/\/tv\.html$/i.test(location.pathname)) {
+  window.addEventListener('load', () => {
+    if (document.querySelector('script[data-school-enhancements]')) return;
+    const script = document.createElement('script');
+    script.src = 'site-enhancements.js?v=mgmt-3';
+    script.dataset.schoolEnhancements = '1';
+    document.body.appendChild(script);
+  });
+}
