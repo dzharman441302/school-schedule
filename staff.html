@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="description" content="Актуальная сетка изменений для учителей МОУ СОШ № 20 г. Твери.">
+  <meta name="theme-color" content="#102552">
   <title>Изменения для учителей — МОУ СОШ № 20</title>
   <link rel="icon" href="assets/school-logo.jpg">
-  <link rel="stylesheet" href="style.css?v=staff-1">
-  <link rel="stylesheet" href="staff.css?v=staff-1">
+  <link rel="manifest" href="manifest.webmanifest?v=16">
+  <link rel="stylesheet" href="style.css?v=features-16">
+  <link rel="stylesheet" href="staff.css?v=features-16">
 </head>
 <body>
 <div class="site-shell">
@@ -36,6 +38,16 @@
         <div class="staff-actions"><button class="button button--secondary button--small" type="button" data-refresh>Обновить</button><button class="button button--quiet button--small" type="button" data-print>Печать</button></div>
       </section>
 
+      <section class="staff-controls" style="margin-top:10px">
+        <div class="staff-field"><label for="staff-my-teacher">Моя фамилия</label><select id="staff-my-teacher"></select></div>
+        <div class="staff-status" data-staff-stats>Изменений нет</div>
+        <div class="staff-actions">
+          <button class="button button--secondary button--small" type="button" data-my-only>Показать только меня</button>
+          <button class="button button--quiet button--small" type="button" data-teacher-link>Скопировать мою ссылку</button>
+          <button class="button button--quiet button--small" type="button" data-teacher-qr>QR моей страницы</button>
+        </div>
+      </section>
+
       <div class="staff-legend"><strong>Обозначения:</strong><span><i class="legend-dot normal"></i>без изменений</span><span><i class="legend-dot cancelled"></i>отмена / окно</span><span><i class="legend-dot changed"></i>замена</span><span><i class="legend-dot room"></i>новый кабинет</span><span><i class="legend-dot added"></i>добавленный урок</span></div>
 
       <section class="staff-grid-card">
@@ -52,9 +64,9 @@
 
   <footer class="footer"><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Служебная страница изменений</span></div></footer>
 </div>
-<script src="config.js?v=staff-1"></script>
-<script src="content.js?v=staff-1"></script>
-<script src="app.js?v=staff-1"></script>
-<script src="staff.js?v=staff-1"></script>
+<script src="config.js?v=features-16"></script>
+<script src="content.js?v=features-16"></script>
+<script src="app.js?v=features-16"></script>
+<script src="staff.js?v=features-16"></script>
 </body>
 </html>
