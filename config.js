@@ -4,16 +4,13 @@ window.SCHOOL_CONFIG = Object.freeze({
     fullName: 'МОУ СОШ № 20 г. Твери',
     city: 'Тверь'
   },
-
   timeZone: 'Europe/Moscow',
   changesUpdateTime: '15:00',
-
   links: {
     contactUrl: 'https://vk.me/school_20_tver',
     officialSite: 'https://school.tver.ru/school/20',
     vkCommunity: 'https://vk.ru/school_20_tver'
   },
-
   googleSheets: {
     spreadsheetId: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
     apiKey: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI',
@@ -21,9 +18,7 @@ window.SCHOOL_CONFIG = Object.freeze({
       schedule: 'Расписание',
       changes: 'Изменения',
       teachersPublic: 'Учителя_сайт',
-
-      // Старые разделы оставлены в конфигурации для совместимости,
-      // но больше не выводятся в навигации сайта.
+      publicationStatus: 'Статус_публикации',
       news: 'Новости',
       announcements: 'Объявления',
       important: 'Важное',
@@ -31,7 +26,6 @@ window.SCHOOL_CONFIG = Object.freeze({
       opportunities: 'Возможности'
     }
   },
-
   classes: [
     '5А', '5Б', '5В', '5И',
     '6А', '6Б', '6И', '6К',
@@ -40,10 +34,15 @@ window.SCHOOL_CONFIG = Object.freeze({
     '9А', '9Б', '9В', '9Г',
     '10А', '11А'
   ],
-
-  vector20: {
-    coordinator: '',
-    contactEmail: '',
-    applicationUrl: ''
-  }
+  vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
+
+// Общий модуль: московское время, текущий урок, свежесть данных, QR, PWA и уведомления.
+(() => {
+  if (window.__school20FeatureLoader) return;
+  window.__school20FeatureLoader = true;
+  const script = document.createElement('script');
+  script.src = 'school-day.js?v=features-16';
+  script.defer = true;
+  document.head.appendChild(script);
+})();
