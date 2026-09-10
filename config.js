@@ -46,7 +46,7 @@ if (!/\/tv\.html$/i.test(location.pathname)) {
   window.addEventListener('load', () => {
     if (document.querySelector('script[data-school-enhancements]')) return;
     const script = document.createElement('script');
-    script.src = 'site-enhancements.js?v=mgmt-3';
+    script.src = 'site-enhancements.js?v=mgmt-47';
     script.dataset.schoolEnhancements = '1';
     document.body.appendChild(script);
   });
