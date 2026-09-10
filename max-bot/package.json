@@ -1,0 +1,9 @@
+{
+  "name": "school20-max-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MAX bot for MOY SOSH 20 Tver schedule and notifications",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node bot.mjs", "check": "node --check bot.mjs" }
+}
