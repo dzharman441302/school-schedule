@@ -1,7 +1,8 @@
-name = "school20-max-bot"
+name = "school-schedule"
 main = "src/index.js"
 compatibility_date = "2026-09-10"
 workers_dev = true
+preview_urls = false
 
 [vars]
 SCHOOL_SITE_URL = "https://sosh20tver.ru"
