@@ -1,5 +1,5 @@
 name = "school-schedule"
-main = "src/index.js"
+main = "src/setup-wrapper.js"
 compatibility_date = "2026-09-10"
 workers_dev = true
 preview_urls = false
