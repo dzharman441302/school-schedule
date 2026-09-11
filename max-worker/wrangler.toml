@@ -1,0 +1,18 @@
+name = "school20-max-bot"
+main = "src/index.js"
+compatibility_date = "2026-09-10"
+workers_dev = true
+
+[vars]
+SCHOOL_SITE_URL = "https://sosh20tver.ru"
+SPREADSHEET_ID = "1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzE-k5KDPobjb32ySdEU6vRqvrxLETV_ktJHPn1LnWdp1pZX-t0WL3L4pyA576oe9S1Sg/exec"
+TIME_ZONE = "Europe/Moscow"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "school20-max"
+database_id = "efee5015-f515-4b8d-b441-6bdd65e55e80"
+
+[triggers]
+crons = ["*/2 * * * *"]
