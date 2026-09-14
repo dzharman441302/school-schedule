@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=16">
   <link rel="stylesheet" href="style.css?v=features-16">
   <link rel="stylesheet" href="site-schedule.css?v=features-16">
+  <link rel="stylesheet" href="school-ui-refresh.css?v=ui-20260914">
 </head>
 <body>
 <div class="site-shell">
@@ -24,11 +25,11 @@
         <div class="nav__links">
           <a class="nav__link" href="schedule.html?v=features-16" aria-current="page">Расписание</a>
           <a class="nav__link" href="schedule.html?v=features-16#changes">Изменения</a>
-          <a class="nav__link" href="staff.html?v=features-16">Учителям</a>
+          <a class="nav__link" href="staff.html?v=ui-20260914">Учителям</a>
         </div>
         <div class="mobile-external"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div>
       </nav>
-      <div class="header-actions"><a class="button button--small" href="staff.html?v=features-16">Расписание учителей</a><button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button></div>
+      <div class="header-actions"><a class="button button--small" href="staff.html?v=ui-20260914">Расписание учителей</a><button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button></div>
     </div>
   </header>
 
@@ -41,7 +42,7 @@
       <div class="container schedule-shell">
         <div class="schedule-toolbar">
           <div><div class="schedule-toolbar__head"><h2>Выберите класс</h2><span class="sync-status" data-sync-status>Подключение к таблице…</span></div><div class="class-buttons" data-class-buttons></div><div class="class-select-wrap"><label for="class-select">Класс</label><select class="select-field" id="class-select" data-class-select></select></div></div>
-          <div class="toolbar-actions"><a class="button button--quiet button--small" href="staff.html?v=features-16">Учителям</a><button class="button button--quiet button--small" type="button" data-clear-class>Сбросить</button><button class="button button--secondary button--small" type="button" data-refresh><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 1 0 .1 4M20 4v7h-7"/></svg>Обновить</button></div>
+          <div class="toolbar-actions"><a class="button button--quiet button--small" href="staff.html?v=ui-20260914">Учителям</a><button class="button button--quiet button--small" type="button" data-clear-class>Сбросить</button><button class="button button--secondary button--small" type="button" data-refresh><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 1 0 .1 4M20 4v7h-7"/></svg>Обновить</button></div>
         </div>
 
         <div class="view-tabs" role="tablist" aria-label="Вид расписания"><button class="view-tab" type="button" role="tab" aria-controls="schedule-panel" data-schedule-view="schedule">Основное расписание</button><button class="view-tab" type="button" role="tab" aria-controls="changes-panel" data-schedule-view="changes">Изменения</button></div>
@@ -91,16 +92,16 @@
           </details>
         </section>
 
-        <section class="schedule-panel" id="changes-panel" role="tabpanel" data-schedule-panel="changes"><div class="schedule-summary"><div><span class="section-kicker">Актуальные замены</span><h2>Изменения в расписании</h2><p>Показываются ближайшие два учебных дня. Суббота и воскресенье автоматически пропускаются.</p></div></div><div data-changes-output></div></section>
+        <section class="schedule-panel" id="changes-panel" role="tabpanel" data-schedule-panel="changes"><div class="schedule-summary"><div><span class="section-kicker">Актуальные замены</span><h2>Изменения в расписании</h2><p>Выберите класс — увидите готовое актуальное расписание дня: отмены, замены и кабинеты уже учтены.</p></div></div><div data-changes-output></div></section>
       </div>
     </section>
   </main>
 
-  <footer class="footer"><div class="container footer__inner footer__inner--compact"><div class="footer__brand"><img src="assets/school-logo.jpg" alt=""><span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание и оперативные изменения</span></span></div><div class="footer__column"><h2>Разделы</h2><nav class="footer__links" aria-label="Разделы сайта"><a href="schedule.html?v=features-16">Расписание</a><a href="schedule.html?v=features-16#changes">Изменения</a><a href="staff.html?v=features-16">Учителям</a></nav></div><div class="footer__column"><h2>Школа</h2><div class="footer__links"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div></div></div><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс школы</span></div></footer>
+  <footer class="footer"><div class="container footer__inner footer__inner--compact"><div class="footer__brand"><img src="assets/school-logo.jpg" alt=""><span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание и оперативные изменения</span></span></div><div class="footer__column"><h2>Разделы</h2><nav class="footer__links" aria-label="Разделы сайта"><a href="schedule.html?v=features-16">Расписание</a><a href="schedule.html?v=features-16#changes">Изменения</a><a href="staff.html?v=ui-20260914">Учителям</a></nav></div><div class="footer__column"><h2>Школа</h2><div class="footer__links"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div></div></div><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс школы</span></div></footer>
 </div>
 <script>
 try {
-  const version = 'features-16';
+  const version = 'ui-20260914';
   if (localStorage.getItem('school20:schedule:version') !== version) {
     localStorage.removeItem('school20:sheet:v3:Расписание');
     localStorage.setItem('school20:schedule:version', version);
@@ -109,9 +110,9 @@ try {
   localStorage.removeItem('school20:sheet:v4:Изменения');
 } catch (_) {}
 </script>
-<script src="config.js?v=features-16"></script>
+<script src="config.js?v=ui-20260914"></script>
 <script src="content.js?v=features-16"></script>
 <script src="app.js?v=features-16"></script>
-<script src="schedule.js?v=features-16"></script>
+<script src="schedule.js?v=ui-20260914"></script>
 </body>
 </html>
