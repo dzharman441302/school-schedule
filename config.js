@@ -39,14 +39,21 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
 
-// Общий оперативный слой: официальная шапка, московское время,
+// Оперативный слой сайта: официальная шапка, московское время,
 // обратный отсчёт до звонка, свежесть публикации, оповещения и отметка просмотра.
 if (!/\/tv\.html$/i.test(location.pathname)) {
   window.addEventListener('load', () => {
-    if (document.querySelector('script[data-school-enhancements]')) return;
-    const script = document.createElement('script');
-    script.src = 'site-enhancements.js?v=ui-20260914';
-    script.dataset.schoolEnhancements = '1';
-    document.body.appendChild(script);
+    if (!document.querySelector('script[data-school-enhancements]')) {
+      const script = document.createElement('script');
+      script.src = 'site-enhancements.js?v=ui-20260914b';
+      script.dataset.schoolEnhancements = '1';
+      document.body.appendChild(script);
+    }
+    if (!document.querySelector('script[data-school-polish]')) {
+      const polish = document.createElement('script');
+      polish.src = 'site-polish.js?v=ui-20260914b';
+      polish.dataset.schoolPolish = '1';
+      document.body.appendChild(polish);
+    }
   });
 }
