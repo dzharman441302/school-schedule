@@ -1,0 +1,215 @@
+/* UI refresh 2026-09-14: official header, readable live bar, student changes, lighter staff hero */
+
+/* Official school header -------------------------------------------------- */
+.topbar.topbar--official .topbar__inner{
+  grid-template-columns:88px minmax(360px,1fr) auto auto;
+  gap:18px;
+  min-height:108px;
+}
+.topbar.topbar--official .brand{width:82px;justify-content:center;gap:0}
+.topbar.topbar--official .brand__logo{
+  width:78px;height:78px;border:2px solid #e1e6f0;
+  box-shadow:0 6px 18px rgba(31,45,87,.10);
+}
+.topbar.topbar--official .brand__copy{display:none}
+.school-official-title{
+  min-width:0;
+  max-width:720px;
+  justify-self:center;
+  text-align:center;
+  color:#16264b;
+  font-size:13px;
+  font-weight:900;
+  line-height:1.32;
+  letter-spacing:.018em;
+  text-transform:uppercase;
+}
+.school-official-title__section{
+  display:block;
+  margin-top:5px;
+  color:#7a86a0;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:none;
+}
+.topbar--official:not(.topbar--with-nav) .topbar__inner{
+  grid-template-columns:88px minmax(420px,1fr) auto;
+}
+
+/* Live school status ----------------------------------------------------- */
+.school-livebar{
+  background:linear-gradient(90deg,#102a5c 0%,#153a78 48%,#102a5c 100%)!important;
+  color:#fff!important;
+  border-top:1px solid rgba(255,255,255,.12)!important;
+  border-bottom:1px solid rgba(6,25,59,.16);
+  font-size:14px!important;
+  box-shadow:0 4px 12px rgba(14,39,85,.08);
+}
+.school-livebar__in{
+  max-width:1240px!important;
+  min-height:46px;
+  margin:auto!important;
+  padding:9px 22px!important;
+  display:grid!important;
+  grid-template-columns:minmax(280px,1fr) auto minmax(280px,1fr);
+  gap:18px!important;
+  align-items:center!important;
+}
+.school-livebar strong{font-size:13px;font-weight:900!important}
+.school-livebar [data-live-state]{
+  padding:5px 13px;
+  border-radius:999px;
+  background:rgba(255,255,255,.11);
+  font-size:13px;
+  font-weight:900;
+  text-align:center;
+  white-space:nowrap;
+}
+.school-livebar .live-muted{
+  color:#d9e5ff!important;
+  font-size:12px;
+  font-weight:700;
+  text-align:right;
+}
+
+/* Staff page ------------------------------------------------------------- */
+.staff-hero{
+  position:relative;
+  overflow:hidden;
+  color:#17355c!important;
+  background:
+    radial-gradient(circle at 86% 20%,rgba(255,238,132,.72) 0 72px,transparent 73px),
+    linear-gradient(135deg,#e4f2ff 0%,#e6f8ef 58%,#fff3bd 100%)!important;
+  border:1px solid #cee5d8;
+  box-shadow:0 16px 36px rgba(48,96,95,.12)!important;
+}
+.staff-hero::after{
+  content:"";position:absolute;right:-40px;bottom:-70px;width:190px;height:190px;
+  border-radius:50%;background:rgba(255,255,255,.38);pointer-events:none;
+}
+.staff-hero h1{color:#17355c!important}
+.staff-hero p{color:#49677a!important;font-weight:600}
+.staff-hero .eyebrow{color:#23755b!important}
+.staff-hero .eyebrow::before{background:#79bc79!important}
+.staff-hero__badge{
+  position:relative;z-index:1;
+  color:#52621f!important;
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid rgba(164,183,80,.38);
+  box-shadow:0 7px 18px rgba(73,111,79,.08);
+}
+.sg-cell.cancelled .old{
+  font-size:10px!important;
+  line-height:1.18;
+  color:#9d4349!important;
+  font-weight:800;
+}
+
+/* Student changes: ready-to-use actual day ------------------------------- */
+.change-context--visual{
+  align-items:center;
+  background:linear-gradient(90deg,#eef3ff,#f0faf5);
+  border:1px solid #dbe5ee;
+}
+.student-day-card{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dfe5ef;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(28,50,95,.06);
+}
+.student-day-card__head{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+  padding:20px 22px;
+  background:linear-gradient(135deg,#f5f8ff,#f2fbf6);
+  border-bottom:1px solid #e2e7ef;
+}
+.student-day-card__head h3{margin:2px 0 0;font-size:23px;text-transform:capitalize}
+.student-change-summary{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.student-change-pill{
+  display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border-radius:999px;
+  background:#fff;border:1px solid #dbe2ec;color:#52617c;font-size:11px;font-weight:850;
+}
+.student-change-pill.cancelled{color:#a43843;background:#fff0f1;border-color:#f0c9cd}
+.student-change-pill.changed{color:#3154c9;background:#edf3ff;border-color:#cedbff}
+.student-change-pill.room{color:#8b6300;background:#fff7dc;border-color:#efdca0}
+.student-change-pill.added{color:#0b7454;background:#e9f8f2;border-color:#c5eadc}
+.student-day-lessons{display:grid;padding:8px 14px 14px}
+.student-lesson{
+  display:grid;
+  grid-template-columns:54px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  min-height:64px;
+  padding:10px 8px;
+  border-bottom:1px solid #edf0f5;
+}
+.student-lesson:last-child{border-bottom:0}
+.student-lesson__number{
+  width:44px;height:44px;border-radius:13px;display:grid;place-items:center;
+  color:#30465f;background:#f1f4f8;font-size:17px;font-weight:950;
+}
+.student-lesson__time{display:block;margin-top:2px;color:#8a96aa;font-size:9px;font-weight:700;white-space:nowrap}
+.student-lesson__body{min-width:0}
+.student-lesson__body strong{display:block;color:#1e3154;font-size:15px;line-height:1.25}
+.student-lesson__body small{display:block;margin-top:3px;color:#758199;font-size:11px}
+.student-lesson__old{display:block;margin-bottom:4px;color:#9b6266;font-size:11px;text-decoration:line-through}
+.student-lesson__new{font-weight:900;color:#1e3154}
+.student-lesson__arrow{margin-right:5px;color:#7d89a0}
+.student-lesson__badge{
+  display:inline-flex;align-items:center;justify-content:center;min-height:27px;padding:0 9px;
+  border-radius:999px;font-size:9px;font-weight:950;letter-spacing:.05em;white-space:nowrap;
+}
+.student-lesson.cancelled{background:#fff5f5}
+.student-lesson.cancelled .student-lesson__number{background:#ffe2e4;color:#a52d38}
+.student-lesson.cancelled .student-lesson__badge{background:#ffdfe2;color:#a52d38}
+.student-lesson.changed{background:#f4f7ff}
+.student-lesson.changed .student-lesson__number{background:#e4ebff;color:#3154c9}
+.student-lesson.changed .student-lesson__badge{background:#e0e9ff;color:#3154c9}
+.student-lesson.room{background:#fffbec}
+.student-lesson.room .student-lesson__number{background:#fff0be;color:#8b6300}
+.student-lesson.room .student-lesson__badge{background:#ffedb0;color:#795600}
+.student-lesson.added{background:#effaf6}
+.student-lesson.added .student-lesson__number{background:#d8f3e8;color:#0a7555}
+.student-lesson.added .student-lesson__badge{background:#d4f0e5;color:#0a7555}
+.student-room-change{font-weight:900;color:#815c00}
+
+.all-change-groups{display:grid;gap:10px;padding:14px}
+.class-change-card{border:1px solid #e0e5ee;border-radius:16px;padding:12px 14px;background:#fff}
+.class-change-card__head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.class-change-card__head strong{font-size:18px;color:#1b315b}
+.class-change-list{display:grid;gap:6px}
+.class-change-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:9px;align-items:center;padding:8px 0;border-top:1px solid #edf0f5}
+.class-change-row:first-child{border-top:0}
+.class-change-row__lesson{font-weight:950;color:#50607d}
+.class-change-row del{color:#a36b6e;font-size:11px}
+.class-change-row b{display:block;color:#233759}
+
+@media(max-width:1180px){
+  .topbar.topbar--official .topbar__inner{grid-template-columns:72px minmax(300px,1fr) auto;min-height:100px}
+  .topbar.topbar--official .brand{width:68px}.topbar.topbar--official .brand__logo{width:66px;height:66px}
+  .topbar.topbar--official .nav{grid-column:1/-1;justify-self:center;margin-top:-5px;margin-bottom:9px}
+  .topbar--official:not(.topbar--with-nav) .topbar__inner{grid-template-columns:72px minmax(300px,1fr) auto}
+  .school-official-title{font-size:11px;max-width:650px}
+}
+@media(max-width:760px){
+  .topbar.topbar--official .topbar__inner,.topbar--official:not(.topbar--with-nav) .topbar__inner{grid-template-columns:58px minmax(0,1fr) auto;gap:10px;min-height:82px}
+  .topbar.topbar--official .brand{width:56px}.topbar.topbar--official .brand__logo{width:54px;height:54px}
+  .school-official-title{font-size:8.5px;line-height:1.25;letter-spacing:0}
+  .school-official-title__section{font-size:9px;margin-top:3px}
+  .school-livebar__in{grid-template-columns:1fr!important;gap:4px!important;padding:8px 12px!important;text-align:center}
+  .school-livebar strong,.school-livebar [data-live-state],.school-livebar .live-muted{text-align:center;font-size:11px}
+  .school-livebar [data-live-state]{justify-self:center}
+  .student-day-card__head{display:block;padding:16px}
+  .student-change-summary{justify-content:flex-start;margin-top:10px}
+  .student-lesson{grid-template-columns:46px minmax(0,1fr);gap:9px}
+  .student-lesson__number{width:40px;height:40px;font-size:15px}
+  .student-lesson__badge{grid-column:2;justify-self:start}
+  .class-change-row{grid-template-columns:42px minmax(0,1fr)}
+  .class-change-row .student-lesson__badge{grid-column:2}
+}
