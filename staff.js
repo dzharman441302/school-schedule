@@ -29,7 +29,32 @@
   function relationMap(cells){const cancelled=new Map(),added=new Map();cells.forEach(c=>{if(c.status==='cancelled'&&c.oldClass)cancelled.set(c.oldClass+'|'+c.lesson,c.teacher);if(['changed','added'].includes(c.status)&&c.className)added.set(c.className+'|'+c.lesson,c.teacher)});const out=new Map();cells.forEach(c=>{const k=c.teacher+'|'+c.lesson;if(c.status==='cancelled'&&c.oldClass&&added.has(c.oldClass+'|'+c.lesson))out.set(k,'→ '+added.get(c.oldClass+'|'+c.lesson));else if(['changed','added'].includes(c.status)&&c.className&&cancelled.has(c.className+'|'+c.lesson))out.set(k,'← '+cancelled.get(c.className+'|'+c.lesson))});return out}
   function hasChange(t){return state.cells.some(c=>c.teacher===t&&c.status!=='normal')}
   function matchingTeacher(t){const q=site.normalize(state.search);return!q||site.normalize(t).includes(q)}
-  function cellMarkup(c,rel){const cls=['sg-cell',c.status||'normal'];if(!c.className&&c.status==='normal')cls.push('empty');let inner='·';if(c.status==='cancelled')inner=`<span class="old">${esc(c.oldClass||'')} ${esc(c.oldSubject||'')} ${esc(c.oldRoom||'')}</span><span class="cls">ОКНО</span>`;else if(c.className)inner=`${c.oldClass&&c.oldClass!==c.className?`<span class="old">${esc(c.oldClass)}</span>`:''}<span class="cls">${esc(c.className)}</span><span class="subj">${esc(c.subject||'')}</span><span class="room">${esc(c.room||'')}</span>`;if(rel)inner+=`<span class="arrow">${esc(rel)}</span>`;return`<div class="${cls.join(' ')}">${inner}</div>`}
+
+  function trueWindowLessons(teacher){
+    const teacherCells=state.cells.filter(c=>c.teacher===teacher);
+    const active=teacherCells.filter(c=>c.status!=='cancelled'&&c.className).map(c=>Number(c.lesson)).filter(Number.isFinite).sort((a,b)=>a-b);
+    if(active.length<2)return[];
+    const first=active[0],last=active[active.length-1],windows=[];
+    for(let lesson=first+1;lesson<last;lesson++){
+      const c=teacherCells.find(x=>Number(x.lesson)===lesson);
+      if(!c||c.status==='cancelled'||!c.className)windows.push(lesson);
+    }
+    return windows;
+  }
+
+  function cellMarkup(c,rel){
+    const cls=['sg-cell',c.status||'normal'];
+    if(!c.className&&c.status==='normal')cls.push('empty');
+    let inner='·';
+    if(c.status==='cancelled'){
+      const old=[c.oldClass,c.oldSubject,c.oldRoom].filter(Boolean).map(esc).join(' · ');
+      inner=old?`<span class="old">${old}</span>`:'<span class="old">Урок снят</span>';
+    }else if(c.className){
+      inner=`${c.oldClass&&c.oldClass!==c.className?`<span class="old">${esc(c.oldClass)}</span>`:''}<span class="cls">${esc(c.className)}</span><span class="subj">${esc(c.subject||'')}</span><span class="room">${esc(c.room||'')}</span>`;
+    }
+    if(rel)inner+=`<span class="arrow">${esc(rel)}</span>`;
+    return`<div class="${cls.join(' ')}">${inner}</div>`;
+  }
 
   function orderedTeachers(){const present=[...new Set(state.cells.map(c=>c.teacher).filter(Boolean))],base=teacherOrderFromBase();return[...base.filter(t=>present.includes(t)),...present.filter(t=>!base.includes(t))]}
   function renderGrid(){const grid=$('[data-grid]'),rel=relationMap(state.cells);let html='<div class="sg-head teacher">Учитель</div>'+Array.from({length:12},(_,i)=>`<div class="sg-head">${i+1}</div>`).join('');const visible=state.teachers.filter(t=>(!state.onlyChanged||hasChange(t))&&matchingTeacher(t));visible.forEach(t=>{html+=`<div class="sg-teacher ${hasChange(t)?'changed':''}">${esc(t)}</div>`;for(let l=1;l<=12;l++){const c=state.cells.find(x=>x.teacher===t&&x.lesson===l)||{teacher:t,lesson:l,className:'',subject:'',room:'',status:'normal',oldClass:'',oldSubject:'',oldRoom:''};html+=cellMarkup(c,rel.get(t+'|'+l))}});grid.innerHTML=visible.length?html:'<div class="staff-empty" style="grid-column:1/-1">По выбранному фильтру учителя не найдены.</div>'}
@@ -40,9 +65,14 @@
   function teacherLink(t=state.selectedTeacher){const u=new URL(location.href);u.searchParams.set('teacher',t);u.searchParams.set('mine','1');return u.href}
   function showOnlyMine(){if(!state.selectedTeacher)return;state.search=state.selectedTeacher;$('#staff-search').value=state.selectedTeacher;state.onlyChanged=false;$('[data-only-changed]').checked=false;renderGrid();document.querySelector('.staff-grid-card')?.scrollIntoView({behavior:'smooth',block:'start'})}
 
-  function renderMobile(){syncTeacherSelects();const only=$('[data-mobile-only-changed]')?.checked;const rel=relationMap(state.cells);const rows=state.cells.filter(c=>c.teacher===state.selectedTeacher&&(!only||c.status!=='normal')).sort((a,b)=>a.lesson-b.lesson),target=$('[data-teacher-cards]');target.innerHTML=rows.length?rows.map(c=>{const r=rel.get(c.teacher+'|'+c.lesson);let body='';if(c.status==='cancelled')body=`<h3><del>${esc(c.oldClass||'')} · ${esc(c.oldSubject||'')}</del></h3><p>Урок снят — окно${c.oldRoom?' · каб. '+esc(c.oldRoom):''}</p>`;else body=`<h3>${esc(c.className||'Свободно')} · ${esc(c.subject||'')}</h3><p>${c.room?'Кабинет '+esc(c.room):'Кабинет не указан'}${c.oldClass&&c.oldClass!==c.className?' · было '+esc(c.oldClass):''}</p>`;return`<article class="teacher-card ${esc(c.status)}"><div class="teacher-card__lesson">${c.lesson}</div><div>${body}${r?`<span class="tag">${esc(r)}</span>`:''}${c.note?`<p>${esc(c.note)}</p>`:''}</div></article>`}).join(''):'<div class="staff-empty">Для выбранного учителя уроков по этому фильтру нет.</div>'}
+  function renderMobile(){syncTeacherSelects();const only=$('[data-mobile-only-changed]')?.checked;const rel=relationMap(state.cells);const rows=state.cells.filter(c=>c.teacher===state.selectedTeacher&&(!only||c.status!=='normal')).sort((a,b)=>a.lesson-b.lesson),target=$('[data-teacher-cards]');target.innerHTML=rows.length?rows.map(c=>{const r=rel.get(c.teacher+'|'+c.lesson);let body='';if(c.status==='cancelled'){const old=[c.oldClass,c.oldSubject].filter(Boolean).map(esc).join(' · ');body=`<h3><del>${old||'Урок'}</del></h3><p>Урок снят${c.oldRoom?' · каб. '+esc(c.oldRoom):''}</p>`}else body=`<h3>${esc(c.className||'Свободно')} · ${esc(c.subject||'')}</h3><p>${c.room?'Кабинет '+esc(c.room):'Кабинет не указан'}${c.oldClass&&c.oldClass!==c.className?' · было '+esc(c.oldClass):''}</p>`;return`<article class="teacher-card ${esc(c.status)}"><div class="teacher-card__lesson">${c.lesson}</div><div>${body}${r?`<span class="tag">${esc(r)}</span>`:''}${c.note?`<p>${esc(c.note)}</p>`:''}</div></article>`}).join(''):'<div class="staff-empty">Для выбранного учителя уроков по этому фильтру нет.</div>'}
 
-  function renderStats(){const changes=state.cells.filter(c=>c.status!=='normal'),teachers=new Set(changes.map(c=>c.teacher)),windows=changes.filter(c=>c.status==='cancelled').length;const el=$('[data-staff-stats]');if(el)el.innerHTML=`<strong>${changes.length}</strong> изменённых клеток · <strong>${teachers.size}</strong> учителей · <strong>${windows}</strong> окон`}
+  function renderStats(){
+    const changes=state.cells.filter(c=>c.status!=='normal'),teachers=new Set(changes.map(c=>c.teacher));
+    const windows=state.teachers.reduce((sum,t)=>sum+trueWindowLessons(t).length,0);
+    const el=$('[data-staff-stats]');
+    if(el)el.innerHTML=`<strong>${changes.length}</strong> изменённых клеток · <strong>${teachers.size}</strong> учителей · <strong>${windows}</strong> окон между уроками`;
+  }
   function render(){state.teachers=orderedTeachers();if(!state.selectedTeacher||!state.teachers.includes(state.selectedTeacher))state.selectedTeacher=currentTeacherFromStorage();const code=dateCode(state.date);$('[data-day-title]').textContent=`${DAY_NAMES[code]||code}, ${ruDate(state.date)}`;$('[data-publish-note]').textContent=publicCellsForDate().length?'Показана опубликованная сетка изменений.':'Изменения на эту дату ещё не публиковались — показано основное расписание.';renderGrid();renderMobile();renderStats();if(new URLSearchParams(location.search).get('mine')==='1')setTimeout(showOnlyMine,30)}
 
   async function load(force=false){setStatus('Загружаю сетку…');try{const[pub,teachers,schedule]=await Promise.all([site.loadSheet(PUBLIC_SHEET,{force,optional:true}),site.loadSheet(BASE_TEACHERS,{force,optional:true}),site.loadSheet(SCHEDULE,{force,optional:true})]);state.publicRows=pub;state.teacherRows=teachers;state.scheduleRows=schedule;const published=publicCellsForDate();state.cells=published.length?published:baseCells();render();setStatus(published.length?'Опубликованные изменения загружены':'Показано основное расписание','ok')}catch(e){setStatus('Не удалось загрузить сетку','bad');$('[data-grid]').innerHTML=`<div class="staff-empty" style="grid-column:1/-1">${esc(e.message)}</div>`}}
@@ -58,8 +88,8 @@
     $('#staff-my-teacher')?.addEventListener('change',e=>{saveTeacher(e.target.value);renderMobile()});
     $('[data-my-only]')?.addEventListener('click',showOnlyMine);
     $('[data-teacher-link]')?.addEventListener('click',async()=>{const url=teacherLink();try{await navigator.clipboard.writeText(url);setStatus('Персональная ссылка скопирована','ok')}catch(_){prompt('Скопируйте ссылку:',url)}});
-    $('[data-teacher-qr]')?.addEventListener('click',()=>window.School20Features?.openQr(teacherLink(),`Расписание: ${state.selectedTeacher}`));
-    $('[data-refresh]').addEventListener('click',()=>load(true));$('[data-print]').addEventListener('click',()=>window.print());
+    $('[data-refresh]').addEventListener('click',()=>load(true));
+    $('[data-print]').addEventListener('click',()=>window.print());
     load(true);
   });
 })();
