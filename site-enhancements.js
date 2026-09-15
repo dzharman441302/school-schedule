@@ -27,7 +27,7 @@
       .school-notice.important{background:#fffaf0;border-color:#ebd49a}.school-notice.urgent{background:#fff3f3;border-color:#e5a7a7}
       .school-notice h3{margin:0 0 4px;color:#102552;font-size:16px}.school-notice p{margin:0;color:#455474;white-space:pre-line}
       .school-notice__media{max-width:170px;max-height:100px;border-radius:10px;object-fit:cover}.school-notice__files{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-      .school-notice__files a{font-size:11px;border:1px solid #dce3f0;border-radius:999px;padding:4px 7px;text-decoration:none}.school-notice__action{display:inline-block;margin-top:8px;font-weight:800;color:#3154df;text-decoration:none}.staff-tv-link{white-space:nowrap}
+      .school-notice__files a{font-size:11px;border:1px solid #dce3f0;border-radius:999px;padding:4px 7px;text-decoration:none}.school-notice__action{display:inline-block;margin-top:8px;font-weight:800;color:#3154df;text-decoration:none}.staff-tv-link,.student-tv-link{white-space:nowrap}
       @media(max-width:650px){.school-notices{padding:0 10px}.school-notice{grid-template-columns:1fr}.school-notice__media{max-width:100%;width:100%;max-height:180px}}
     `;
     document.head.appendChild(st);
@@ -151,14 +151,25 @@
   function addStaffTvButton(){
     if(!isStaff)return;
     const actions=document.querySelector('.staff-actions');
-    if(!actions||actions.querySelector('.staff-tv-link'))return;
-    const a=document.createElement('a');
-    a.className='button button--quiet button--small staff-tv-link';
-    a.href='tv.html?v=ui-20260914';
-    a.target='_blank';
-    a.rel='noopener';
-    a.textContent='Экран учительской';
-    actions.appendChild(a);
+    if(!actions)return;
+    if(!actions.querySelector('.staff-tv-link')){
+      const a=document.createElement('a');
+      a.className='button button--quiet button--small staff-tv-link';
+      a.href='tv.html?v=tv8-2';
+      a.target='_blank';
+      a.rel='noopener';
+      a.textContent='Экран учительской';
+      actions.appendChild(a);
+    }
+    if(!actions.querySelector('.student-tv-link')){
+      const b=document.createElement('a');
+      b.className='button button--quiet button--small student-tv-link';
+      b.href='tv-students.html?v=tv-students-2';
+      b.target='_blank';
+      b.rel='noopener';
+      b.textContent='Экран для детей';
+      actions.appendChild(b);
+    }
   }
 
   ensureCss();
