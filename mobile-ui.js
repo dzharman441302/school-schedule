@@ -20,7 +20,6 @@
     const root = document.querySelector('[data-teacher-cards]');
     if (!root) return;
 
-    root.querySelectorAll('.mobile-no-lessons').forEach(x => x.remove());
     const cards = [...root.querySelectorAll('.teacher-card')];
     if (!cards.length) return;
 
@@ -35,15 +34,20 @@
     }).filter(x => x.lesson > 0);
 
     const scheduled = info.filter(x => x.isScheduled);
+    const existingEmpty = root.querySelector('.mobile-no-lessons');
+
     if (!scheduled.length) {
       info.forEach(x => x.card.classList.add('mobile-outside-work'));
-      const empty = document.createElement('div');
-      empty.className = 'mobile-no-lessons';
-      empty.textContent = 'На этот день у выбранного учителя уроков нет.';
-      root.appendChild(empty);
+      if (!existingEmpty) {
+        const empty = document.createElement('div');
+        empty.className = 'mobile-no-lessons';
+        empty.textContent = 'На этот день у выбранного учителя уроков нет.';
+        root.appendChild(empty);
+      }
       return;
     }
 
+    existingEmpty?.remove();
     const first = Math.min(...scheduled.map(x => x.lesson));
     const last = Math.max(...scheduled.map(x => x.lesson));
 
@@ -54,9 +58,9 @@
       }
       if (x.isFree) {
         x.card.classList.add('mobile-gap');
-        if (x.h3) x.h3.textContent = 'Свободно';
+        if (x.h3 && x.h3.textContent !== 'Свободно') x.h3.textContent = 'Свободно';
         const p = x.card.querySelector('p');
-        if (p) p.textContent = 'Перерыв между уроками';
+        if (p && p.textContent !== 'Перерыв между уроками') p.textContent = 'Перерыв между уроками';
       }
     });
   }
@@ -70,7 +74,7 @@
     const targets = [document.querySelector('[data-staff-stats]'), document.querySelector('[data-teacher-cards]')].filter(Boolean);
     if (!targets.length) return;
     const observer = new MutationObserver(() => requestAnimationFrame(run));
-    targets.forEach(t => observer.observe(t, {childList:true, subtree:true, characterData:true}));
+    targets.forEach(t => observer.observe(t, {childList:true}));
   }
 
   document.addEventListener('DOMContentLoaded', () => {
