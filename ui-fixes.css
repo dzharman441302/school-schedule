@@ -1,0 +1,24 @@
+/* Focused UI fixes — 2026-09-15 */
+
+/* One cancellation language everywhere: strike the original assignment only. */
+.sg-cell.cancelled::after{display:none!important}
+.sg-cell.cancelled .old{
+  text-decoration:line-through!important;
+  text-decoration-thickness:2px!important;
+  text-decoration-color:#b83f47!important;
+}
+
+/* Schedule hero: keep the heading and status chips, remove explanatory copy. */
+.page-hero--schedule .page-hero__lead{display:none!important}
+.page-hero--schedule .page-meta{margin-top:18px!important}
+
+/* Staff stats no longer show teacher windows. */
+.staff-status[data-staff-stats]{gap:10px;flex-wrap:wrap}
+.staff-status[data-staff-stats] .staff-metric{display:flex;align-items:baseline;gap:5px}
+.staff-status[data-staff-stats] .staff-metric strong{color:#203a69;font-size:17px}
+.staff-status[data-staff-stats] .staff-metric span{color:#6b7890;font-size:11px;font-weight:750;line-height:1.2}
+
+@media(max-width:760px){
+  .page-hero--schedule .page-meta{margin-top:12px!important}
+  .staff-status[data-staff-stats]{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
