@@ -39,36 +39,30 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
 
-// Мобильные адаптивные правки подключаем отдельным слоем, чтобы не ломать десктоп.
-if (!document.querySelector('link[data-mobile-ui]')) {
-  const mobileCss = document.createElement('link');
-  mobileCss.rel = 'stylesheet';
-  mobileCss.href = 'mobile-ui.css?v=mobile-20260915';
-  mobileCss.dataset.mobileUi = '1';
-  document.head.appendChild(mobileCss);
-}
-
-// Оперативный слой сайта: официальная шапка, московское время,
-// обратный отсчёт до звонка, свежесть публикации, оповещения и отметка просмотра.
-if (!/\/tv\.html$/i.test(location.pathname)) {
+// Общий оперативный слой публичного сайта. Панель администратора и ТВ-режим
+// используют собственный интерфейс и сюда не подключаются.
+if (!/\/(?:tv|admin-changes)\.html$/i.test(location.pathname)) {
   window.addEventListener('load', () => {
-    if (!document.querySelector('script[data-school-enhancements]')) {
-      const script = document.createElement('script');
-      script.src = 'site-enhancements.js?v=ui-20260914b';
-      script.dataset.schoolEnhancements = '1';
-      document.body.appendChild(script);
-    }
-    if (!document.querySelector('script[data-school-polish]')) {
-      const polish = document.createElement('script');
-      polish.src = 'site-polish.js?v=ui-20260914b';
-      polish.dataset.schoolPolish = '1';
-      document.body.appendChild(polish);
-    }
-    if (/\/staff\.html$/i.test(location.pathname) && !document.querySelector('script[data-mobile-ui]')) {
-      const mobile = document.createElement('script');
-      mobile.src = 'mobile-ui.js?v=mobile-20260915';
-      mobile.dataset.mobileUi = '1';
-      document.body.appendChild(mobile);
-    }
+    const css = [
+      ['school-ui-refresh.css?v=ui-20260914b','school-ui-refresh'],
+      ['school-ui-polish.css?v=ui-20260914b','school-ui-polish'],
+      ['mobile-ui.css?v=ui-20260915','mobile-ui'],
+      ['mobile-shell.css?v=17','mobile-shell'],
+      ['ui-fixes.css?v=ui-20260915','ui-fixes']
+    ];
+    css.forEach(([href,key])=>{
+      if (document.querySelector(`link[data-dynamic-ui="${key}"]`)) return;
+      const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.dynamicUi=key;document.head.appendChild(link);
+    });
+    const scripts = [
+      ['site-enhancements.js?v=ui-20260914b','school-enhancements'],
+      ['site-polish.js?v=ui-20260914b','school-polish'],
+      ['mobile-ui.js?v=ui-20260915','mobile-ui'],
+      ['mobile-shell.js?v=17','mobile-shell']
+    ];
+    scripts.forEach(([src,key])=>{
+      if (document.querySelector(`script[data-dynamic-ui="${key}"]`)) return;
+      const script=document.createElement('script');script.src=src;script.dataset.dynamicUi=key;document.body.appendChild(script);
+    });
   });
 }
