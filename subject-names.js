@@ -12,12 +12,14 @@ const aliases={
   'нем':'Немецкий язык','немецкий':'Немецкий язык','немецкийязык':'Немецкий язык',
   'муз':'Музыка','музыка':'Музыка','изо':'Изобразительное искусство','изобразительноеискусство':'Изобразительное искусство',
   'труд':'Труд (технология)','технология':'Труд (технология)',
-  'обзр':'Основы безопасности и защиты Родины','обзр':'Основы безопасности и защиты Родины',
+  'обзр':'Основы безопасности и защиты Родины',
   'ии':'Искусственный интеллект','рмг':'Россия — мои горизонты','ров':'Разговоры о важном',
   'фг':'Функциональная грамотность','днкр':'Духовно-нравственная культура России','фг+днкр':'Функциональная грамотность + Духовно-нравственная культура России'
 };
 const key=v=>String(v??'').trim().toLowerCase().replace(/ё/g,'е').replace(/[\s_.–—-]+/g,'');
 function expandSubject(value){const raw=String(value??'').trim();if(!raw)return'';return aliases[key(raw)]||raw}
 function expandLessonText(value){const raw=String(value??'').trim();if(!raw)return'';const m=raw.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(!m)return expandSubject(raw);return`${expandSubject(m[1])} (${m[2].trim()})`}
+function loadTvCss(){let href='';if(/\/tv\.html$/i.test(location.pathname))href='tv-teachers-4.css?v=4';else if(/\/tv-students\.html$/i.test(location.pathname))href='tv-students-fix.css?v=4';if(!href||document.querySelector('link[data-tv-layout]'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.dataset.tvLayout='1';document.head.appendChild(l)}
 window.SchoolSubjects=Object.freeze({expandSubject,expandLessonText});
+loadTvCss();
 })();
