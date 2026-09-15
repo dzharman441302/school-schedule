@@ -1,0 +1,31 @@
+name: Patch student print form v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-print-form-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch print form
+        run: python tools/patch_print_form_v2.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps-script/Admin.html
+          git commit -m "Center print header and align class columns"
+          git push
