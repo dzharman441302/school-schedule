@@ -1,0 +1,13 @@
+(()=>{
+'use strict';
+const site=window.SchoolSite;if(!site)return;
+const root=document.querySelector('#home-info-card');if(!root)return;
+const esc=site.escapeHtml||((v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+function normDate(v){const s=String(v||'').trim();let m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:''}
+function today(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function levelLabel(v){const s=String(v||'info').toLowerCase();if(s==='urgent')return['Срочно','urgent'];if(s==='important')return['Важно','important'];return['Информация','']}
+function shortText(v,n=82){const s=String(v||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trim()+'…':s}
+async function load(){const box=root.querySelector('[data-home-info-content]'),count=root.querySelector('[data-home-info-count]');try{const rows=await site.loadSheet('Оповещения',{force:true,optional:true});const d=today();const items=(rows||[]).slice(1).filter(r=>{const from=normDate(r[5]),to=normDate(r[6]),aud=String(r[11]||'all').toLowerCase(),active=String(r[12]||'true').toLowerCase()!=='false';return active&&['all','students','children'].includes(aud)&&(!from||from<=d)&&(!to||to>=d)}).reverse();count.textContent=items.length?`${items.length} ${items.length===1?'актуальное объявление':items.length<5?'актуальных объявления':'актуальных объявлений'}`:'Новых объявлений нет';if(!items.length){box.innerHTML='<p class="home-info-card__empty">Новых объявлений нет. Следите за обновлениями школы.</p>';return}box.innerHTML=items.slice(0,2).map(r=>{const[lbl,cls]=levelLabel(r[4]),title=String(r[2]||'').trim()||shortText(r[3],50),text=title===String(r[3]||'').trim()?'':shortText(r[3]);return`<div class="home-info-card__item"><span class="home-info-card__badge ${cls}">${lbl}</span><div><strong>${esc(title)}</strong>${text?`<small>${esc(text)}</small>`:''}</div></div>`}).join('')}catch(_){count.textContent='Информация школы';box.innerHTML='<p class="home-info-card__empty">Не удалось загрузить объявления. Обновите страницу позже.</p>'}}
+root.querySelector('[data-home-info-all]')?.addEventListener('click',()=>{const target=document.querySelector('.school-notices');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});else window.scrollTo({top:0,behavior:'smooth'})});
+load();
+})();
