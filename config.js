@@ -42,7 +42,7 @@ window.SCHOOL_CONFIG = Object.freeze({
 // Общий оперативный слой публичного сайта. Панель администратора и ТВ-режим
 // используют собственный интерфейс и сюда не подключаются.
 if (!/\/(?:tv|admin-changes)\.html$/i.test(location.pathname)) {
-  window.addEventListener('load', () => {
+  const bootPublicUi = () => {
     const css = [
       ['school-ui-refresh.css?v=ui-20260914b','school-ui-refresh'],
       ['school-ui-polish.css?v=ui-20260914b','school-ui-polish'],
@@ -62,7 +62,9 @@ if (!/\/(?:tv|admin-changes)\.html$/i.test(location.pathname)) {
     ];
     scripts.forEach(([src,key])=>{
       if (document.querySelector(`script[data-dynamic-ui="${key}"]`)) return;
-      const script=document.createElement('script');script.src=src;script.dataset.dynamicUi=key;document.body.appendChild(script);
+      const script=document.createElement('script');script.src=src;script.async=false;script.dataset.dynamicUi=key;document.body.appendChild(script);
     });
-  });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootPublicUi, {once:true});
+  else bootPublicUi();
 }
