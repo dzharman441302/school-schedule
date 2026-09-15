@@ -7,12 +7,14 @@
   function prepareStats(){
     const el=document.querySelector('[data-staff-stats]');
     if(!el)return;
-    const raw=(el.dataset.rawStats||el.textContent||'').replace(/\s+/g,' ').trim();
-    if(!el.dataset.rawStats)el.dataset.rawStats=raw;
+    const hasMetrics=!!el.querySelector('.staff-metric');
+    const current=(el.textContent||'').replace(/\s+/g,' ').trim();
+    if(!hasMetrics&&current)el.dataset.rawStats=current;
+    const raw=(el.dataset.rawStats||current).replace(/\s+/g,' ').trim();
     const nums=[...raw.matchAll(/\d+/g)].map(m=>m[0]);
     if(nums.length<2)return;
     const key=`${nums[0]}|${nums[1]}`;
-    if(el.dataset.metricsKey===key)return;
+    if(hasMetrics&&el.dataset.metricsKey===key)return;
     el.dataset.metricsKey=key;
     el.innerHTML=`<div class="staff-metric"><strong>${nums[0]}</strong><span>изменённых клеток</span></div><div class="staff-metric"><strong>${nums[1]}</strong><span>учителей с изменениями</span></div>`;
   }
