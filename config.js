@@ -48,7 +48,7 @@ if (!/\/(?:tv|admin-changes)\.html$/i.test(location.pathname)) {
       ['school-ui-polish.css?v=ui-20260914b','school-ui-polish'],
       ['mobile-ui.css?v=ui-20260915','mobile-ui'],
       ['mobile-shell.css?v=17','mobile-shell'],
-      ['ui-fixes.css?v=ui-20260915','ui-fixes']
+      ['ui-fixes.css?v=ui-20260915b','ui-fixes']
     ];
     css.forEach(([href,key])=>{
       if (document.querySelector(`link[data-dynamic-ui="${key}"]`)) return;
