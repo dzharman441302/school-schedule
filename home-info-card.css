@@ -1,0 +1,17 @@
+.core-link-card--info{position:relative;display:flex;min-width:0;min-height:330px;flex-direction:column;overflow:hidden;padding:32px;border-radius:30px;background:linear-gradient(145deg,#eaf7ef 0%,#f4f9dd 58%,#fff4bd 100%);box-shadow:0 14px 35px rgba(36,50,98,.06)}
+.core-link-card--info::after{position:absolute;right:-36px;bottom:-52px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.34);content:"";pointer-events:none}
+.core-link-card--info .core-link-card__number{color:rgba(24,92,69,.10)}
+.core-link-card--info .feature-card__label{color:#2f765e}
+.core-link-card--info h3{margin-bottom:16px}
+.home-info-card__content{position:relative;z-index:1;display:grid;gap:9px;margin-bottom:18px}
+.home-info-card__item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:start;padding:9px 10px;border:1px solid rgba(117,157,115,.22);border-radius:13px;background:rgba(255,255,255,.64)}
+.home-info-card__item strong{display:block;margin:0;color:#17345e;font-size:13px;line-height:1.3}
+.home-info-card__item small{display:block;margin-top:3px;color:#5f7180;font-size:11px;line-height:1.3}
+.home-info-card__badge{display:inline-flex;min-height:23px;align-items:center;padding:0 7px;border-radius:999px;color:#2c7058;background:#d9f2e5;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.home-info-card__badge.important{color:#865f00;background:#fff0b7}.home-info-card__badge.urgent{color:#a52f39;background:#ffdfe2}
+.home-info-card__empty{margin:0;color:#667690;font-size:14px;line-height:1.45}
+.home-info-card__footer{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto}
+.home-info-card__footer>span{color:#486a5e;font-size:11px;font-weight:850}
+.home-info-card__link{padding:0;border:0;color:#246e56;background:none;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
+.home-info-card__link:hover{text-decoration:underline;text-underline-offset:4px}
+@media(max-width:760px){.core-link-card--info{min-height:280px;padding:24px}.home-info-card__footer{align-items:flex-start;flex-direction:column}}
