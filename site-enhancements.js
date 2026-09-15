@@ -8,6 +8,7 @@
   const OFFICIAL_NAME = 'МУНИЦИПАЛЬНОЕ ОБЩЕОБРАЗОВАТЕЛЬНОЕ УЧРЕЖДЕНИЕ "СРЕДНЯЯ ОБЩЕОБРАЗОВАТЕЛЬНАЯ ШКОЛА № 20" ИМЕНИ ИВАНА АНДРЕЕВИЧА РЫБАЛКО';
   const esc = site.escapeHtml || (v => String(v || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
   const isStaff = /staff\.html/i.test(location.pathname);
+  const isHome = /(?:^|\/)index\.html$/i.test(location.pathname) || /\/$/.test(location.pathname);
   const audience = isStaff ? 'teachers' : 'students';
 
   function ensureCss() {
@@ -28,7 +29,9 @@
       .school-notice h3{margin:0 0 4px;color:#102552;font-size:16px}.school-notice p{margin:0;color:#455474;white-space:pre-line}
       .school-notice__media{max-width:170px;max-height:100px;border-radius:10px;object-fit:cover}.school-notice__files{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
       .school-notice__files a{font-size:11px;border:1px solid #dce3f0;border-radius:999px;padding:4px 7px;text-decoration:none}.school-notice__action{display:inline-block;margin-top:8px;font-weight:800;color:#3154df;text-decoration:none}.staff-tv-link,.student-tv-link{white-space:nowrap}
-      @media(max-width:650px){.school-notices{padding:0 10px}.school-notice{grid-template-columns:1fr}.school-notice__media{max-width:100%;width:100%;max-height:180px}}
+      .home-info-wrap{max-width:1240px;margin:14px auto 0;padding:0 20px}.home-info-panel{position:relative;overflow:hidden;border:1px solid #dce6f4;border-radius:18px;background:linear-gradient(105deg,#eef5ff 0%,#f7fbff 54%,#edf9f4 100%);box-shadow:0 9px 28px rgba(32,63,114,.07)}
+      .home-info-main{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:15px 18px}.home-info-label{display:flex;align-items:center;gap:10px;color:#3154df;font-size:17px;font-weight:950;white-space:nowrap}.home-info-label:before{content:'i';display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:#dfe8ff;color:#3154df;font:950 18px/1 Georgia,serif}.home-info-copy{min-width:0;border-left:1px solid rgba(49,84,223,.18);padding-left:18px}.home-info-copy strong{display:block;color:#17345f;font-size:15px;margin-bottom:3px}.home-info-copy p{margin:0;color:#5c6b86;font-size:13px;line-height:1.4;white-space:pre-line}.home-info-toggle{border:1px solid #cfdbf1;background:rgba(255,255,255,.75);color:#3154df;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;white-space:nowrap;cursor:pointer}.home-info-toggle:hover{background:#fff}.home-info-more{border-top:1px solid rgba(49,84,223,.12);padding:11px 18px 14px;display:grid;gap:8px}.home-info-more[hidden]{display:none}.home-info-item{background:rgba(255,255,255,.72);border:1px solid #dfe6f2;border-radius:12px;padding:10px 12px}.home-info-item h3{margin:0 0 3px;color:#17345f;font-size:14px}.home-info-item p{margin:0;color:#596984;font-size:12px;white-space:pre-line}.home-info-files{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.home-info-files a,.home-info-action{display:inline-flex;text-decoration:none;color:#3154df;font-size:11px;font-weight:800}.home-info-files a{border:1px solid #d7e0ef;border-radius:999px;padding:4px 7px;background:#fff}.home-info-action{margin-top:7px}.home-info-media{max-width:110px;max-height:72px;border-radius:10px;object-fit:cover;float:right;margin-left:10px}
+      @media(max-width:650px){.school-notices{padding:0 10px}.school-notice{grid-template-columns:1fr}.school-notice__media{max-width:100%;width:100%;max-height:180px}.home-info-wrap{padding:0 10px;margin-top:9px}.home-info-main{grid-template-columns:1fr;gap:8px;padding:12px}.home-info-copy{border-left:0;border-top:1px solid rgba(49,84,223,.15);padding:8px 0 0}.home-info-toggle{justify-self:start}.home-info-more{padding:10px 12px 12px}}
     `;
     document.head.appendChild(st);
   }
@@ -98,26 +101,47 @@
     return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : '';
   }
 
+  function noticeFilesHtml(files, cls='school-notice__files') {
+    if(!Array.isArray(files)||!files.length)return'';
+    return `<div class="${cls}">${files.map(f=>`<a href="${esc(f.url||f.viewUrl||'#')}" target="_blank" rel="noopener">${esc(f.name||'Файл')}</a>`).join('')}</div>`;
+  }
+
+  function parseNoticeRow(r){
+    let files=[];try{files=JSON.parse(String(r[8]||'[]'))}catch(_){}
+    return {title:String(r[2]||''),text:String(r[3]||''),level:String(r[4]||'info'),image:String(r[7]||''),files,button:String(r[9]||''),url:String(r[10]||'')};
+  }
+
+  function homeInfoItem(n){
+    return `<article class="home-info-item">${n.image?`<img class="home-info-media" src="${esc(n.image)}" alt="">`:''}<h3>${esc(n.title||'Информация')}</h3>${n.text?`<p>${esc(n.text)}</p>`:''}${noticeFilesHtml(n.files,'home-info-files')}${n.button&&n.url?`<a class="home-info-action" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.button)} →</a>`:''}</article>`;
+  }
+
+  function mountHomeInfo(data){
+    if(document.querySelector('.home-info-wrap'))return;
+    const live=document.querySelector('.school-livebar'),anchor=live||document.querySelector('.topbar');if(!anchor)return;
+    const notices=data.map(parseNoticeRow),first=notices[0]||{title:'Информация',text:'Актуальных объявлений на сегодня нет.',files:[]};
+    const wrap=document.createElement('section');wrap.className='home-info-wrap';wrap.setAttribute('aria-label','Информация школы');
+    wrap.innerHTML=`<div class="home-info-panel"><div class="home-info-main"><div class="home-info-label">Информация</div><div class="home-info-copy"><strong>${esc(first.title||'Информация')}</strong><p>${esc(first.text||'Актуальных объявлений на сегодня нет.')}</p></div><button class="home-info-toggle" type="button" aria-expanded="false">Все объявления${notices.length?` · ${notices.length}`:''}</button></div><div class="home-info-more" hidden>${notices.length?notices.map(homeInfoItem).join(''):'<article class="home-info-item"><p>Новых объявлений нет.</p></article>'}</div></div>`;
+    anchor.after(wrap);
+    const btn=wrap.querySelector('.home-info-toggle'),more=wrap.querySelector('.home-info-more');btn.addEventListener('click',()=>{const open=more.hidden;more.hidden=!open;btn.setAttribute('aria-expanded',String(open));btn.textContent=open?'Скрыть объявления':`Все объявления${notices.length?` · ${notices.length}`:''}`});
+  }
+
   async function mountNotices() {
     const main=document.querySelector('main'); if(!main) return;
     try {
       const rows=await site.loadSheet('Оповещения',{force:true,optional:true});
-      if(!rows||rows.length<2) return;
       const today=new Intl.DateTimeFormat('sv-SE',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-      const data=rows.slice(1).filter(r=>{
+      const data=(rows||[]).slice(1).filter(r=>{
         const start=normalizeDate(r[5]),end=normalizeDate(r[6]),aud=String(r[11]||'all'),active=String(r[12]||'true').toLowerCase()!=='false';
         return active&&(!start||start<=today)&&(!end||end>=today)&&(aud==='all'||aud===audience);
-      });
-      if(!data.length) return;
+      }).reverse();
+      if(isHome){mountHomeInfo(data);return;}
+      if(!data.length)return;
       const box=document.createElement('section'); box.className='school-notices'; box.setAttribute('aria-label','Оповещения школы');
-      box.innerHTML=data.slice().reverse().map(r=>{
-        let files=[]; try{files=JSON.parse(String(r[8]||'[]'))}catch(_){}
-        const img=String(r[7]||''),level=String(r[4]||'info'),btn=String(r[9]||''),url=String(r[10]||'');
-        return `<article class="school-notice ${esc(level)}"><div><h3>${esc(r[2]||'')}</h3><p>${esc(r[3]||'')}</p>${files.length?`<div class="school-notice__files">${files.map(f=>`<a href="${esc(f.url||'#')}" target="_blank" rel="noopener">${esc(f.name||'Файл')}</a>`).join('')}</div>`:''}${btn&&url?`<a class="school-notice__action" href="${esc(url)}" target="_blank" rel="noopener">${esc(btn)} →</a>`:''}</div>${img?`<img class="school-notice__media" src="${esc(img)}" alt="">`:''}</article>`;
+      box.innerHTML=data.map(r=>{
+        const n=parseNoticeRow(r);return `<article class="school-notice ${esc(n.level)}"><div><h3>${esc(n.title)}</h3><p>${esc(n.text)}</p>${noticeFilesHtml(n.files)}${n.button&&n.url?`<a class="school-notice__action" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.button)} →</a>`:''}</div>${n.image?`<img class="school-notice__media" src="${esc(n.image)}" alt="">`:''}</article>`;
       }).join('');
-      const live=document.querySelector('.school-livebar');
-      (live||document.querySelector('.topbar'))?.after(box);
-    } catch (_) {}
+      const live=document.querySelector('.school-livebar');(live||document.querySelector('.topbar'))?.after(box);
+    } catch (_) { if(isHome)mountHomeInfo([]); }
   }
 
   async function setupStaffSeen() {
