@@ -39,9 +39,9 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
 
-// Общий оперативный слой публичного сайта. Панель администратора и ТВ-режим
+// Общий оперативный слой публичного сайта. Панель администратора и ТВ-режимы
 // используют собственный интерфейс и сюда не подключаются.
-if (!/\/(?:tv|admin-changes)\.html$/i.test(location.pathname)) {
+if (!/\/(?:tv(?:-students)?|admin-changes)\.html$/i.test(location.pathname)) {
   const bootPublicUi = () => {
     const css = [
       ['school-ui-refresh.css?v=ui-20260914b','school-ui-refresh'],
