@@ -1,19 +1,23 @@
 {
-  "name": "МОУ СОШ № 20 — расписание",
-  "short_name": "СОШ №20",
+  "id": "/",
+  "name": "Расписание СОШ №20",
+  "short_name": "СОШ 20",
   "description": "Расписание классов, изменения и актуальная сетка учителей МОУ СОШ № 20 г. Твери.",
   "lang": "ru",
-  "start_url": "/index.html?source=pwa",
+  "start_url": "/schedule.html?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#f5f7fb",
-  "theme_color": "#102552",
+  "theme_color": "#15366d",
+  "categories": ["education", "productivity"],
   "icons": [
     {"src":"assets/school-logo.jpg","sizes":"any","type":"image/jpeg","purpose":"any maskable"}
   ],
   "shortcuts": [
-    {"name":"Расписание","url":"/schedule.html"},
-    {"name":"Изменения","url":"/schedule.html#changes"},
-    {"name":"Учителям","url":"/staff.html"}
+    {"name":"Расписание","short_name":"Расписание","url":"/schedule.html"},
+    {"name":"Изменения","short_name":"Изменения","url":"/schedule.html#changes"},
+    {"name":"Учителям","short_name":"Учителям","url":"/staff.html"}
   ]
 }
