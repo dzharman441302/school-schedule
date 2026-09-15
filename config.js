@@ -39,6 +39,15 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
 
+// Мобильные адаптивные правки подключаем отдельным слоем, чтобы не ломать десктоп.
+if (!document.querySelector('link[data-mobile-ui]')) {
+  const mobileCss = document.createElement('link');
+  mobileCss.rel = 'stylesheet';
+  mobileCss.href = 'mobile-ui.css?v=mobile-20260915';
+  mobileCss.dataset.mobileUi = '1';
+  document.head.appendChild(mobileCss);
+}
+
 // Оперативный слой сайта: официальная шапка, московское время,
 // обратный отсчёт до звонка, свежесть публикации, оповещения и отметка просмотра.
 if (!/\/tv\.html$/i.test(location.pathname)) {
@@ -54,6 +63,12 @@ if (!/\/tv\.html$/i.test(location.pathname)) {
       polish.src = 'site-polish.js?v=ui-20260914b';
       polish.dataset.schoolPolish = '1';
       document.body.appendChild(polish);
+    }
+    if (/\/staff\.html$/i.test(location.pathname) && !document.querySelector('script[data-mobile-ui]')) {
+      const mobile = document.createElement('script');
+      mobile.src = 'mobile-ui.js?v=mobile-20260915';
+      mobile.dataset.mobileUi = '1';
+      document.body.appendChild(mobile);
     }
   });
 }
