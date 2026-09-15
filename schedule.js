@@ -19,6 +19,8 @@
   let classButtonsElement=null, classSelectElement=null;
 
   const esc=site.escapeHtml;
+  const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
+  const fullLesson=v=>window.SchoolSubjects?.expandLessonText?window.SchoolSubjects.expandLessonText(v):String(v??'');
   const addUtcDays=(date,count)=>new Date(date.getTime()+count*86400000);
   const dateKey=date=>`${String(date.getUTCDate()).padStart(2,'0')}.${String(date.getUTCMonth()+1).padStart(2,'0')}.${date.getUTCFullYear()}`;
   const dateDayCode=date=>['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][date.getUTCDay()];
@@ -38,7 +40,7 @@
   function changeCountLabel(n){const n100=n%100,n10=n%10;if(n100>=11&&n100<=14)return`${n} изменений`;if(n10===1)return`${n} изменение`;if(n10>=2&&n10<=4)return`${n} изменения`;return`${n} изменений`}
   function parseLessonText(value){
     const s=String(value??'').trim();if(!s)return{subject:'',room:'',raw:''};
-    const m=s.match(/^(.*?)\s*\(([^()]*)\)\s*$/);return m?{subject:m[1].trim(),room:m[2].trim(),raw:s}:{subject:s,room:'',raw:s};
+    const m=s.match(/^(.*?)\s*\(([^()]*)\)\s*$/);return m?{subject:fullSubject(m[1].trim()),room:m[2].trim(),raw:s}:{subject:fullSubject(s),room:'',raw:s};
   }
   function sameText(a,b){return site.normalize(String(a||''))===site.normalize(String(b||''))}
 
@@ -65,7 +67,7 @@
     const{headers,data}=scheduleTableParts(scheduleRows),{classIndex,lessonIndex,dayColumns}=mapScheduleColumns(headers),classRows=data.filter(r=>site.normalizeClass(r[classIndex])===selectedClass).sort((a,b)=>lessonNumber(a[lessonIndex])-lessonNumber(b[lessonIndex]));
     if(!classRows.length){target.innerHTML=`<div class="empty-state empty-state--large"><strong>Для ${esc(selectedClass)} расписание не найдено.</strong><span>Проверьте написание класса в Google Таблице.</span></div>`;return}
     const today=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][site.getSchoolToday().getUTCDay()];
-    target.innerHTML=dayColumns.map(({code,index})=>{const lessons=classRows.filter(r=>String(r[index]??'').trim()).map(r=>({number:r[lessonIndex],subject:r[index]}));return`<article class="day-card${code===today?' is-today':''}"><header class="day-card__header"><div><span class="day-code">${esc(code)}</span><h3>${esc(DAY_NAMES[code]||code)}</h3></div>${code===today?'<span class="today-badge">Сегодня</span>':''}</header><ol class="lesson-list">${lessons.length?lessons.map(l=>`<li><span class="lesson-number">${esc(l.number)}</span><span class="lesson-name">${esc(l.subject).replace(/\n/g,'<br>')}</span></li>`).join(''):'<li class="lesson-list__empty">Уроков нет</li>'}</ol></article>`}).join('');
+    target.innerHTML=dayColumns.map(({code,index})=>{const lessons=classRows.filter(r=>String(r[index]??'').trim()).map(r=>({number:r[lessonIndex],subject:r[index]}));return`<article class="day-card${code===today?' is-today':''}"><header class="day-card__header"><div><span class="day-code">${esc(code)}</span><h3>${esc(DAY_NAMES[code]||code)}</h3></div>${code===today?'<span class="today-badge">Сегодня</span>':''}</header><ol class="lesson-list">${lessons.length?lessons.map(l=>`<li><span class="lesson-number">${esc(l.number)}</span><span class="lesson-name">${esc(fullLesson(l.subject)).replace(/\n/g,'<br>')}</span></li>`).join(''):'<li class="lesson-list__empty">Уроков нет</li>'}</ol></article>`}).join('');
   }
 
   function baseLessonsFor(date,className){

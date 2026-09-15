@@ -2,6 +2,7 @@
 'use strict';
 const site=window.SchoolSite,config=window.SCHOOL_CONFIG||{};if(!site)return;
 const esc=site.escapeHtml;
+const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
 const DAY_ORDER=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
 const DAY_ALIASES={пн:'ПН',понедельник:'ПН',вт:'ВТ',вторник:'ВТ',ср:'СР',среда:'СР',чт:'ЧТ',четверг:'ЧТ',пт:'ПТ',пятница:'ПТ',сб:'СБ',суббота:'СБ'};
 const BELLS=['08:00–08:40','08:50–09:30','09:45–10:25','10:45–11:25','11:40–12:20','12:30–13:10','13:20–14:00','14:15–14:55','15:10–15:50','16:05–16:45','17:00–17:40','17:50–18:30'];
@@ -11,7 +12,7 @@ let scheduleRows=[],changesRows=[],parallels=[],parallelIndex=0,rotateTimer=null
 function normalizeDateValue(value){const s=String(value??'').trim();if(!s)return'';let m=s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);if(m){const y=m[3].length===2?`20${m[3]}`:m[3];return`${m[1].padStart(2,'0')}.${m[2].padStart(2,'0')}.${y}`}m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[3].padStart(2,'0')}.${m[2].padStart(2,'0')}.${m[1]}`:s}
 function dateKey(d){return`${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${d.getUTCFullYear()}`}
 function lessonNumber(v){const m=String(v??'').match(/\d+/);return m?Number(m[0]):999}
-function parseLessonText(value){const s=String(value??'').trim();if(!s)return{subject:'',room:'',raw:''};const m=s.match(/^(.*?)\s*\(([^()]*)\)\s*$/);return m?{subject:m[1].trim(),room:m[2].trim(),raw:s}:{subject:s,room:'',raw:s}}
+function parseLessonText(value){const s=String(value??'').trim();if(!s)return{subject:'',room:'',raw:''};const m=s.match(/^(.*?)\s*\(([^()]*)\)\s*$/);return m?{subject:fullSubject(m[1].trim()),room:m[2].trim(),raw:s}:{subject:fullSubject(s),room:'',raw:s}}
 function sameText(a,b){return site.normalize(String(a||''))===site.normalize(String(b||''))}
 function scheduleParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_SCHEDULE_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['класс','урок','пн','понедельник'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_SCHEDULE_HEADERS,data:rows}}
 function changesParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_CHANGES_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['дата','класс','урок','изменения'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_CHANGES_HEADERS,data:rows}}
