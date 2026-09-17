@@ -6,11 +6,13 @@ on:
     paths:
       - 'tv.js'
       - 'tv-students.js'
+      - 'subject-names.js'
       - 'tv.html'
       - 'tv-students.html'
       - 'tv-no-notice.css'
       - 'tv-teachers-v5.css'
       - 'tv-students-v5.css'
+      - 'tv-students-compact.css'
       - '.github/workflows/validate-tv-js.yml'
 
 permissions:
@@ -25,6 +27,7 @@ jobs:
         run: |
           node --check tv.js
           node --check tv-students.js
+          node --check subject-names.js
       - name: Check active-schedule logic
         run: |
           grep -q "visibleByTime" tv.js
@@ -38,3 +41,14 @@ jobs:
           grep -q "tv-no-notice.css" tv-students.html
           grep -q '#notice{display:none!important}' tv-no-notice.css
           grep -q 'grid-template-rows:auto minmax(0,1fr) auto auto' tv-no-notice.css
+      - name: Check compact student TV layout
+        run: |
+          grep -q 'tv-students-compact.css' tv-students.html
+          grep -q 'min-height:42px!important' tv-students-compact.css
+          grep -q 'grid-template-columns:48px minmax(0,1fr) 54px!important' tv-students-compact.css
+      - name: Check full subject name aliases
+        run: |
+          grep -q "'вер':'Вероятность и статистика'" subject-names.js
+          grep -q "'внеур':'Внеурочная деятельность'" subject-names.js
+          grep -q 'subject-names.js?v=6' tv.html
+          grep -q 'subject-names.js?v=6' tv-students.html
