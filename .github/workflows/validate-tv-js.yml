@@ -1,4 +1,4 @@
-name: Validate TV screen JavaScript
+name: Validate TV screens
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
     paths:
       - 'tv.js'
       - 'tv-students.js'
+      - 'tv.html'
+      - 'tv-students.html'
+      - 'tv-no-notice.css'
+      - 'tv-teachers-v5.css'
+      - 'tv-students-v5.css'
       - '.github/workflows/validate-tv-js.yml'
 
 permissions:
@@ -20,9 +25,16 @@ jobs:
         run: |
           node --check tv.js
           node --check tv-students.js
-      - name: Check active-schedule logic is present
+      - name: Check active-schedule logic
         run: |
           grep -q "visibleByTime" tv.js
           grep -q "hasRealLesson" tv.js
+          grep -q "rebuildCards" tv.js
           grep -q "activeParallelSnapshots" tv-students.js
           grep -q "ПЕРЕМЕНА · далее" tv-students.js
+      - name: Check TV notice is hidden and layout remains full-height
+        run: |
+          grep -q "tv-no-notice.css" tv.html
+          grep -q "tv-no-notice.css" tv-students.html
+          grep -q '#notice{display:none!important}' tv-no-notice.css
+          grep -q 'grid-template-rows:auto minmax(0,1fr) auto auto' tv-no-notice.css
