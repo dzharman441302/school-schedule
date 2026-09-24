@@ -16,10 +16,11 @@ const aliases={
   'обзр':'Основы безопасности и защиты Родины',
   'ии':'Искусственный интеллект','рмг':'Россия — мои горизонты','ров':'Разговоры о важном',
   'внеур':'Внеурочная деятельность','внеурочка':'Внеурочная деятельность','внеурочнаядеятельность':'Внеурочная деятельность',
-  'фг':'Функциональная грамотность','днкр':'Духовно-нравственная культура России','фг+днкр':'Функциональная грамотность + Духовно-нравственная культура России'
+  'фг':'Функциональная грамотность','днкр':'Духовно-нравственная культура России','фг+днкр':'Функциональная грамотность + Духовно-нравственная культура России',
+  'про':'Программирование','проф':'Профориентация','роб':'Робототехника','фак':'Факультатив','фин':'Финансовая грамотность'
 };
 const key=v=>String(v??'').trim().toLowerCase().replace(/ё/g,'е').replace(/[\s_.–—-]+/g,'');
 function expandSubject(value){const raw=String(value??'').trim();if(!raw)return'';return aliases[key(raw)]||raw}
-function expandLessonText(value){const raw=String(value??'').trim();if(!raw)return'';const m=raw.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(!m)return expandSubject(raw);return`${expandSubject(m[1])} (${m[2].trim()})`}
+function expandLessonText(value){const raw=String(value??'').trim();if(!raw)return'';const parts=raw.split(/\s+\/\s+/).map(x=>x.trim()).filter(Boolean);if(parts.length>1)return parts.map(expandLessonText).join(' / ');const m=raw.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(!m)return expandSubject(raw);return`${expandSubject(m[1])} (${m[2].trim()})`}
 window.SchoolSubjects=Object.freeze({expandSubject,expandLessonText});
 })();
