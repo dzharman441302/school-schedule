@@ -1,0 +1,30 @@
+name: Schedule regression checks
+on:
+  push:
+    branches: [main, feature/replacement-ledger-20260925]
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tools/schedule-*.py', 'tests/schedule-*.js', '.github/workflows/schedule-regression.yml']
+  pull_request:
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression tests
+        run: |
+          if test -f tests/schedule-regression.js; then node tests/schedule-regression.js; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: schedule-source
+          path: |
+            apps-script/
+            *.js
+            *.html
+            *.css
+            tests/schedule-*.js
+          retention-days: 7
