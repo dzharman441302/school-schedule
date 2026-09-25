@@ -1,56 +1,22 @@
 name: Schedule regression checks
 on:
   push:
-    branches: [feature/replacement-ledger-20260925]
-    paths: ['.github/workflows/schedule-regression.yml']
+    branches: [main, feature/replacement-ledger-20260925]
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js', '.github/workflows/schedule-regression.yml']
+  pull_request:
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js']
 permissions:
-  contents: write
+  contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feature/replacement-ledger-20260925
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply reviewed patch with exact source checks
-        run: |
-          python - <<'PY'
-          import base64,hashlib,json,lzma,pathlib,subprocess
-          encoded=''.join(pathlib.Path('tools/schedule-patch.part'+str(i)).read_text().strip() for i in (1,2,3))
-          payload=lzma.decompress(base64.b64decode(encoded,validate=True))
-          assert hashlib.sha256(payload).hexdigest()=='76019f18e7daade4a741d058f1ef564ae1542f654d7d31c884df3e3cf31ec80c', 'Payload checksum mismatch'
-          obj=json.loads(payload)
-          allowed={'apps-script/Admin.html','apps-script/Code.gs','apps-script/ManagementExtensions.gs','apps-script/PublishWarnings.gs','apps-script/REPLACEMENTS_README.md','apps-script/ReplacementJournal.gs','apps-script/ReplacementPanel.html','apps-script/ScheduleModel.gs','staff.css','staff.html','staff.js','tests/schedule-fixture.js','tests/schedule-regression.js','tv-teachers-v5.css','tv.html','tv.js'}
-          assert set(obj['files'])==allowed
-          states=[]
-          for name,hashes in obj['files'].items():
-              p=pathlib.Path(name)
-              current=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
-              assert current in (hashes['before'],hashes['after']), 'Concurrent source change: '+name
-              states.append(current==hashes['after'])
-          if not all(states):
-              assert not any(states), 'Unexpected mixed update'
-              patch=obj['patch'].encode()
-              subprocess.run(['git','apply','--check','--unidiff-zero','-'],input=patch,check=True)
-              subprocess.run(['git','apply','--unidiff-zero','-'],input=patch,check=True)
-          for name,hashes in obj['files'].items():
-              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest()==hashes['after'], 'Final checksum mismatch: '+name
-          PY
-      - name: Test model, publication, decisions and recovery
+      - name: Model, publication, decisions and recovery regression tests
         run: node tests/schedule-regression.js
-      - name: Commit reviewed feature and remove transfer files
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps-script/Admin.html apps-script/Code.gs apps-script/ManagementExtensions.gs apps-script/PublishWarnings.gs apps-script/REPLACEMENTS_README.md apps-script/ReplacementJournal.gs apps-script/ReplacementPanel.html apps-script/ScheduleModel.gs staff.css staff.html staff.js tests/schedule-fixture.js tests/schedule-regression.js tv-teachers-v5.css tv.html tv.js
-          git rm tools/schedule-patch.part1 tools/schedule-patch.part2 tools/schedule-patch.part3
-          if ! git diff --cached --quiet; then
-            git commit -m 'Add confirmed replacement journal and two-class assignments'
-            git push origin HEAD:feature/replacement-ledger-20260925
-          fi
       - uses: actions/upload-artifact@v4
         with:
           name: schedule-source
