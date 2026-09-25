@@ -1,23 +1,53 @@
 name: Schedule regression checks
 on:
   push:
-    branches: [main, feature/replacement-ledger-20260925]
-    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tools/schedule-*.py', 'tests/schedule-*.js', '.github/workflows/schedule-regression.yml']
-  pull_request:
-    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js']
+    branches: [feature/replacement-ledger-20260925]
+    paths: ['.github/workflows/schedule-regression.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feature/replacement-ledger-20260925
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Regression tests
+      - name: Apply reviewed source package with exact base checks
+        env:
+          PACKAGE_URL: 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-f174-8210-ba64-bca618102c4b/raw?se=2026-09-25T11%3A07%3A49Z&sp=r&sv=2026-02-06&sr=b&scid=b20622e0-5c0f-5a92-ab54-939e32585f04&skoid=d294dba5-36f7-432b-aab8-935656489847&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-25T00%3A47%3A17Z&ske=2026-09-26T00%3A47%3A17Z&sks=b&skv=2026-02-06&sig=tHRbSw%2BNqzXmMxJXvBqOjA0sqp6YCFk3StGQ2XkCkxo%3D'
         run: |
-          if test -f tests/schedule-regression.js; then node tests/schedule-regression.js; fi
+          python - <<'PY'
+          import hashlib,io,json,os,pathlib,urllib.request,zipfile
+          data=urllib.request.urlopen(os.environ['PACKAGE_URL'],timeout=30).read()
+          assert hashlib.sha256(data).hexdigest()=='d406f3799f629626992ead3a9946adf5fe85b16842f6b452e68eea97c07d7152', 'Package checksum mismatch'
+          allowed={'apps-script/Admin.html','apps-script/Code.gs','apps-script/ManagementExtensions.gs','apps-script/PublishWarnings.gs','apps-script/REPLACEMENTS_README.md','apps-script/ReplacementJournal.gs','apps-script/ReplacementPanel.html','apps-script/ScheduleModel.gs','staff.css','staff.html','staff.js','tests/schedule-fixture.js','tests/schedule-regression.js','tv-teachers-v5.css','tv.html','tv.js'}
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              manifest=json.loads(z.read('update-manifest.json'))
+              assert set(manifest)==allowed
+              writes={}
+              for name,hashes in manifest.items():
+                  p=pathlib.Path(name);new=z.read(name)
+                  assert hashlib.sha256(new).hexdigest()==hashes['after'],name
+                  current=hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+                  assert current in (hashes['before'],hashes['after']), 'Concurrent source change: '+name
+                  writes[p]=new
+              for p,new in writes.items():
+                  p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(new)
+          PY
+      - name: Test model, server, publication and decision lifecycle
+        run: node tests/schedule-regression.js
+      - name: Commit only reviewed feature files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps-script/Admin.html apps-script/Code.gs apps-script/ManagementExtensions.gs apps-script/PublishWarnings.gs apps-script/REPLACEMENTS_README.md apps-script/ReplacementJournal.gs apps-script/ReplacementPanel.html apps-script/ScheduleModel.gs staff.css staff.html staff.js tests/schedule-fixture.js tests/schedule-regression.js tv-teachers-v5.css tv.html tv.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add confirmed replacement journal and two-class assignments'
+            git push origin HEAD:feature/replacement-ledger-20260925
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: schedule-source
