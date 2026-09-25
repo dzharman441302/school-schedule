@@ -14,54 +14,32 @@ function publishAdminDayEnhanced(token, dateIso, teacherEdits, studentChanges) {
   return publishPayloadCore_(dateIso, teacherEdits, studentChanges, 'Сейчас');
 }
 
-function publishPayloadCore_(dateIso, teacherEdits, studentChanges, mode) {
+function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode) {
   validateIsoDate_(dateIso);
-  if (!Array.isArray(teacherEdits) || !Array.isArray(studentChanges)) {
-    throw new Error('Некорректные данные публикации');
-  }
-
-  ensureTechnicalSheets_();
-  ensureEnhancementSheets_();
-
-  const normalizedEdits = prepareTeacherEdits_(dateIso, teacherEdits);
-  const normalizedChanges = studentChanges.map(item => ({
-    className: normalizeClass_(item.className),
-    lesson: Number(item.lesson),
-    change: String(item.change || '').trim(),
-    note: String(item.note || '').trim(),
-  })).filter(item => item.className && item.lesson >= 1 && item.lesson <= 12 && item.change);
-
-  const check = validateTeacherGrid_(dateIso, normalizedEdits);
-  const notices = unique_([].concat(check.errors || [], check.warnings || []));
-  const summary = buildPublicationSummary_(normalizedEdits, normalizedChanges, notices);
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-  try {
-    const previousEdits = readTeacherEditsForDate_(dateIso);
-    const previousChanges = readChangesForDate_(dateIso);
-
-    writeTeacherEditsForDate_(dateIso, normalizedEdits);
-    writeStudentChangesForDate_(dateIso, normalizedChanges);
-    writeTeacherPublicGrid_(dateIso, normalizedEdits);
-    appendHistory_(dateIso, previousEdits, previousChanges, normalizedEdits, normalizedChanges,
-      notices.length ? 'Опубликовано с предупреждениями: ' + notices.length : '');
-    const archiveId = appendDailyArchive_(dateIso, normalizedEdits, normalizedChanges, summary, mode || 'Сейчас');
-    writePublicationStatus_(dateIso, summary, mode || 'Сейчас');
-
-    SpreadsheetApp.flush();
-    return {
-      teacherCount: normalizedEdits.length,
-      studentCount: normalizedChanges.length,
-      date: dateIso,
-      savedAt: Utilities.formatDate(new Date(), CONFIG.timeZone, 'HH:mm:ss'),
-      warnings: notices,
-      summary: summary,
-      archiveId: archiveId,
-    };
-  } finally {
-    lock.releaseLock();
-  }
+  if(!Array.isArray(teacherEdits)||!Array.isArray(studentChanges))throw new Error('Некорректные данные публикации');
+  const lock=LockService.getScriptLock();lock.waitLock(15000);let snapshot=null,scheduleWritten=false;
+  try{
+    ensureTechnicalSheets_();ensureEnhancementSheets_();
+    const edits=prepareTeacherEdits_(dateIso,teacherEdits),built=buildEffectiveGrid_(dateIso,edits);
+    const map=new Map();studentChanges.forEach(item=>{
+      const lesson=Number(item.lesson),change=String(item.change||'').trim();
+      if(!Number.isInteger(lesson)||lesson<1||lesson>12||!change)return;
+      S20Schedule.classes(item.className,true).forEach(cls=>map.set(cls+'|'+lesson,{className:cls,lesson,change,note:String(item.note||'').trim()}));
+    });
+    // Backward-compatible guarantee: both classes receive an explicit student entry.
+    const combined=new Set();[...built.base.cells,...built.effective].filter(c=>S20Schedule.classes(c.className).length>1).forEach(c=>S20Schedule.classes(c.className).forEach(cls=>combined.add(cls+'|'+c.lesson)));
+    S20Schedule.studentChanges(built.base.cells,built.effective).forEach(c=>{const k=c.className+'|'+c.lesson;if(combined.has(k)&&!map.has(k))map.set(k,c);});
+    const changes=Array.from(map.values()),check=validateTeacherGrid_(dateIso,edits),notices=unique_([...(check.errors||[]),...(check.warnings||[])]),summary=buildPublicationSummary_(edits,changes,notices);
+    snapshot=replacementBegin_(dateIso,built,changes,mode==='Отложенно'?'scheduled':String(mode||'').startsWith('Откат')?'rollback':'publication');
+    const previousEdits=readTeacherEditsForDate_(dateIso),previousChanges=readChangesForDate_(dateIso);
+    writeTeacherEditsForDate_(dateIso,edits);writeStudentChangesForDate_(dateIso,changes);writeTeacherPublicGrid_(dateIso,edits,built);
+    appendHistory_(dateIso,previousEdits,previousChanges,edits,changes,(mode||'Сейчас')+(notices.length?' · предупреждений: '+notices.length:''));
+    const archiveId=appendDailyArchive_(dateIso,edits,changes,summary,mode||'Сейчас');writePublicationStatus_(dateIso,summary,mode||'Сейчас');
+    SpreadsheetApp.flush();scheduleWritten=true;
+    const review=replacementFinish_(snapshot);SpreadsheetApp.flush();
+    return{teacherCount:edits.length,studentCount:changes.length,date:dateIso,savedAt:Utilities.formatDate(new Date(),CONFIG.timeZone,'HH:mm:ss'),
+      warnings:notices,summary,archiveId,replacementReview:review,normalizedChanges:changes};
+  }catch(e){if(snapshot&&!scheduleWritten)replacementFail_(snapshot);throw e;}finally{lock.releaseLock();}
 }
 
 function getPublicationMeta(token, dateIso) {

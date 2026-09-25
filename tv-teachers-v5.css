@@ -18,3 +18,6 @@ body{margin:0;background:linear-gradient(145deg,#edf4ff,#f7fbf8);color:#18305a;f
 @keyframes pageIn{from{opacity:.25;transform:translateY(4px)}to{opacity:1;transform:none}}@keyframes teacherCurrentGlow{0%,100%{box-shadow:inset 0 0 0 3px var(--tv-blue),0 0 14px rgba(49,84,223,.22)}50%{box-shadow:inset 0 0 0 3px var(--tv-blue),0 0 32px rgba(49,84,223,.46)}}
 @media(max-width:1100px){.tv{padding-inline:1.55vw}.lesson-columns,.lesson{grid-template-columns:42px 68px 48px minmax(0,1fr) 50px 82px;gap:5px;padding-inline:6px}.state{max-width:82px}.clock{min-width:220px}.teacher-card h2{font-size:clamp(22px,2vw,30px)}}
 @media(max-width:700px){body{overflow:auto}.tv{height:auto;min-height:100vh}.teachers{grid-template-columns:1fr;grid-template-rows:auto}.teacher-lessons{grid-auto-rows:minmax(54px,auto)}.lesson-columns,.lesson{grid-template-columns:42px 72px 48px minmax(0,1fr) 54px 88px}.state{max-width:88px}.foot{grid-template-columns:1fr}.foot span,.foot span:last-child{text-align:left!important}}
+
+/* Two classes occupy one teacher/lesson row. */
+.lesson .cls{white-space:normal;line-height:1.1}
