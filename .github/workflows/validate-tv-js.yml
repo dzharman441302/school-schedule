@@ -46,9 +46,21 @@ jobs:
           grep -q 'tv-students-compact.css' tv-students.html
           grep -q 'min-height:42px!important' tv-students-compact.css
           grep -q 'grid-template-columns:48px minmax(0,1fr) 54px!important' tv-students-compact.css
-      - name: Check full subject name aliases
+      - name: Check full subject names and script load order
         run: |
-          grep -q "'вер':'Вероятность и статистика'" subject-names.js
-          grep -q "'внеур':'Внеурочная деятельность'" subject-names.js
-          grep -q 'subject-names.js?v=6' tv.html
-          grep -q 'subject-names.js?v=6' tv-students.html
+          node <<'JS'
+          const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+          const context={window:{}};
+          vm.runInNewContext(fs.readFileSync('subject-names.js','utf8'),context);
+          const subjects=context.window.SchoolSubjects;
+          for(const [short,full] of [['Вер','Вероятность и статистика'],['внеур','Внеурочная деятельность'],['Про','Программирование'],['ПРОФ','Профориентация'],['Ф-РА','Физическая культура']]){
+            assert.equal(subjects.expandSubject(short),full);
+          }
+          for(const [html,app] of [['tv.html','tv.js'],['tv-students.html','tv-students.js']]){
+            const text=fs.readFileSync(html,'utf8');
+            const scripts=[...text.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>m[1].split('?')[0]);
+            const dictionary=scripts.indexOf('subject-names.js');
+            assert(dictionary>=0 && dictionary<scripts.indexOf(app),html+': dictionary must load before renderer');
+          }
+          console.log('Full subject-name expansion and TV script order verified');
+          JS
