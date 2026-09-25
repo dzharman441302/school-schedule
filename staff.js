@@ -9,7 +9,7 @@
   const DAY_NAMES={ПН:'Понедельник',ВТ:'Вторник',СР:'Среда',ЧТ:'Четверг',ПТ:'Пятница',СБ:'Суббота',ВС:'Воскресенье'};
   const STORE_TEACHER='school20:myTeacher';
   const state={publicRows:[],teacherRows:[],scheduleRows:[],cells:[],teachers:[],date:'',search:'',onlyChanged:false,selectedTeacher:''};
-  const $=s=>document.querySelector(s), esc=site.escapeHtml, normalizeClass=site.normalizeClass;
+  const $=s=>document.querySelector(s), esc=site.escapeHtml, normalizeClass=v=>String(v||'').split(/\s*\+\s*/).map(site.normalizeClass).filter(Boolean).join(' + ');
   const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
   const ruDate=iso=>{const[y,m,d]=iso.split('-');return`${d}.${m}.${y}`};
   const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -27,7 +27,12 @@
 
   function baseCells(){if(!state.teacherRows.length)return[];const th=state.teacherRows[0],td=state.teacherRows.slice(1),code=dateCode(state.date);if(code==='СБ'||code==='ВС')return[];const teacherIx=headerIndex(th,['ФИО','Учитель'],0),lessonIx=headerIndex(th,['УРОК','Урок'],1),dayIx=th.map(x=>String(x||'').trim().toUpperCase()).indexOf(code);const scheduleMap={};if(state.scheduleRows.length){const sh=state.scheduleRows[0],sd=state.scheduleRows.slice(1),ci=headerIndex(sh,['Класс'],0),li=headerIndex(sh,['Урок'],1),di=sh.map(x=>String(x||'').trim().toUpperCase()).indexOf(code);if(di>=0)sd.forEach(r=>{const cls=normalizeClass(r[ci]),l=Number(r[li])||0;if(cls&&l)scheduleMap[cls+'|'+l]=String(r[di]||'').trim()})}return td.map(r=>{const teacher=String(r[teacherIx]||'').trim(),lesson=Number(r[lessonIx])||0;if(!teacher||lesson<1||lesson>12||dayIx<0)return null;const tc=parseTeacherCell(r[dayIx]);const sp=parseStudent(scheduleMap[tc.className+'|'+lesson]||'');return{teacher,lesson,className:tc.className,subject:tc.subject||sp.subject,room:tc.room||sp.room,status:'normal',oldClass:'',oldSubject:'',oldRoom:'',note:''}}).filter(Boolean)}
 
-  function relationMap(cells){const cancelled=new Map(),added=new Map();cells.forEach(c=>{if(c.status==='cancelled'&&c.oldClass)cancelled.set(c.oldClass+'|'+c.lesson,c.teacher);if(['changed','added'].includes(c.status)&&c.className)added.set(c.className+'|'+c.lesson,c.teacher)});const out=new Map();cells.forEach(c=>{const k=c.teacher+'|'+c.lesson;if(c.status==='cancelled'&&c.oldClass&&added.has(c.oldClass+'|'+c.lesson))out.set(k,'→ '+added.get(c.oldClass+'|'+c.lesson));else if(['changed','added'].includes(c.status)&&c.className&&cancelled.has(c.className+'|'+c.lesson))out.set(k,'← '+cancelled.get(c.className+'|'+c.lesson))});return out}
+  function relationMap(cells){
+ const split=v=>String(v||'').split(/\s*\+\s*/).filter(Boolean),removed=new Map(),added=new Map();
+ const put=(m,k,t)=>{if(!m.has(k))m.set(k,new Set());m.get(k).add(t);};
+ cells.forEach(c=>{const old=split(c.oldClass),next=split(c.className);old.filter(cls=>!next.includes(cls)).forEach(cls=>put(removed,cls+'|'+c.lesson,c.teacher));next.filter(cls=>!old.includes(cls)&&c.status!=='normal').forEach(cls=>put(added,cls+'|'+c.lesson,c.teacher));});
+ const out=new Map();cells.forEach(c=>{const from=new Set(),to=new Set();split(c.className).forEach(cls=>(removed.get(cls+'|'+c.lesson)||[]).forEach(t=>{if(t!==c.teacher)from.add(t);}));split(c.oldClass).forEach(cls=>(added.get(cls+'|'+c.lesson)||[]).forEach(t=>{if(t!==c.teacher)to.add(t);}));const labels=[];if(from.size)labels.push('← '+[...from].join(', '));if(to.size)labels.push('→ '+[...to].join(', '));if(labels.length)out.set(c.teacher+'|'+c.lesson,labels.join(' · '));});return out;
+}
   function hasChange(t){return state.cells.some(c=>c.teacher===t&&c.status!=='normal')}
   function matchingTeacher(t){const q=site.normalize(state.search);return!q||site.normalize(t).includes(q)}
 
