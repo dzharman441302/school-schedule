@@ -13,6 +13,7 @@ on:
       - 'tv-teachers-v5.css'
       - 'tv-students-v5.css'
       - 'tv-students-compact.css'
+      - 'tests/tv-rotation.js'
       - '.github/workflows/validate-tv-js.yml'
 
 permissions:
@@ -28,6 +29,8 @@ jobs:
           node --check tv.js
           node --check tv-students.js
           node --check subject-names.js
+      - name: Check complete teacher rotation across refreshes
+        run: node tests/tv-rotation.js
       - name: Check active-schedule logic
         run: |
           grep -q "visibleByTime" tv.js
