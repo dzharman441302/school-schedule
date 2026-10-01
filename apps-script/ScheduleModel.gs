@@ -126,6 +126,10 @@ var S20Schedule = (function () {
           studentChange:change?text(change.change):'',studentMismatch:conflict});
       });
       if(!isDifferent&&!mismatch)return;
+      // Only the receiving teacher is a replacement candidate. A cancellation,
+      // room change, own-lesson move or an extra lesson has no transferred assignment.
+      const transferred=evidence.some(e=>!e.retained&&!e.movedFrom&&e.removedTeachers.some(t=>teacherKey(t)!==teacherKey(f.teacher)));
+      if(!cs.length||!transferred)return;
       let kind='added', reason='Новый урок: исходный заменяемый учитель не установлен.', recommend='exclude';
       if(!cs.length){kind='cancelled';reason='Урок снят. Само снятие урока не является часом замены.';}
       else if(cs.length>1){kind='combined';reason='Два класса у одного учителя в один момент. По умолчанию один час; проверьте, чьи занятия объединены.';}
