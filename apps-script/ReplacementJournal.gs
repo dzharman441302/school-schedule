@@ -97,17 +97,26 @@ function replacementReconcile_(s){
   const all=rows.filter(r=>r.date!==s.date||r.legacy).concat(next);
   replacementWriteBody_(replacementSheet_(REPLACEMENTS.journal,REPLACEMENTS.headers),REPLACEMENTS.headers.length,all.map(replacementRow_));
   s.phase='ready';replacementPutSnapshot_(s);
-  return{pending:next.filter(r=>r.decision==='pending').length,revision:s.revision};
+  return{pending:next.filter(r=>replacementEligible_(r)&&r.decision==='pending').length,revision:s.revision};
 }
 function replacementFail_(s){if(s){s.phase='failed';replacementPutSnapshot_(s);}}
 function replacementFinish_(s){
   try{return replacementReconcile_(s);}catch(e){s.phase='needs-review';replacementPutSnapshot_(s);return{pending:0,revision:s.revision,
     warning:'Расписание опубликовано, но учёт замен требует восстановления: '+String(e&&e.message||e)};}
 }
+// Older journal rows are retained for audit, but only received assignments are reviewed.
+function replacementEligible_(r){
+  if(r.legacy)return false;
+  if(r.kind==='manual')return true; // Explicit administrator entry; confirmation validates its origin.
+  if(['cancelled','room','moved','added'].includes(r.kind))return false;
+  const evidence=r.details&&r.details.evidence||[];
+  return evidence.some(e=>!e.retained&&!e.movedFrom&&(e.removedTeachers||[]).some(t=>
+    S20Schedule.teacherKey(t)!==S20Schedule.teacherKey(r.replacementTeacher)));
+}
 function replacementPublicRow_(r,ready){
   return{id:r.id,date:r.date,lesson:r.lesson,className:r.className,subject:S20Schedule.subject(r.subject),room:r.room,
     originalTeachers:r.originalTeachers,replacementTeacher:r.replacementTeacher,kind:r.kind,decision:r.decision,hours:r.hours,
-    countedHours:ready&&r.decision==='confirm'?r.hours:0,comment:r.comment,confirmedAt:r.confirmedAt,publishedAt:r.publishedAt,
+    countedHours:ready&&replacementEligible_(r)&&r.decision==='confirm'?r.hours:0,comment:r.comment,confirmedAt:r.confirmedAt,publishedAt:r.publishedAt,
     revision:r.revision,source:r.source,reason:r.details.reason||'',suggestedDecision:r.details.suggestedDecision||'pending',
     suggestedHours:r.details.suggestedHours||1,originalChoices:r.details.originalChoices||[],evidence:r.details.evidence||[],legacy:r.legacy};
 }
@@ -134,7 +143,7 @@ function getReplacementReview(token,dateIso){
     const assigned=S20Schedule.assignments(s.final);
     const unlinkedStudentChanges=(s.studentChanges||[]).filter(c=>!/^(?:отмена|отмен[её]н)$/i.test(String(c.change||'').trim())&&!assigned.some(a=>a.className===c.className&&a.lesson===Number(c.lesson)));
     return{date:dateIso,exists:true,revision:s.revision,reviewVersion:s.reviewVersion,source:s.source,publishedAt:s.publishedAt,unlinkedStudentChanges,
-      rows:replacementRead_().filter(r=>r.date===dateIso&&!r.legacy&&r.revision===s.revision&&r.decision!=='obsolete').map(r=>replacementPublicRow_(r,true))};
+      rows:replacementRead_().filter(r=>r.date===dateIso&&!r.legacy&&r.revision===s.revision&&r.decision!=='obsolete'&&replacementEligible_(r)).map(r=>replacementPublicRow_(r,true))};
   }finally{lock.releaseLock();}
 }
 function replacementRange_(from,to,maxDays){
@@ -146,7 +155,7 @@ function getReplacementLedger(token,fromIso,toIso){
   assertSession_(token);replacementRange_(fromIso,toIso,366);const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
     replacementEnsure_();const snaps=replacementSnapshots_(),byDate=new Map(snaps.map(s=>[s.date,s]));
-    const rows=replacementRead_().filter(r=>r.date>=fromIso&&r.date<=toIso).map(r=>{
+    const rows=replacementRead_().filter(r=>r.date>=fromIso&&r.date<=toIso&&replacementEligible_(r)).map(r=>{
       const s=byDate.get(r.date);return replacementPublicRow_(r,!!s&&s.phase==='ready'&&r.revision===s.revision);
     }).sort((a,b)=>a.date.localeCompare(b.date)||a.replacementTeacher.localeCompare(b.replacementTeacher,'ru')||a.lesson-b.lesson);
     const summary={};rows.filter(r=>r.countedHours>0).forEach(r=>{const k=S20Schedule.teacherKey(r.replacementTeacher);
@@ -156,40 +165,98 @@ function getReplacementLedger(token,fromIso,toIso){
       coveredDates:snaps.filter(s=>s.date>=fromIso&&s.date<=toIso&&s.phase==='ready').map(s=>s.date)};
   }finally{lock.releaseLock();}
 }
-function saveReplacementDecisions(token,dateIso,revision,reviewVersion,decisions){
-  assertSession_(token);validateIsoDate_(dateIso);
+/** Validate every changed day first; one stale day must not partially save a week. */
+function replacementDecisionUpdates_(s,rows,revision,reviewVersion,decisions){
+  if(!s||s.phase!=='ready'||s.revision!==revision||s.reviewVersion!==Number(reviewVersion))
+    throw new Error('Данные изменились в другой вкладке или после публикации. Обновите журнал и подтвердите актуальные записи.');
   if(!Array.isArray(decisions)||decisions.length>1000)throw new Error('Некорректный список решений.');
+  const map=new Map(rows.filter(r=>r.date===s.date&&!r.legacy&&r.revision===revision&&r.decision!=='obsolete').map(r=>[r.id,r]));
+  const teachers=new Map(getTeacherTable_().teachers.map(t=>[S20Schedule.teacherKey(t),t])),seen=new Set();
+  return decisions.map(d=>{
+    const old=map.get(String(d.id||''));
+    if(!old||seen.has(old.id))throw new Error('Запись не найдена или повторяется. Обновите журнал.');seen.add(old.id);
+    if(!replacementEligible_(old))throw new Error('Это не передача урока другому учителю. Снятый урок, перенос или кабинет не учитываются в заменах.');
+    if(!['pending','confirm','exclude'].includes(d.decision))throw new Error('Выберите решение для записи.');
+    const names=S20Schedule.uniqueTeachers(Array.isArray(d.originalTeachers)?d.originalTeachers:[]);
+    const allowed=new Map(teachers);[...old.originalTeachers,...(old.details.originalChoices||[])].forEach(t=>allowed.set(S20Schedule.teacherKey(t),t));
+    const originals=names.map(t=>{const n=allowed.get(S20Schedule.teacherKey(t));if(!n)throw new Error('Неизвестный заменяемый учитель: '+t);return n;});
+    const comment=String(d.comment||'').trim().slice(0,2000),hours=d.decision==='confirm'?Number(d.hours):0;
+    if(d.decision==='confirm'){
+      if(!originals.length||originals.some(t=>S20Schedule.teacherKey(t)===S20Schedule.teacherKey(old.replacementTeacher)))throw new Error('Укажите другого учителя, которого заменяли.');
+      if(!Number.isFinite(hours)||hours<=0||hours>2||hours*2!==Math.round(hours*2))throw new Error('Часы: 0,5; 1; 1,5 или 2.');
+      if(hours>1&&(S20Schedule.classes(old.className).length<2||!comment))throw new Error('Больше одного часа в одном слоте допускается только для объединённых классов с вашим пояснением.');
+      if(old.kind!=='replacement'&&!comment)throw new Error('Для нестандартного случая укажите пояснение решения.');
+    }
+    return[old,Object.assign({},old,{decision:d.decision,hours,comment,originalTeachers:originals,confirmedAt:d.decision==='pending'?'':replacementNow_()})];
+  });
+}
+function saveReplacementDecisions(token,dateIso,revision,reviewVersion,decisions){
+  const result=saveReplacementPeriodDecisions(token,dateIso,dateIso,[{date:dateIso,revision,reviewVersion,decisions}]);
+  return{ok:true,reviewVersion:result.versions[0].reviewVersion,pending:result.pending};
+}
+function saveReplacementPeriodDecisions(token,fromIso,toIso,days){
+  assertSession_(token);replacementRange_(fromIso,toIso,30);
+  if(!Array.isArray(days)||!days.length||days.length>31)throw new Error('Некорректный список дней.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
-    const s=replacementSnapshots_().find(x=>x.date===dateIso);
-    if(!s||s.phase!=='ready'||s.revision!==revision||s.reviewVersion!==Number(reviewVersion))throw new Error('Данные изменились в другой вкладке или после публикации. Обновите журнал и подтвердите актуальные записи.');
-    const rows=replacementRead_(),map=new Map(rows.filter(r=>r.date===dateIso&&!r.legacy&&r.revision===revision&&r.decision!=='obsolete').map(r=>[r.id,r]));
-    const teachers=new Map(getTeacherTable_().teachers.map(t=>[S20Schedule.teacherKey(t),t])),seen=new Set(),updates=[];
-    decisions.forEach(d=>{
-      const old=map.get(String(d.id||''));if(!old||seen.has(old.id))throw new Error('Запись не найдена или повторяется. Обновите журнал.');seen.add(old.id);
-      if(!['pending','confirm','exclude'].includes(d.decision))throw new Error('Выберите решение для записи.');
-      const names=S20Schedule.uniqueTeachers(Array.isArray(d.originalTeachers)?d.originalTeachers:[]);
-      const allowed=new Map(teachers);[...old.originalTeachers,...(old.details.originalChoices||[])].forEach(t=>allowed.set(S20Schedule.teacherKey(t),t));
-      const originals=names.map(t=>{const n=allowed.get(S20Schedule.teacherKey(t));if(!n)throw new Error('Неизвестный заменяемый учитель: '+t);return n;});
-      const comment=String(d.comment||'').trim().slice(0,2000), hours=d.decision==='confirm'?Number(d.hours):0;
-      if(d.decision==='confirm'){
-        if(old.kind==='cancelled')throw new Error('Снятый урок нельзя учесть как проведённую замену.');
-        if(!originals.length||originals.some(t=>S20Schedule.teacherKey(t)===S20Schedule.teacherKey(old.replacementTeacher)))throw new Error('Укажите другого учителя, которого заменяли.');
-        if(!Number.isFinite(hours)||hours<=0||hours>2||hours*2!==Math.round(hours*2))throw new Error('Часы: 0,5; 1; 1,5 или 2.');
-        if(hours>1&&(S20Schedule.classes(old.className).length<2||!comment))throw new Error('Больше одного часа в одном слоте допускается только для объединённых классов с вашим пояснением.');
-        if(old.kind!=='replacement'&&!comment)throw new Error('Для нестандартного случая укажите пояснение решения.');
-      }
-      const n=Object.assign({},old,{decision:d.decision,hours,comment,originalTeachers:originals,
-        confirmedAt:d.decision==='pending'?'':replacementNow_()});
-      updates.push([old,n]);
+    const snapshots=new Map(replacementSnapshots_().map(s=>[s.date,s])),rows=replacementRead_(),seen=new Set(),plans=[];
+    days.forEach(day=>{
+      validateIsoDate_(day.date);
+      if(day.date<fromIso||day.date>toIso||seen.has(day.date))throw new Error('Дата решения вне периода или повторяется.');seen.add(day.date);
+      const s=snapshots.get(day.date),updates=replacementDecisionUpdates_(s,rows,day.revision,day.reviewVersion,day.decisions);
+      plans.push({snapshot:s,updates});
     });
-    const replacements=new Map(updates.map(p=>[p[1].id,p[1]]));
-    // Validate all input before any mutation; same date/teacher/slot has exactly one stable ID.
-    replacementCommitReview_(s,()=>{
-      updates.forEach(([b,a])=>replacementAudit_('review-saved',dateIso,a.id,b,a));
-      replacementWriteBody_(replacementSheet_(REPLACEMENTS.journal,REPLACEMENTS.headers),REPLACEMENTS.headers.length,rows.map(r=>replacementRow_(!r.legacy&&r.date===dateIso?replacements.get(r.id)||r:r)));
+    const updates=plans.flatMap(p=>p.updates),replacements=new Map(updates.map(p=>[p[1].id,p[1]]));
+    try{
+      // A failed multi-day write must not expose a partly confirmed week as approved.
+      plans.forEach(p=>{p.snapshot.phase='review-saving';replacementPutSnapshot_(p.snapshot);});
+      updates.forEach(([before,after])=>replacementAudit_('review-saved',after.date,after.id,before,after));
+      replacementWriteBody_(replacementSheet_(REPLACEMENTS.journal,REPLACEMENTS.headers),REPLACEMENTS.headers.length,
+        rows.map(r=>replacementRow_(!r.legacy?replacements.get(r.id)||r:r)));
+      plans.forEach(p=>{p.snapshot.reviewVersion++;p.snapshot.phase='ready';replacementPutSnapshot_(p.snapshot);});
+      SpreadsheetApp.flush();
+    }catch(e){
+      plans.forEach(p=>{p.snapshot.phase='review-retry';p.snapshot.reviewVersion++;try{replacementPutSnapshot_(p.snapshot);}catch(_){};});
+      throw new Error('Решения не подтверждены: запись не завершилась. Обновите журнал и проверьте неделю ещё раз. '+String(e&&e.message||e));
+    }
+    return{ok:true,versions:plans.map(p=>({date:p.snapshot.date,reviewVersion:p.snapshot.reviewVersion})),
+      pending:rows.map(r=>replacements.get(r.id)||r).filter(r=>r.date>=fromIso&&r.date<=toIso&&replacementEligible_(r)&&r.decision==='pending').length};
+  }finally{lock.releaseLock();}
+}
+function replacementWeek_(date){
+  const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
+  const from=d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()+4);const due=d.toISOString().slice(0,10);
+  d.setUTCDate(d.getUTCDate()+2);return{from,to:d.toISOString().slice(0,10),due};
+}
+function getReplacementWeeklyStatus(token,selectedDate){
+  assertSession_(token);const today=isoToday_();selectedDate=selectedDate||today;validateIsoDate_(selectedDate);
+  const lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    const selected=replacementWeek_(selectedDate),snapshots=new Map(replacementSnapshots_().map(s=>[s.date,s])),weeks=new Map();let pending=0;
+    replacementRead_().filter(r=>replacementEligible_(r)&&r.decision==='pending').forEach(r=>{
+      const s=snapshots.get(r.date);if(!s||s.phase!=='ready'||s.revision!==r.revision)return;
+      if(r.date>=selected.from&&r.date<=selected.to)pending++;
+      const week=replacementWeek_(r.date);if(today<week.due)return;
+      if(!weeks.has(week.from))weeks.set(week.from,Object.assign({pending:0},week));weeks.get(week.from).pending++;
     });
-    return{ok:true,reviewVersion:s.reviewVersion,pending:Array.from(map.values()).filter(r=>(replacements.get(r.id)||r).decision==='pending').length};
+    return{today,selectedWeek:selected,pending,weeks:Array.from(weeks.values()).sort((a,b)=>a.from.localeCompare(b.from))};
+  }finally{lock.releaseLock();}
+}
+function getReplacementPeriodReview(token,fromIso,toIso){
+  assertSession_(token);replacementRange_(fromIso,toIso,30);const lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    replacementEnsure_();const snapshots=replacementSnapshots_().filter(s=>s.date>=fromIso&&s.date<=toIso),unreadyDates=[];
+    snapshots.forEach(s=>{
+      if(s.phase==='needs-review')replacementReconcile_(s);
+      if(s.phase==='review-retry'||s.phase==='review-saving')replacementResetInterruptedReview_(s);
+      if(s.phase!=='ready')unreadyDates.push(s.date);
+    });
+    const all=replacementRead_();const days=snapshots.filter(s=>s.phase==='ready').sort((a,b)=>a.date.localeCompare(b.date)).map(s=>({
+      date:s.date,exists:true,revision:s.revision,reviewVersion:s.reviewVersion,source:s.source,publishedAt:s.publishedAt,
+      rows:all.filter(r=>r.date===s.date&&!r.legacy&&r.revision===s.revision&&r.decision!=='obsolete'&&replacementEligible_(r))
+        .map(r=>replacementPublicRow_(r,true)).sort((a,b)=>a.lesson-b.lesson||a.replacementTeacher.localeCompare(b.replacementTeacher,'ru'))
+    }));
+    return{from:fromIso,to:toIso,days,rows:days.flatMap(d=>d.rows),unreadyDates,coveredDates:days.map(d=>d.date)};
   }finally{lock.releaseLock();}
 }
 function addManualReplacement(token,dateIso,revision,reviewVersion,item){
@@ -200,9 +267,11 @@ function addManualReplacement(token,dateIso,revision,reviewVersion,item){
     const teachers=new Map(getTeacherTable_().teachers.map(t=>[S20Schedule.teacherKey(t),t]));
     const teacher=teachers.get(S20Schedule.teacherKey(item&&item.replacementTeacher)),lesson=Number(item&&item.lesson),classes=S20Schedule.classes(item&&item.className,true);
     if(!teacher||!Number.isInteger(lesson)||lesson<1||lesson>12||!classes.length||!String(item.subject||'').trim()||!String(item.comment||'').trim())throw new Error('Укажите учителя, урок, класс, предмет и причину ручного добавления.');
+    const originals=S20Schedule.uniqueTeachers(String(item.originalTeachers||'').split(';')).map(t=>teachers.get(S20Schedule.teacherKey(t)));
+    if(!originals.length||originals.some(t=>!t||S20Schedule.teacherKey(t)===S20Schedule.teacherKey(teacher)))throw new Error('Укажите другого учителя, чей урок передан.');
     const id=dateIso+'|'+S20Schedule.teacherKey(teacher)+'|'+lesson,rows=replacementRead_(),existing=rows.find(r=>r.id===id&&r.date===dateIso&&!r.legacy&&r.decision!=='obsolete');
     if(existing)throw new Error('На этот урок у учителя уже есть запись. Измените её, чтобы не задвоить часы.');
-    const n={id,date:dateIso,lesson,className:classes.join(' + '),subject:S20Schedule.subject(item.subject),room:String(item.room||'').trim(),originalTeachers:[],
+    const n={id,date:dateIso,lesson,className:classes.join(' + '),subject:S20Schedule.subject(item.subject),room:String(item.room||'').trim(),originalTeachers:originals,
       replacementTeacher:teacher,kind:'manual',publishedAt:s.publishedAt,decision:'pending',hours:0,comment:String(item.comment).trim().slice(0,2000),revision,
       fingerprint:replacementHash_(JSON.stringify(item)),confirmedAt:'',source:'manual',details:{reason:'Добавлено вручную. Требуется подтверждение.',suggestedDecision:'pending',suggestedHours:1}};
     replacementCommitReview_(s,()=>{
