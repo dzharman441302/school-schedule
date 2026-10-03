@@ -19,6 +19,8 @@ jobs:
         run: node tests/schedule-regression.js
       - name: Weekly review, transfer-only journal and Friday reminders
         run: node tests/schedule-weekly-review.js
+      - name: Compact workspace, draft and optimistic publication tests
+        run: node tests/schedule-workspace.js
       - uses: actions/upload-artifact@v4
         with:
           name: schedule-source
