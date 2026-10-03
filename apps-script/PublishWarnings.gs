@@ -9,18 +9,19 @@ function publishAdminDayAllowWarnings(token, dateIso, teacherEdits, studentChang
   return publishPayloadCore_(dateIso, teacherEdits, studentChanges, 'Сейчас');
 }
 
-function publishAdminDayEnhanced(token, dateIso, teacherEdits, studentChanges) {
+function publishAdminDayEnhanced(token, dateIso, teacherEdits, studentChanges, expectedRevision) {
   assertSession_(token);
-  return publishPayloadCore_(dateIso, teacherEdits, studentChanges, 'Сейчас');
+  return publishPayloadCore_(dateIso, teacherEdits, studentChanges, 'Сейчас', expectedRevision);
 }
 
-function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode) {
+function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode,expectedRevision) {
   validateIsoDate_(dateIso);
   if(!Array.isArray(teacherEdits)||!Array.isArray(studentChanges))throw new Error('Некорректные данные публикации');
   const lock=LockService.getScriptLock();lock.waitLock(15000);let snapshot=null,scheduleWritten=false;
   try{
     ensureTechnicalSheets_();ensureEnhancementSheets_();
     const edits=prepareTeacherEdits_(dateIso,teacherEdits),built=buildEffectiveGrid_(dateIso,edits);
+    if(expectedRevision && expectedRevision!==workspaceRevisionFor_(built.base.cells,readTeacherEditsForDate_(dateIso),readChangesForDate_(dateIso)))throw new Error('День изменён в другой вкладке. Обновите данные и сверьте свои правки перед публикацией.');
     const map=new Map();studentChanges.forEach(item=>{
       const lesson=Number(item.lesson),change=String(item.change||'').trim();
       if(!Number.isInteger(lesson)||lesson<1||lesson>12||!change)return;
@@ -38,7 +39,7 @@ function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode) {
     SpreadsheetApp.flush();scheduleWritten=true;
     const review=replacementFinish_(snapshot);SpreadsheetApp.flush();
     return{teacherCount:edits.length,studentCount:changes.length,date:dateIso,savedAt:Utilities.formatDate(new Date(),CONFIG.timeZone,'HH:mm:ss'),
-      warnings:notices,summary,archiveId,replacementReview:review,normalizedChanges:changes};
+      warnings:notices,summary,archiveId,replacementReview:review,normalizedChanges:changes,revision:workspaceRevisionFor_(built.base.cells,readTeacherEditsForDate_(dateIso),readChangesForDate_(dateIso))};
   }catch(e){if(snapshot&&!scheduleWritten)replacementFail_(snapshot);throw e;}finally{lock.releaseLock();}
 }
 
