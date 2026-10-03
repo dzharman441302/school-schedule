@@ -50,7 +50,7 @@ jobs:
           for path,data in writes.items():
               path.parent.mkdir(parents=True,exist_ok=True)
               path.write_bytes(data)
-          pathlib.Path('/tmp/ui-refresh-paths').write_text('\n'.join(sorted(allowed))+'\n')
+          pathlib.Path('/tmp/ui-refresh-paths').write_text('\n'.join(sorted(n for n in allowed if not n.startswith('.github/')))+'\n')
           print('Verified and applied',len(writes),'source files; original backup preserved')
           PY
       - name: Validate model, weekly ledger, responsive workspace and TV rotation
@@ -64,11 +64,13 @@ jobs:
           node --check tv.js
           node --check tv-students.js
           node --check subject-names.js
-      - name: Commit only reviewed source changes and remove staging files
+      - name: Commit only source changes within Actions permissions
         run: |
           git diff --quiet a5a682ced0e92c0a6aba32ddedcbad861fe32ea7 -- backup
+          git restore --source=HEAD -- .github/workflows/schedule-regression.yml
           while IFS= read -r path; do git add -- "$path"; done < /tmp/ui-refresh-paths
-          git rm tools/ui-refresh-20261003.part1 tools/ui-refresh-20261003.part2 tools/ui-refresh-20261003.part3 .github/workflows/apply-ui-refresh-20261003.yml
+          git rm tools/ui-refresh-20261003.part1 tools/ui-refresh-20261003.part2 tools/ui-refresh-20261003.part3
+          git diff --cached --quiet -- .github
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'Implement compact laptop and mobile panel with weekly ledger preserved'
