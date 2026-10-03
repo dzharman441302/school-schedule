@@ -1,0 +1,58 @@
+/* School UI polish — 2026-09-14 */
+:root{--school-navy:#15366d;--school-blue:#3154df;--school-green:#4b9a78;--school-lime:#dff2a8;--school-yellow:#fff1a8}
+
+/* Header */
+.topbar.topbar--official{background:rgba(255,255,255,.98)}
+.topbar.topbar--official .topbar__inner{min-height:122px!important;grid-template-columns:108px minmax(420px,1fr) auto auto!important;gap:22px!important;align-items:center!important}
+.topbar.topbar--official .brand{width:104px!important;min-width:104px!important;justify-content:center!important}
+.topbar.topbar--official .brand__logo{width:92px!important;height:92px!important;object-fit:cover;border:2px solid #e0e6f0!important;box-shadow:0 8px 22px rgba(18,42,92,.12)!important}
+.topbar.topbar--official .brand__copy{display:none!important}
+.school-official-title{max-width:860px!important;justify-self:center!important;text-align:center!important;color:#14264b!important;font-size:14px!important;font-weight:950!important;line-height:1.3!important;letter-spacing:.012em!important;text-transform:uppercase!important}
+.school-official-title__section{display:block!important;margin-top:7px!important;color:#7b879f!important;font-size:12px!important;font-weight:750!important;letter-spacing:.01em!important;text-transform:none!important}
+.topbar--official:not(.topbar--with-nav) .topbar__inner{grid-template-columns:108px minmax(480px,1fr) auto!important}
+
+/* Live status bar */
+.school-livebar{background:linear-gradient(90deg,#15366d 0%,#1c4c92 52%,#15366d 100%)!important;color:white!important;border:0!important;box-shadow:0 5px 18px rgba(17,48,98,.14)!important}
+.school-livebar__in{max-width:1320px!important;min-height:58px!important;padding:10px 24px!important;grid-template-columns:minmax(300px,1fr) auto minmax(300px,1fr)!important;gap:22px!important}
+.school-livebar strong{font-size:14px!important;font-weight:900!important;letter-spacing:.01em}
+.school-livebar [data-live-state]{padding:8px 16px!important;border-radius:999px!important;background:#ffffff1f!important;box-shadow:inset 0 0 0 1px #ffffff1a;font-size:15px!important;font-weight:950!important;color:#fff!important}
+.school-livebar .live-muted{font-size:13px!important;color:#eef4ff!important;font-weight:800!important}
+
+/* Teacher hero */
+.staff-hero{background:linear-gradient(135deg,#eef8ff 0%,#eaf8ef 55%,#fff6c9 100%)!important;color:#17345e!important;border:1px solid #d7eadc!important;box-shadow:0 16px 36px rgba(38,83,91,.10)!important}
+.staff-hero h1{color:#17345e!important}
+.staff-hero p{color:#526c79!important;font-weight:650!important}
+.staff-hero .eyebrow{color:#3d8065!important}
+.staff-hero .eyebrow::before{background:#98c86f!important}
+.staff-hero__badge{background:linear-gradient(90deg,#eff8cf,#fff3b4)!important;color:#53631d!important;border:1px solid #dce6a0!important;box-shadow:none!important}
+
+/* Teacher grid cancellations: strike-through only; no extra visual label */
+.sg-cell.cancelled{background:#fff4f4!important}
+.sg-cell.cancelled .old{display:block!important;color:#a3454d!important;text-decoration:line-through!important;text-decoration-thickness:2px!important;font-weight:850!important}
+
+/* Student actual-day cards */
+.student-day-card{border-radius:20px!important;box-shadow:0 12px 32px rgba(28,52,104,.07)!important}
+.student-day-card__head{background:linear-gradient(135deg,#f6f9ff,#f2fbf5)!important}
+.student-lesson{border-radius:13px;margin:3px 0;border-bottom:0!important}
+.student-lesson.normal{background:#fff}
+.student-lesson.cancelled{background:#fff1f2!important;box-shadow:inset 4px 0 #d64e58}
+.student-lesson.changed{background:#f1f5ff!important;box-shadow:inset 4px 0 #5577e8}
+.student-lesson.room{background:#fff9e5!important;box-shadow:inset 4px 0 #e4ba42}
+.student-lesson.added{background:#edf9f4!important;box-shadow:inset 4px 0 #47a47b}
+.student-lesson__old{text-decoration-thickness:1.5px!important}
+.student-change-pill{font-weight:900!important}
+.class-change-card{box-shadow:0 5px 18px rgba(27,49,91,.04)}
+
+@media(max-width:1180px){
+ .topbar.topbar--official .topbar__inner{grid-template-columns:84px minmax(280px,1fr) auto!important;min-height:104px!important}
+ .topbar.topbar--official .brand{width:80px!important;min-width:80px!important}.topbar.topbar--official .brand__logo{width:74px!important;height:74px!important}
+ .school-official-title{font-size:11px!important;max-width:680px!important}
+ .topbar--official:not(.topbar--with-nav) .topbar__inner{grid-template-columns:84px minmax(300px,1fr) auto!important}
+}
+@media(max-width:760px){
+ .topbar.topbar--official .topbar__inner,.topbar--official:not(.topbar--with-nav) .topbar__inner{grid-template-columns:64px minmax(0,1fr) auto!important;min-height:88px!important;gap:10px!important}
+ .topbar.topbar--official .brand{width:62px!important;min-width:62px!important}.topbar.topbar--official .brand__logo{width:58px!important;height:58px!important}
+ .school-official-title{font-size:8.3px!important;line-height:1.22!important}.school-official-title__section{font-size:9px!important;margin-top:3px!important}
+ .school-livebar__in{grid-template-columns:1fr!important;gap:5px!important;min-height:88px!important;padding:9px 12px!important;text-align:center!important}
+ .school-livebar strong,.school-livebar [data-live-state],.school-livebar .live-muted{text-align:center!important;font-size:11px!important}.school-livebar [data-live-state]{justify-self:center!important;padding:6px 10px!important}
+}

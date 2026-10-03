@@ -1,0 +1,21 @@
+name: MAX bot syntax check
+
+on:
+  push:
+    paths:
+      - 'max-bot/**'
+      - '.github/workflows/max-bot-check.yml'
+  pull_request:
+    paths:
+      - 'max-bot/**'
+      - '.github/workflows/max-bot-check.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check max-bot/bot.mjs

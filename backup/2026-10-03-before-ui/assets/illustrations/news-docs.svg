@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" role="img" aria-labelledby="title desc">
+  <title id="title">Новости и документы</title>
+  <desc id="desc">Карточки новостей, фотография и документ.</desc>
+  <defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#6b4c00" flood-opacity=".13"/></filter></defs>
+  <circle cx="430" cy="78" r="50" fill="#dff5e9"/>
+  <circle cx="94" cy="282" r="58" fill="#e5e8ff"/>
+  <rect x="74" y="64" width="250" height="232" rx="28" fill="#fff" filter="url(#s)"/>
+  <rect x="102" y="94" width="194" height="86" rx="18" fill="#dfe3ff"/>
+  <circle cx="150" cy="132" r="22" fill="#ffd458"/>
+  <path d="m112 168 45-38 37 29 31-24 60 45H112Z" fill="#76bba3"/>
+  <rect x="102" y="205" width="145" height="12" rx="6" fill="#263765"/>
+  <rect x="102" y="231" width="171" height="10" rx="5" fill="#c4c9db"/>
+  <rect x="102" y="253" width="122" height="10" rx="5" fill="#c4c9db"/>
+  <rect x="294" y="116" width="150" height="190" rx="26" fill="#fff8df" stroke="#f0d783" stroke-width="5" filter="url(#s)" transform="rotate(5 369 211)"/>
+  <path d="M335 157h72M332 190h76M329 222h64M326 254h70" stroke="#c18a18" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="404" cy="76" r="31" fill="#5269e9"/>
+  <path d="M391 76h26M404 63v26" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,8 @@
+services:
+  max-bot:
+    build: .
+    container_name: school20-max-bot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data

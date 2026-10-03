@@ -1,0 +1,31 @@
+name: Patch TV buttons and break marker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-tv-break-buttons.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch files
+        run: python tools/patch_tv_break_and_buttons.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site-enhancements.js tv.html tv-students.html tv-students.js
+          git commit -m "Improve TV screens and add student TV button"
+          git push

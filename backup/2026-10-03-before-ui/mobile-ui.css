@@ -1,0 +1,236 @@
+/* Mobile UI refinements — 2026-09-15 */
+
+@media (max-width: 760px) {
+  html, body { overflow-x: hidden; }
+
+  /* Compact official header without losing the full school name */
+  .topbar.topbar--official .topbar__inner,
+  .topbar--official:not(.topbar--with-nav) .topbar__inner {
+    grid-template-columns: 54px minmax(0,1fr) auto !important;
+    gap: 8px !important;
+    min-height: 76px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  .topbar.topbar--official .brand { width: 52px !important; min-width: 52px !important; }
+  .topbar.topbar--official .brand__logo { width: 48px !important; height: 48px !important; }
+  .school-official-title {
+    max-width: none !important;
+    font-size: 7.7px !important;
+    line-height: 1.18 !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+  }
+  .school-official-title__section { font-size: 8.5px !important; margin-top: 2px !important; }
+
+  /* Live bar: readable, but not excessively tall */
+  .school-livebar__in {
+    min-height: 0 !important;
+    padding: 7px 10px !important;
+    gap: 3px !important;
+  }
+  .school-livebar strong,
+  .school-livebar [data-live-state],
+  .school-livebar .live-muted {
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+  }
+  .school-livebar [data-live-state] { padding: 5px 9px !important; }
+
+  /* Student changes ----------------------------------------------------- */
+  .change-context--visual { padding: 10px 12px !important; gap: 4px !important; font-size: 12px !important; }
+  .change-days { gap: 12px !important; }
+  .student-day-card { border-radius: 17px !important; }
+  .student-day-card__head {
+    padding: 14px 14px 13px !important;
+    gap: 8px !important;
+  }
+  .student-day-card__head .section-kicker {
+    font-size: 10px !important;
+    letter-spacing: .13em !important;
+    line-height: 1.25 !important;
+  }
+  .student-day-card__head h3 {
+    margin-top: 5px !important;
+    font-size: clamp(20px, 6.3vw, 26px) !important;
+    line-height: 1.08 !important;
+  }
+  .student-change-summary {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, max-content));
+    justify-content: start !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+  .student-change-pill {
+    min-height: 26px !important;
+    padding: 0 9px !important;
+    font-size: 10px !important;
+  }
+  .student-day-lessons { padding: 6px 8px 10px !important; }
+  .student-lesson {
+    grid-template-columns: 58px minmax(0,1fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+    min-height: 0 !important;
+    margin: 4px 0 !important;
+    padding: 10px 10px !important;
+    border-radius: 14px !important;
+  }
+  .student-lesson__number {
+    width: 52px !important;
+    height: auto !important;
+    min-height: 57px !important;
+    padding: 7px 2px 6px !important;
+    border-radius: 13px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+  .student-lesson__time {
+    margin-top: 8px !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+  }
+  .student-lesson__body { padding-top: 2px !important; }
+  .student-lesson__body strong {
+    font-size: 15.5px !important;
+    line-height: 1.22 !important;
+    overflow-wrap: anywhere;
+  }
+  .student-lesson__body small { font-size: 11px !important; line-height: 1.25 !important; }
+  .student-lesson__old {
+    margin-bottom: 5px !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+  .student-lesson__badge {
+    grid-column: 2 !important;
+    justify-self: start !important;
+    min-height: 25px !important;
+    margin-top: 2px !important;
+    padding: 0 9px !important;
+    font-size: 8.5px !important;
+  }
+  .class-change-card { padding: 10px 11px !important; border-radius: 14px !important; }
+  .class-change-row { grid-template-columns: 42px minmax(0,1fr) !important; gap: 7px !important; }
+
+  /* Teacher page -------------------------------------------------------- */
+  .staff-page { padding: 10px 0 26px !important; }
+  .staff-shell { gap: 10px !important; }
+  .staff-hero { padding: 15px !important; border-radius: 16px !important; }
+  .staff-hero h1 { font-size: 24px !important; line-height: 1.08 !important; }
+  .staff-hero p { font-size: 12.5px !important; line-height: 1.4 !important; }
+  .staff-hero__badge { margin-top: 9px !important; font-size: 10px !important; padding: 6px 9px !important; }
+  .staff-controls { padding: 11px !important; border-radius: 15px !important; gap: 8px !important; }
+  .staff-field label { font-size: 11px !important; }
+  .staff-field input,
+  .staff-field select { min-height: 46px !important; padding: 9px 10px !important; font-size: 16px !important; }
+  .staff-date-actions { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+  .staff-date-actions .button { width: 100% !important; }
+
+  .staff-status[data-staff-stats] {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    gap: 6px !important;
+    min-height: 0 !important;
+    padding: 6px !important;
+    background: #f6f8fc !important;
+  }
+  .staff-metric {
+    min-width: 0;
+    min-height: 58px;
+    padding: 7px 4px;
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .staff-metric strong { display: block; color: #203a69; font-size: 19px; line-height: 1; }
+  .staff-metric span { display: block; margin-top: 4px; color: #6b7890; font-size: 9.5px; font-weight: 750; }
+
+  .staff-controls .staff-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+  }
+  .staff-controls .staff-actions .button,
+  .staff-controls .staff-actions a.button {
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 8px 9px !important;
+    white-space: normal !important;
+    text-align: center !important;
+    line-height: 1.15 !important;
+    font-size: 11px !important;
+  }
+
+  .staff-legend {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px 10px !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+    font-size: 10.5px !important;
+  }
+  .staff-legend strong { grid-column: 1 / -1; }
+  .staff-legend span { min-width: 0; }
+
+  .staff-mobile { padding: 9px !important; border-radius: 16px !important; }
+  .staff-mobile-head {
+    position: sticky;
+    top: 6px;
+    z-index: 12;
+    margin: -1px -1px 10px !important;
+    padding: 9px !important;
+    border: 1px solid #e1e6ef;
+    border-radius: 13px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 7px 20px rgba(26,44,82,.08);
+    backdrop-filter: blur(10px);
+  }
+  .staff-mobile-head .staff-toggle { font-size: 11.5px !important; }
+  .teacher-cards { gap: 7px !important; }
+  .teacher-card {
+    grid-template-columns: 50px minmax(0,1fr) !important;
+    gap: 9px !important;
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+  .teacher-card__lesson {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 12px !important;
+    font-size: 17px !important;
+  }
+  .teacher-card h3 { margin: 1px 0 4px !important; font-size: 15.5px !important; line-height: 1.2 !important; overflow-wrap: anywhere; }
+  .teacher-card p { margin: 2px 0 !important; font-size: 12px !important; line-height: 1.3 !important; }
+  .teacher-card .tag { margin-top: 6px !important; font-size: 9.5px !important; }
+  .teacher-card.mobile-gap { background: #f8fafc !important; border-style: dashed !important; }
+  .teacher-card.mobile-gap h3 { color: #61708a !important; font-weight: 800 !important; }
+  .teacher-card.mobile-outside-work { display: none !important; }
+  .mobile-no-lessons {
+    padding: 18px 12px;
+    border: 1px dashed #ccd5e4;
+    border-radius: 14px;
+    color: #69768c;
+    text-align: center;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 430px) {
+  .student-change-summary { grid-template-columns: repeat(2, minmax(0, max-content)); }
+  .student-day-card__head h3 { font-size: 21px !important; }
+  .student-lesson { grid-template-columns: 54px minmax(0,1fr) !important; padding: 9px 8px !important; }
+  .student-lesson__number { width: 48px !important; min-height: 54px !important; font-size: 17px !important; }
+  .staff-controls .staff-actions { grid-template-columns: 1fr !important; }
+  .staff-legend { grid-template-columns: 1fr 1fr !important; }
+}

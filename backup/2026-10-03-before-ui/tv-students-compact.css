@@ -1,0 +1,40 @@
+/* Compact 75-inch student TV layout: keep all current/upcoming rows visible without clipping. */
+body .tv{padding:.8vh .9vw!important;gap:.55vh!important}
+body .head{padding:7px 12px!important;border-radius:18px!important}
+body .logo{width:48px!important;height:48px!important}
+body .head h1{font-size:clamp(22px,1.65vw,32px)!important}
+body .parallel-sub{font-size:clamp(10px,.72vw,13px)!important}
+body .date{font-size:clamp(10px,.7vw,13px)!important;margin-top:1px!important}
+body .clock{min-width:225px!important}
+body .clock strong{font-size:clamp(38px,3.45vw,60px)!important}
+body .clock span{font-size:clamp(11px,.84vw,15px)!important;padding:5px 10px!important;margin-top:4px!important}
+body .classes{gap:.55vw!important}
+body .classes .class-card>header{min-height:42px!important;padding:6px 8px 5px!important}
+body .classes .class-card h2{font-size:clamp(19px,1.35vw,25px)!important;line-height:1!important}
+body .classes .summary{gap:2px!important}
+body .classes .summary span{font-size:clamp(6.5px,.44vw,8.5px)!important;padding:2px 4px!important}
+body .classes .class-card .lesson{min-height:42px!important;flex:0 0 auto!important;gap:5px!important;padding:3px 5px!important;line-height:1.02!important}
+body .classes .class-card .lesson.normal{grid-template-columns:48px minmax(0,1fr)!important}
+body .classes .class-card .lesson.changed,
+body .classes .class-card .lesson.cancelled,
+body .classes .class-card .lesson.room,
+body .classes .class-card .lesson.added{grid-template-columns:48px minmax(0,1fr) 54px!important}
+body .classes .lesson-no b{font-size:clamp(14px,.92vw,18px)!important;line-height:1!important}
+body .classes .lesson-no span{font-size:clamp(6.5px,.4vw,8px)!important;margin-top:2px!important;letter-spacing:-.025em!important}
+body .classes .lesson-main{gap:0!important}
+body .classes .lesson-main strong{font-size:clamp(10.5px,.72vw,13.5px)!important;line-height:1.03!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+body .classes .lesson-main small,
+body .classes .lesson-main del{font-size:clamp(6.5px,.44vw,8.5px)!important;line-height:1.02!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
+body .classes .lesson em{max-width:54px!important;padding:3px 4px!important;font-size:clamp(6px,.4vw,7.5px)!important;line-height:1!important}
+body .classes .lesson.break-after:before{top:-7px!important;padding:2px 7px!important;font-size:clamp(6.5px,.42vw,8px)!important;letter-spacing:.03em!important}
+body .foot{font-size:10.5px!important;gap:12px!important}
+body .progress{height:4px!important}
+@media(max-width:1100px){
+  body .classes .class-card .lesson{min-height:40px!important;padding:2px 4px!important;gap:4px!important}
+  body .classes .class-card .lesson.normal{grid-template-columns:44px minmax(0,1fr)!important}
+  body .classes .class-card .lesson.changed,
+  body .classes .class-card .lesson.cancelled,
+  body .classes .class-card .lesson.room,
+  body .classes .class-card .lesson.added{grid-template-columns:44px minmax(0,1fr) 50px!important}
+  body .classes .lesson em{max-width:50px!important}
+}
