@@ -1,0 +1,75 @@
+name: Apply reviewed compact UI source update
+on:
+  push:
+    branches: [feature/compact-mobile-panel-20261003]
+    paths: ['.github/workflows/apply-ui-refresh-20261003.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify all inputs before modifying any source
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json,lzma,pathlib,subprocess
+          expected_base='a5a682ced0e92c0a6aba32ddedcbad861fe32ea7'
+          expected_tree='c69ee51035b8bfc36b058ceb23aa575f29a00abf'
+          raw=base64.b64decode(''.join(pathlib.Path('tools/ui-refresh-20261003.part'+str(i)).read_text().strip() for i in range(1,4)),validate=True)
+          assert hashlib.sha256(raw).hexdigest()=='c1b561f295870bc1a07ad42b842073a85365f7e14b7049d7aa8b86de0e8d0746','Bundle checksum mismatch'
+          bundle=json.loads(lzma.decompress(raw))
+          assert bundle['base']==expected_base
+          actual_tree=subprocess.check_output(['git','rev-parse','HEAD:backup/2026-10-03-before-ui'],text=True).strip()
+          assert actual_tree==expected_tree,'Backup tree changed'
+          allowed={'.github/workflows/schedule-regression.yml','_config.yml','admin-changes.html','apps-script/Admin.html','apps-script/Code.gs','apps-script/PublishWarnings.gs','apps-script/ReplacementPanel.html','apps-script/WORKSPACE_README.md','apps-script/WorkspaceStyles.html','schedule-compact.css','schedule.html','schedule.js','staff.html','staff.js','subject-names.js','tests/schedule-workspace.js','tv-students.html','tv-students.js','tv.html','tv.js'}
+          assert set(bundle['files'])==allowed
+          writes={}
+          for name,patch in bundle['files'].items():
+              path=pathlib.Path(name)
+              assert not path.is_symlink()
+              old=path.read_bytes() if path.exists() else b''
+              current=hashlib.sha256(old).hexdigest() if path.exists() else None
+              assert current==patch['before'],'Concurrent source change: '+name
+              lines=old.decode('utf-8').splitlines(keepends=True)
+              end=0
+              for start,stop,replacement in patch['ops']:
+                  assert 0<=start<=stop<=len(lines) and start>=end,name
+                  end=stop
+              for start,stop,replacement in reversed(patch['ops']):
+                  lines[start:stop]=replacement.splitlines(keepends=True)
+              new=''.join(lines).encode('utf-8')
+              assert hashlib.sha256(new).hexdigest()==patch['after'],'Result checksum mismatch: '+name
+              writes[path]=new
+          for path,data in writes.items():
+              path.parent.mkdir(parents=True,exist_ok=True)
+              path.write_bytes(data)
+          pathlib.Path('/tmp/ui-refresh-paths').write_text('\n'.join(sorted(allowed))+'\n')
+          print('Verified and applied',len(writes),'source files; original backup preserved')
+          PY
+      - name: Validate model, weekly ledger, responsive workspace and TV rotation
+        run: |
+          node tests/schedule-regression.js
+          node tests/schedule-weekly-review.js
+          node tests/schedule-workspace.js
+          node tests/tv-rotation.js
+          node --check schedule.js
+          node --check staff.js
+          node --check tv.js
+          node --check tv-students.js
+          node --check subject-names.js
+      - name: Commit only reviewed source changes and remove staging files
+        run: |
+          git diff --quiet a5a682ced0e92c0a6aba32ddedcbad861fe32ea7 -- backup
+          while IFS= read -r path; do git add -- "$path"; done < /tmp/ui-refresh-paths
+          git rm tools/ui-refresh-20261003.part1 tools/ui-refresh-20261003.part2 tools/ui-refresh-20261003.part3 .github/workflows/apply-ui-refresh-20261003.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Implement compact laptop and mobile panel with weekly ledger preserved'
+          git push origin HEAD:feature/compact-mobile-panel-20261003
