@@ -37,7 +37,7 @@ function getInitialData(token) {
   const classes = unique_(schedule.rows.map(row => normalizeClass_(row[0])).filter(Boolean)).sort(classCompare_);
   const subjects = unique_(schedule.rows.flatMap(row => row.slice(2)).map(extractSubject_).filter(Boolean)).sort(localeCompare_);
   const teachers = getTeacherTable_().teachers;
-  return { classes, subjects, teachers, today: isoToday_(), schoolName: 'МОУ СОШ № 20 г. Твери' };
+  return { classes, subjects, teachers, today: isoToday_(), schoolName: 'МОУ СОШ № 20 г. Твери', workspaceId: getRequiredProperty_('SPREADSHEET_ID') };
 }
 
 function getAdminDay(token, dateIso) {
@@ -45,14 +45,16 @@ function getAdminDay(token, dateIso) {
   validateIsoDate_(dateIso);
   ensureTechnicalSheets_();
   const base = buildBaseDay_(dateIso);
+  const edits = readTeacherEditsForDate_(dateIso), changes = readChangesForDate_(dateIso);
   return {
+    revision: workspaceRevisionFor_(base.cells, edits, changes),
     date: dateIso,
     dayName: weekdayName_(dateIso),
     weekend: base.dayIndex < 0,
     teachers: base.teacherTable.teachers,
     cells: base.cells,
-    edits: readTeacherEditsForDate_(dateIso),
-    studentChanges: readChangesForDate_(dateIso),
+    edits: edits,
+    studentChanges: changes,
     baseStudent: base.baseStudent,
   };
 }
@@ -239,3 +241,22 @@ function extractSubject_(value){const text=String(value||'').trim();return text?
 function unique_(items){return Array.from(new Set(items))}
 function localeCompare_(a,b){return String(a).localeCompare(String(b),'ru',{numeric:true,sensitivity:'base'})}
 function classCompare_(a,b){return localeCompare_(a,b)}
+
+/** Optimistic version for the compact editor. Includes base timetable and both published views. */
+function workspaceRevisionFor_(baseCells, edits, changes) {
+  const sort = values => (values || []).map(v => JSON.stringify(v)).sort();
+  const text = JSON.stringify([sort(baseCells), sort(edits), sort(changes)]);
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, text, Utilities.Charset.UTF_8)
+    .map(v => ((v + 256) % 256).toString(16).padStart(2, '0')).join('');
+}
+function saveWorkspaceDraft(token, dateIso, teacherEdits, studentChanges, expectedRevision) {
+  assertSession_(token); validateIsoDate_(dateIso);
+  if (!Array.isArray(teacherEdits) || !Array.isArray(studentChanges)) throw new Error('Некорректный черновик');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const base = buildBaseDay_(dateIso), edits = readTeacherEditsForDate_(dateIso), changes = readChangesForDate_(dateIso);
+    if (expectedRevision && expectedRevision !== workspaceRevisionFor_(base.cells, edits, changes))
+      throw new Error('День изменён в другой вкладке. Обновите опубликованную версию и сверьте черновик.');
+    return saveAdminDraft(token, dateIso, teacherEdits, studentChanges);
+  } finally { lock.releaseLock(); }
+}

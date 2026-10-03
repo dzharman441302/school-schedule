@@ -21,6 +21,10 @@ const aliases={
 };
 const key=v=>String(v??'').trim().toLowerCase().replace(/ё/g,'е').replace(/[\s_.–—-]+/g,'');
 function expandSubject(value){const raw=String(value??'').trim();if(!raw)return'';return aliases[key(raw)]||raw}
-function expandLessonText(value){const raw=String(value??'').trim();if(!raw)return'';const parts=raw.split(/\s+\/\s+/).map(x=>x.trim()).filter(Boolean);if(parts.length>1)return parts.map(expandLessonText).join(' / ');const m=raw.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(!m)return expandSubject(raw);return`${expandSubject(m[1])} (${m[2].trim()})`}
-window.SchoolSubjects=Object.freeze({expandSubject,expandLessonText});
+// Split group assignments without splitting room lists inside parentheses.
+function lessonParts(value){const raw=String(value??'').trim(),out=[];let depth=0,start=0;for(let i=0;i<raw.length;i++){if(raw[i]==='(')depth++;else if(raw[i]===')')depth=Math.max(0,depth-1);else if(raw[i]==='/'&&!depth&&/\s/.test(raw[i-1]||'')&&/\s/.test(raw[i+1]||'')){out.push(raw.slice(start,i).trim());start=i+1;}}out.push(raw.slice(start).trim());return out.filter(Boolean);}
+function parseLessonPart(value){const raw=String(value??'').trim(),m=raw.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(m&&!/^(?:технология|мальчики|девочки|базовый|углубл[её]нный|профильный)$/i.test(m[2].trim()))return{subject:expandSubject(m[1]),room:m[2].trim(),raw};return{subject:expandSubject(raw),room:'',raw};}
+function parseLesson(value){const raw=String(value??'').trim(),parts=lessonParts(raw).map(parseLessonPart);return{subject:[...new Set(parts.map(x=>x.subject).filter(Boolean))].join(' / '),room:[...new Set(parts.map(x=>x.room).filter(Boolean))].join(' / '),raw,parts};}
+function expandLessonText(value){return lessonParts(value).map(x=>{const p=parseLessonPart(x);return p.subject+(p.room?' ('+p.room+')':'');}).join(' / ');}
+window.SchoolSubjects=Object.freeze({expandSubject,expandLessonText,parseLesson,lessonParts});
 })();

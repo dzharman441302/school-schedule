@@ -1,0 +1,3 @@
+# Source snapshots belong in GitHub, not in the published website.
+exclude:
+  - backup

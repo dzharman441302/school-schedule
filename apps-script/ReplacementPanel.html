@@ -26,6 +26,33 @@
 #repl-week-label{font-size:14px;color:#244669}#repl-save-state{font-size:12px;color:#795b12}
 @media(max-width:760px){.repl-week-reminder{align-items:flex-start;flex-direction:column}.repl-tools button{font-size:12px}.repl-tools strong{width:100%}.repl-kpi{grid-template-columns:1fr 1fr}.repl-kpi>div:last-child{grid-column:1/-1}}
 @media print{.repl-week-reminder{display:none!important}}
+
+/* Compact review keeps a week's decisions in view; calculations are unchanged. */
+#replacement-dialog .repl-head{padding:10px 18px}#replacement-dialog .repl-head h2{font-size:21px}
+#replacement-dialog .repl-tools,#replacement-dialog .repl-tabs{padding:7px 18px;gap:7px}
+#replacement-dialog .repl-content{padding:10px 18px}#replacement-dialog .repl-notice{padding:7px 10px;margin-bottom:8px;font-size:12px}
+#replacement-dialog .repl-actions{position:sticky;top:-10px;z-index:3;padding:8px 10px}
+#replacement-dialog .repl-entry{grid-template-columns:minmax(200px,.65fr) minmax(470px,1.35fr);padding:10px 12px;border-radius:8px;margin:7px 0;gap:14px}
+#replacement-dialog .repl-entry h3{font-size:14px}#replacement-dialog .repl-meta{font-size:12px}
+#replacement-dialog .repl-edit{grid-template-columns:minmax(160px,1fr) 142px 70px;gap:6px}
+#replacement-dialog .repl-edit>label:nth-child(1){grid-column:2;grid-row:1}
+#replacement-dialog .repl-edit>label:nth-child(2){grid-column:3;grid-row:1}
+#replacement-dialog .repl-edit>label:nth-child(3){grid-column:1;grid-row:1}
+#replacement-dialog .repl-edit>label:nth-child(4){grid-column:1/-1;grid-row:2}
+.repl-basis{margin-top:6px;color:#607793;font-size:11px}.repl-basis summary{cursor:pointer}.repl-basis p{margin:5px 0!important}
+@media(max-width:760px){
+ #replacement-dialog .repl-head{flex-wrap:nowrap;padding:11px}#replacement-dialog .repl-head>div{flex:1 1 0}#replacement-dialog .repl-head p{font-size:11px}#replacement-dialog .repl-head h2{font-size:18px}
+ #replacement-dialog .repl-tabs{padding:7px 10px;gap:5px}#replacement-dialog .repl-tabs button{font-size:11px;min-height:36px;padding:7px 8px}
+ #replacement-dialog .repl-tools{padding:8px 10px}#replacement-dialog .repl-content{padding:8px}
+ #replacement-dialog .repl-entry{grid-template-columns:1fr;padding:10px;gap:10px}
+ #replacement-dialog .repl-edit{grid-template-columns:minmax(0,1fr) 70px}
+ #replacement-dialog .repl-edit>label:nth-child(3){grid-column:1/-1;grid-row:1}
+ #replacement-dialog .repl-edit>label:nth-child(1){grid-column:1;grid-row:2}
+ #replacement-dialog .repl-edit>label:nth-child(2){grid-column:2;grid-row:2}
+ #replacement-dialog .repl-edit>label:nth-child(4){grid-column:1/-1;grid-row:3}
+ #replacement-dialog .repl-edit input,#replacement-dialog .repl-edit select{font-size:16px;min-height:44px}
+ #replacement-dialog .repl-actions{top:-8px;gap:6px}#replacement-dialog .repl-actions button{min-height:40px;font-size:11px}
+}
 </style>
 <script>
 (function(){
@@ -36,13 +63,13 @@ const kinds={replacement:'Замещение',combined:'Объединённые
 let api=null,review=null,ledger=null,tab='review',busy=false,previousFocus=null,badgeRun=0,reminderWeek=null;
 const changed=new Set();
 const button=document.createElement('button');button.type='button';button.className='btn quiet small';button.id='replacements-button';
-button.innerHTML='Замены <span class="repl-badge" id="replacement-badge">—</span>';$('.top-actions').prepend(button);
+button.innerHTML='Учёт замен <span class="repl-badge" id="replacement-badge">—</span>';($('#replacements-slot')||$('.top-actions')).prepend(button);
 const reminder=document.createElement('aside');reminder.id='replacement-week-reminder';reminder.className='repl-week-reminder';reminder.hidden=true;reminder.setAttribute('role','status');
 reminder.innerHTML='<div><strong>Проверьте замены за неделю</strong><span id="replacement-week-text"></span></div><button class="btn quiet small" type="button" id="replacement-week-open">Открыть неделю</button>';
 const controls=$('#app-view .controls');if(controls)controls.after(reminder);else $('#app-view').prepend(reminder);
 const dialog=document.createElement('section');dialog.className='repl-dialog';dialog.id='replacement-dialog';dialog.hidden=true;
 dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','replacement-title');
-dialog.innerHTML=`<div class="repl-window"><header class="repl-head"><div><h2 id="replacement-title">Замены за неделю</h2><p>Только уроки, переданные другому учителю. Простые отмены, смены кабинета и переносы своих уроков сюда не попадают. Часы учитываются после вашего подтверждения.</p></div><button class="btn quiet small" id="repl-close">Закрыть</button></header>
+dialog.innerHTML=`<div class="repl-window"><header class="repl-head"><div><h2 id="replacement-title">Замены за неделю</h2><p>Только переданные уроки. Часы учитываются после вашего подтверждения.</p></div><button class="btn quiet small" id="repl-close">Закрыть</button></header>
 <div class="repl-tabs"><button data-repl-tab="review" class="active">Проверить неделю</button><button data-repl-tab="journal">Журнал</button><button data-repl-tab="summary">Сводка часов</button><button data-repl-tab="audit">История решений</button></div>
 <div class="repl-tools"><button class="btn quiet small" id="repl-prev" aria-label="Предыдущая неделя">← Неделя</button><button class="btn quiet small" id="repl-current">Текущая неделя</button><button class="btn quiet small" id="repl-next" aria-label="Следующая неделя">Неделя →</button><strong id="repl-week-label"></strong></div>
 <div class="repl-tools"><label>Период с<input type="date" id="repl-from"></label><label>по<input type="date" id="repl-to"></label><label id="repl-audit-day" hidden>День истории<input type="date" id="repl-date"></label><label>Учитель<select id="repl-teacher"><option value="">Все учителя</option></select></label><label>Записи<select id="repl-filter"><option value="active">Актуальные</option><option value="confirm">Учтённые</option><option value="pending">Ожидают решения</option><option value="exclude">Не учитывать</option><option value="all">Все, включая архив</option></select></label><button class="btn quiet small" id="repl-refresh">Обновить</button><button class="btn quiet small" id="repl-restore">Восстановить период</button></div>
@@ -96,7 +123,7 @@ function filterRows(rows){
   const teacher=$('#repl-teacher').value,filter=$('#repl-filter').value;
   return(rows||[]).filter(r=>(!teacher||r.replacementTeacher===teacher)&&(filter==='all'||(filter==='active'?!['obsolete','legacy'].includes(r.decision):r.decision===filter)));
 }
-function entry(r){return `<article class="repl-entry" data-repl-id="${esc(r.id)}"><div><h3>${esc(r.replacementTeacher)}</h3><div class="repl-meta"><strong>${ru(r.date)} · ${r.lesson} урок · ${esc(r.className)}</strong><br>${esc(r.subject)}${r.room?' · '+esc(r.room):''}</div><p><span class="repl-tag">${esc(kinds[r.kind]||r.kind)}</span> ${esc(r.reason)}</p>${r.originalChoices?.length?`<small>Исходные учителя: ${esc(r.originalChoices.join('; '))}</small>`:''}${r.source==='history-current-baseline'?'<small>История восстановлена по текущему основному расписанию — проверьте соответствие.</small>':''}</div>
+function entry(r){return `<article class="repl-entry" data-repl-id="${esc(r.id)}"><div><h3>${esc(r.replacementTeacher)}</h3><div class="repl-meta"><strong>${ru(r.date)} · ${r.lesson} урок · ${esc(r.className)}</strong><br>${esc(r.subject)}${r.room?' · '+esc(r.room):''}</div><details class="repl-basis" ${['combined','ambiguous','student-mismatch'].includes(r.kind)?'open':''}><summary>${esc(kinds[r.kind]||r.kind)} · основание</summary><p>${esc(r.reason)}</p>${r.originalChoices?.length?`<small>Исходные учителя: ${esc(r.originalChoices.join('; '))}</small>`:''}${r.source==='history-current-baseline'?'<small>История восстановлена по текущему основному расписанию — проверьте соответствие.</small>':''}</details></div>
 <div class="repl-edit"><label>Решение<select data-field="decision">${['pending','confirm','exclude'].map(s=>`<option value="${s}" ${r.decision===s?'selected':''}>${status[s]}</option>`).join('')}</select></label><label>Часы<input data-field="hours" type="number" min="0.5" max="2" step="0.5" value="${r.hours||r.suggestedHours||1}"></label><label class="wide">Кого заменяет (несколько — через «;»)<input data-field="originalTeachers" list="repl-teachers" value="${esc(r.originalTeachers.join('; '))}" placeholder="Исходный учитель"></label><label class="wide">Пояснение решения<input data-field="comment" value="${esc(r.comment)}" placeholder="Для объединения и неоднозначных случаев"></label></div></article>`;}
 function renderReview(){
   const rows=filterRows(review?.rows),groups=new Map();rows.forEach(r=>{if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r);});

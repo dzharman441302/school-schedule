@@ -13,8 +13,9 @@
   <link rel="stylesheet" href="staff.css?v=replacements-20260925">
   <link rel="stylesheet" href="school-ui-refresh.css?v=ui-20260914b">
   <link rel="stylesheet" href="school-ui-polish.css?v=ui-20260914b">
+<link rel="stylesheet" href="schedule-compact.css?v=20261003-ui1">
 </head>
-<body>
+<body class="staff-compact">
 <div class="site-shell">
   <header class="topbar topbar--official">
     <div class="container topbar__inner">
@@ -30,7 +31,7 @@
   <main class="staff-page">
     <div class="container staff-shell">
       <section class="staff-hero">
-        <div><span class="eyebrow">Сотрудникам</span><h1>Актуальная сетка учителей</h1><p>Белые клетки — основное расписание. Снятый урок остаётся зачёркнутым, а замены, новые назначения и смена кабинета выделяются прямо в сетке.</p></div>
+        <div><span class="eyebrow">Сотрудникам</span><h1>Актуальная сетка учителей</h1><p>Белые клетки — основное расписание. Снятые уроки, новые назначения и смены кабинета отмечены прямо в сетке.</p></div>
         <span class="staff-hero__badge">Обновляется после публикации замен</span>
       </section>
 
@@ -41,7 +42,7 @@
         <div class="staff-actions"><button class="button button--secondary button--small" type="button" data-refresh>Обновить</button><button class="button button--quiet button--small" type="button" data-print>Печать</button></div>
       </section>
 
-      <section class="staff-controls" style="margin-top:10px">
+      <details class="staff-personal"><summary>Мои настройки и персональная ссылка</summary><section class="staff-controls" style="margin-top:10px">
         <div class="staff-field"><label for="staff-my-teacher">Моя фамилия</label><select id="staff-my-teacher"></select></div>
         <div class="staff-status" data-staff-stats>Изменений нет</div>
         <div class="staff-actions">
@@ -50,6 +51,7 @@
         </div>
       </section>
 
+      </details>
       <div class="staff-legend"><strong>Обозначения:</strong><span><i class="legend-dot normal"></i>без изменений</span><span><i class="legend-dot cancelled"></i>отмена</span><span><i class="legend-dot changed"></i>замена</span><span><i class="legend-dot room"></i>новый кабинет</span><span><i class="legend-dot added"></i>добавленный урок</span></div>
 
       <section class="staff-grid-card">
@@ -69,7 +71,7 @@
 <script src="config.js?v=ui-20260914b"></script>
 <script src="content.js?v=features-16"></script>
 <script src="app.js?v=features-16"></script>
-<script src="subject-names.js?v=7"></script>
-<script src="staff.js?v=replacements-20260925"></script>
+<script src="subject-names.js?v=20261003-ui1"></script>
+<script src="staff.js?v=20261003-ui1"></script>
 </body>
 </html>
