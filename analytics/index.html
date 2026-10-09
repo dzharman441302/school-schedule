@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#15366d">
+<title>Итоги триместра — МОУ СОШ № 20</title>
+<link rel="icon" href="../assets/school-logo.jpg">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fc;color:#162b50;font:16px/1.55 Arial,"Segoe UI",sans-serif}
+a{color:#2959cf}a:focus-visible{outline:3px solid #3565de;outline-offset:3px}
+.wrap{max-width:1000px;margin:auto;padding:0 24px}
+header{background:#fff;border-bottom:1px solid #e1e8f4}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:80px}
+.brand{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:700;color:#182f54;text-decoration:none}
+.brand img{width:45px;height:45px;border-radius:10px;object-fit:cover}.back{font-size:14px;font-weight:700}
+main{padding:38px 24px}.hero{background:#fff;border:1px solid #dce5f2;border-radius:22px;padding:34px}
+.kicker{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#3a63af}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.15;margin:10px 0 15px}h2{font-size:21px;margin:32px 0 14px}
+.lead{font-size:17px;max-width:690px;color:#506484;margin:0}.action{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:24px}
+.button{padding:13px 22px;min-height:49px;display:inline-flex;align-items:center;justify-content:center;text-align:center;background:#3563db;border-radius:12px;color:white;text-decoration:none;font-size:16px;font-weight:700}
+.button:hover{background:#234ebb}.button[aria-disabled="true"]{background:#dfe6f3;color:#4c5d78;pointer-events:none;cursor:default}
+.status{color:#657591;font-size:14px}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.step{background:#fff;border:1px solid #dce5f2;border-radius:17px;padding:22px}
+.num{display:inline-flex;width:33px;height:33px;align-items:center;justify-content:center;background:#eaf0ff;color:#285ac3;border-radius:9px;font-weight:800}
+.step h3{font-size:17px;margin:13px 0 7px}.step p{font-size:15px;color:#536580;margin:0}
+.notice{margin-top:23px;padding:18px;background:#fff9ed;border:1px solid #ecd9b6;border-radius:13px}
+.notice p{font-size:15px;color:#61533a;margin:6px 0 0}
+footer{padding-bottom:35px;color:#697b96;font-size:14px}
+@media(max-width:650px){.wrap{padding:0 16px}.top{min-height:70px}.brand{font-size:13px}.brand img{width:39px;height:39px}.back{font-size:12px}main{padding:20px 16px 32px}.hero{padding:24px 19px}.lead{font-size:16px}.steps{grid-template-columns:1fr;gap:10px}.step{padding:17px}.action{display:block}.button{width:100%}.status{display:block;margin-top:12px}}
+</style>
+</head><body>
+<header><div class="wrap top"><a class="brand" href="../staff.html"><img src="../assets/school-logo.jpg" alt=""><span>МОУ СОШ № 20 г. Твери</span></a><a class="back" href="../staff.html">← К расписанию учителей</a></div></header>
+<main class="wrap">
+<section class="hero">
+<span class="kicker">Классным руководителям</span><h1>Итоги триместра</h1>
+<p class="lead">Простой порядок отчётности: заполните Excel-бланк, проверьте считанные показатели и отправьте отчёт завучу.</p>
+<div class="action"><a id="portal" class="button" aria-disabled="true" href="#">Войти в личный кабинет →</a><span id="state" role="status" class="status">Ссылку на кабинет подключает администратор школы.</span></div>
+</section>
+<h2>Как сдать отчёт</h2><div class="steps">
+<div class="step"><span class="num">1</span><h3>Заполните Excel</h3><p>В бланке без ФИО укажите числовые показатели за нужный триместр.</p></div>
+<div class="step"><span class="num">2</span><h3>Загрузите файл</h3><p>В своём кабинете выберите класс, загрузите файл и при необходимости поправьте числа.</p></div>
+<div class="step"><span class="num">3</span><h3>Отправьте завучу</h3><p>Нажмите «Сдать на проверку». После утверждения результаты появятся в сводке школы.</p></div>
+</div>
+<div class="notice"><strong>Защита персональных данных</strong><p>Не загружайте Excel со списками учащихся, ФИО или медицинскими сведениями. Поимённый список неуспевающих ведётся отдельно и остаётся внутри школы.</p></div>
+</main><footer class="wrap">МОУ СОШ № 20 · Служебный раздел</footer>
+<script src="app-config.js"></script>
+<script>
+(function(){
+'use strict';
+var raw=String(window.SCHOOL20_ANALYTICS_APP_URL||'').trim();if(!raw)return;
+try{var u=new URL(raw);if(u.protocol!=='https:'||u.hostname!=='script.google.com'||!/^\/macros\/s\/[^/]+\/exec\/?$/.test(u.pathname))return;
+var a=document.getElementById('portal');a.href=u.href;a.removeAttribute('aria-disabled');a.target='_blank';a.rel='noopener noreferrer';
+document.getElementById('state').textContent='Откроется страница авторизации системы.';
+}catch(_){}
+})();
+</script></body></html>
