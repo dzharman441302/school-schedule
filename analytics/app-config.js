@@ -1,3 +1,2 @@
-// Укажите только проверенный адрес Google Apps Script: https://script.google.com/macros/s/.../exec
-// Адрес публичен сам по себе; доступ к отчётам защищён авторизацией внутри приложения.
-window.SCHOOL20_ANALYTICS_APP_URL = '';
+/* URL веб-приложения Google Apps Script. Здесь нет паролей или персональных данных. */
+window.SCHOOL20_ANALYTICS_APP_URL = "https://script.google.com/macros/s/AKfycbzT1C2R-vasmMChnYAmoYURJLcdb4NxqZiFu---lCQ2-bFaQro97lE9m63_9z-zfCTfqQ/exec";
