@@ -5,7 +5,7 @@
 
   const TZ = 'Europe/Moscow';
   const BELLS = [['08:00','08:40'],['08:50','09:30'],['09:45','10:25'],['10:45','11:25'],['11:40','12:20'],['12:30','13:10'],['13:20','14:00'],['14:15','14:55'],['15:10','15:50'],['16:05','16:45'],['17:00','17:40'],['17:50','18:30']];
-  const OFFICIAL_NAME = 'МУНИЦИПАЛЬНОЕ ОБЩЕОБРАЗОВАТЕЛЬНОЕ УЧРЕЖДЕНИЕ "СРЕДНЯЯ ОБЩЕОБРАЗОВАТЕЛЬНАЯ ШКОЛА № 20" ИМЕНИ ИВАНА АНДРЕЕВИЧА РЫБАЛКО';
+  const OFFICIAL_NAME = 'МОУ СОШ № 20';
   const esc = site.escapeHtml || (v => String(v || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
   const isStaff = /staff\.html/i.test(location.pathname);
   const isHome = /(?:^|\/)index\.html$/i.test(location.pathname) || /\/$/.test(location.pathname);
