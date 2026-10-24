@@ -62,5 +62,24 @@ function maybeSendNoticeToMax_(item){if(!item||!item.sendToMax)return;try{sendMa
 function notifyMaxChanges_(dateIso,summary){const p=PropertiesService.getScriptProperties();if(p.getProperty('MAX_AUTO_CHANGES')!=='1')return;try{sendMaxMessage_('Изменения в расписании на '+formatRuDate_(dateIso)+' опубликованы. Ученикам: '+(summary.studentChanges||0)+', изменений в сетке учителей: '+(summary.teacherEdits||0)+'.');}catch(e){console.log('MAX changes:',e);}}
 function setMaxAutoChanges(token,enabled){assertSession_(token);PropertiesService.getScriptProperties().setProperty('MAX_AUTO_CHANGES',enabled?'1':'0');return true;}
 
-function doPost(e){try{const p=e&&e.parameter?e.parameter:{};if(p.action==='markSeen'){markTeacherViewedPublic_(normalizeDate_(p.date),String(p.teacher||''),String(p.device||''));return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}const body=e&&e.postData&&e.postData.contents?safeJsonParse_(e.postData.contents,{}):{};if(body&&body.update_type){handleMaxUpdate_(body);return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}catch(err){return ContentService.createTextOutput('error').setMimeType(ContentService.MimeType.TEXT);}}
+function doPost(e){try{const p=e&&e.parameter?e.parameter:{};if(p.action==='markSeen'){if(validSeenRequest_(p))markTeacherViewedPublic_(normalizeDate_(p.date),String(p.teacher||'').trim(),String(p.device||''));return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}const body=e&&e.postData&&e.postData.contents?safeJsonParse_(e.postData.contents,{}):{};if(body&&body.update_type&&maxWebhookAllowed_(p)){handleMaxUpdate_(body);return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);}catch(err){return ContentService.createTextOutput('error').setMimeType(ContentService.MimeType.TEXT);}}
+
+/** «Увидел изменения» is accepted only for a real teacher, a date near today and a sane device id, at most once per 30 s per device. */
+function validSeenRequest_(p){
+  const date=normalizeDate_(p.date),teacher=String(p.teacher||'').trim(),device=String(p.device||'');
+  if(!date||!teacher||teacher.length>80||!/^[\w:.-]{6,80}$/.test(device))return false;
+  const days=Math.abs((new Date(date+'T12:00:00Z')-new Date(isoToday_()+'T12:00:00Z'))/86400000);
+  if(!(days<=14))return false;
+  if(!getTeacherTable_().teachers.includes(teacher))return false;
+  const cache=CacheService.getScriptCache(),key='seen:'+Utilities.base64EncodeWebSafe(device+'|'+teacher+'|'+date).slice(0,200);
+  if(cache.get(key))return false;
+  cache.put(key,'1',30);
+  return true;
+}
+
+/** MAX updates reach this script only when the webhook URL carries ?secret=<MAX_WEBHOOK_SECRET>; without the property they are ignored. */
+function maxWebhookAllowed_(p){
+  const secret=PropertiesService.getScriptProperties().getProperty('MAX_WEBHOOK_SECRET');
+  return Boolean(secret)&&String(p.secret||'')===secret;
+}
 function handleMaxUpdate_(u){const msg=u.message||u.callback&&u.callback.message||{},sender=msg.sender||u.user||{},text=String(msg.body&&msg.body.text||msg.text||'').trim(),userId=sender.user_id||sender.userId||'';if(!userId||!text)return;if(/^\/(start|help)/i.test(text))return sendMaxMessage_('Команды:\n/today — изменения учеников на сегодня\n/teachers — количество изменений в сетке учителей\n/site — открыть сайт школы',userId);if(/^\/site/i.test(text))return sendMaxMessage_('https://sosh20tver.ru/',userId);if(/^\/today/i.test(text)){const d=isoToday_(),rows=readChangesForDate_(d),body=rows.length?rows.map(r=>r.className+' · '+r.lesson+' урок — '+r.change+(r.note?' ('+r.note+')':'')).join('\n'):'Изменений для учеников на сегодня нет.';return sendMaxMessage_(body,userId);}if(/^\/teachers/i.test(text)){const d=isoToday_(),edits=readTeacherEditsForDate_(d);return sendMaxMessage_('Сегодня в учительской сетке '+edits.length+' изменений.',userId);}}

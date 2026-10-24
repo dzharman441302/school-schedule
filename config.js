@@ -21,6 +21,7 @@ window.SCHOOL_CONFIG = Object.freeze({
       publicationStatus: 'Статус_публикации',
       notices: 'Оповещения',
       siteSettings: 'Настройки_сайта',
+      calendar: 'Календарь',
       news: 'Новости',
       announcements: 'Объявления',
       important: 'Важное',
@@ -38,33 +39,3 @@ window.SCHOOL_CONFIG = Object.freeze({
   ],
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });
-
-// Общий оперативный слой публичного сайта. Панель администратора и ТВ-режимы
-// используют собственный интерфейс и сюда не подключаются.
-if (!/\/(?:tv(?:-students)?|admin-changes)\.html$/i.test(location.pathname)) {
-  const bootPublicUi = () => {
-    const css = [
-      ['school-ui-refresh.css?v=ui-20260914b','school-ui-refresh'],
-      ['school-ui-polish.css?v=ui-20260914b','school-ui-polish'],
-      ['mobile-ui.css?v=ui-20260915','mobile-ui'],
-      ['mobile-shell.css?v=17','mobile-shell'],
-      ['ui-fixes.css?v=ui-20260915b','ui-fixes']
-    ];
-    css.forEach(([href,key])=>{
-      if (document.querySelector(`link[data-dynamic-ui="${key}"]`)) return;
-      const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.dynamicUi=key;document.head.appendChild(link);
-    });
-    const scripts = [
-      ['site-enhancements.js?v=ui-20260914b','school-enhancements'],
-      ['site-polish.js?v=ui-20260914b','school-polish'],
-      ['mobile-ui.js?v=ui-20260915','mobile-ui'],
-      ['mobile-shell.js?v=17','mobile-shell']
-    ];
-    scripts.forEach(([src,key])=>{
-      if (document.querySelector(`script[data-dynamic-ui="${key}"]`)) return;
-      const script=document.createElement('script');script.src=src;script.async=false;script.dataset.dynamicUi=key;document.body.appendChild(script);
-    });
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootPublicUi, {once:true});
-  else bootPublicUi();
-}

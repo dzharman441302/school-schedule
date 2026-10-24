@@ -1,3 +1,9 @@
-# Source snapshots belong in GitHub, not in the published website.
+# Служебные папки репозитория не публикуются на сайте.
 exclude:
-  - backup
+  - tests
+  - apps-script
+  - max-bot
+  - max-worker
+  - "*.md"
+  - ADMIN-GUIDE.txt
+  - DEPLOY.txt

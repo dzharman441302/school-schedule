@@ -184,7 +184,12 @@
     try { localStorage.setItem(cacheKey, JSON.stringify(entry)); } catch (_) {}
   }
 
-  async function loadSheet(sheetName, { force = false, optional = false } = {}) {
+  // A sheet that does not exist (HTTP 400) is remembered for an hour so optional
+  // sheets such as «Календарь» cost one request per hour instead of one per visit.
+  const MISSING_TTL = 60 * 60 * 1000;
+  const inflight = new Map();
+
+  async function loadSheet(sheetName, { force = false, optional = false, ttl = CACHE_TTL } = {}) {
     if (!sheetName) {
       if (optional) return [];
       throw new Error('Не задано название листа Google Таблицы');
@@ -193,12 +198,21 @@
     const cacheKey = `${CACHE_PREFIX}${sheetName}`;
     const now = Date.now();
     const cached = readStoredCache(cacheKey);
+    const freshFor = cached && cached.missing ? MISSING_TTL : ttl;
 
-    if (!force && cached && now - cached.savedAt < CACHE_TTL) {
+    if (!force && cached && now - cached.savedAt < freshFor) {
       sheetMeta.set(sheetName, { source: 'cache', savedAt: cached.savedAt, stale: false });
       return cached.rows;
     }
 
+    // Several widgets on one page may ask for the same sheet at once.
+    if (inflight.has(cacheKey)) return inflight.get(cacheKey);
+    const request = fetchSheet(sheetName, cacheKey, cached, now, optional);
+    inflight.set(cacheKey, request);
+    try { return await request; } finally { inflight.delete(cacheKey); }
+  }
+
+  async function fetchSheet(sheetName, cacheKey, cached, now, optional) {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 12000);
 
@@ -208,6 +222,11 @@
         cache: 'no-store',
         headers: { Accept: 'application/json' }
       });
+      if (response.status === 400 && optional) {
+        writeStoredCache(cacheKey, { savedAt: Date.now(), rows: [], missing: true });
+        sheetMeta.set(sheetName, { source: 'missing', savedAt: Date.now(), stale: false });
+        return [];
+      }
       if (!response.ok) throw new Error(`Google Sheets: ${response.status}`);
       const data = await response.json();
       const rows = Array.isArray(data.values) ? data.values : [];
@@ -894,18 +913,62 @@
     return dateKey(new Date(parsed.timestamp));
   }
 
+  /* School calendar --------------------------------------------- */
+  // Optional sheet «Календарь»: Дата начала | Дата окончания | Название.
+  // Without it every Monday–Friday is a school day, exactly as before.
+
+  let holidays = [];
+
+  function setCalendar(rows) {
+    holidays = [];
+    if (!Array.isArray(rows) || !rows.length) return;
+    const hasHeader = looksLikeHeader(rows[0], ['дата', 'датаначала', 'название', 'с']);
+    const headers = hasHeader ? rows[0] : [];
+    const data = hasHeader ? rows.slice(1) : rows;
+    const ix = hasHeader ? {
+      from: findHeaderIndex(headers, ['датаначала', 'дата', 'с', 'начало'], 0),
+      to: findHeaderIndex(headers, ['датаокончания', 'по', 'до', 'окончание', 'конец'], 1),
+      title: findHeaderIndex(headers, ['название', 'описание', 'причина', 'событие'], 2)
+    } : { from: 0, to: 1, title: 2 };
+    data.forEach((row) => {
+      const from = parseDateValue(cell(row, ix.from)).timestamp;
+      if (!from) return;
+      const to = parseDateValue(cell(row, ix.to)).timestamp || from;
+      holidays.push({ from: Math.min(from, to), to: Math.max(from, to), title: cell(row, ix.title) || 'Выходной день' });
+    });
+  }
+
+  async function loadCalendar({ force = false } = {}) {
+    const name = config.googleSheets?.sheets?.calendar;
+    if (!name) return [];
+    try { setCalendar(await loadSheet(name, { force, optional: true, ttl: 60 * 60 * 1000 })); } catch (_) {}
+    return holidays;
+  }
+
+  function holidayFor(date) {
+    const t = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12);
+    return holidays.find((h) => t >= h.from && t <= h.to) || null;
+  }
+
+  function isSchoolDay(date) {
+    return ![0, 6].includes(date.getUTCDay()) && !holidayFor(date);
+  }
+
   function nextSchoolDay(date) {
     let candidate = addUtcDays(date, 1);
-    while ([0, 6].includes(candidate.getUTCDay())) candidate = addUtcDays(candidate, 1);
+    for (let i = 0; i < 400 && !isSchoolDay(candidate); i += 1) candidate = addUtcDays(candidate, 1);
     return candidate;
   }
 
   function schoolChangeWindow(baseDate = getSchoolToday()) {
-    let first = new Date(baseDate.getTime());
-    const originalDay = first.getUTCDay();
-    if (originalDay === 6) first = addUtcDays(first, 2);
-    if (originalDay === 0) first = addUtcDays(first, 1);
-    return { first, second: nextSchoolDay(first) };
+    const today = new Date(baseDate.getTime());
+    const first = isSchoolDay(today) ? today : nextSchoolDay(today);
+    return { first, second: nextSchoolDay(first), firstIsToday: first.getTime() === today.getTime() };
+  }
+
+  function capitalize(text) {
+    const s = String(text ?? '');
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }
 
   function scheduleParts(rows) {
@@ -1061,7 +1124,14 @@
     nextSchoolDay,
     schoolChangeWindow,
     normalizeDateValue,
-    dateKey
+    dateKey,
+    addUtcDays,
+    loadCalendar,
+    setCalendar,
+    holidayFor,
+    isSchoolDay,
+    capitalize,
+    truncateText
   });
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -48,7 +48,9 @@ body.panel-connected{overflow:hidden;background:#f1f5fb}
   function save(url){const value=String(url||'').trim();if(!isValid(value)){showSetup('Нужен адрес развернутого Apps Script вида https://script.google.com/macros/s/.../exec');return}try{localStorage.setItem(KEY,value)}catch(_){}showPanel(value)}
   const params=new URLSearchParams(location.search),paramUrl=params.get('app');if(paramUrl&&isValid(paramUrl))save(paramUrl);else{let stored='';try{stored=localStorage.getItem(KEY)||''}catch(_){}if(isValid(stored))showPanel(stored);else showSetup()}
   document.querySelector('[data-save-admin-url]').addEventListener('click',()=>save(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')save(input.value)});
-  window.addEventListener('message',event=>{if(!event.data||event.data.type!=='school20-changes-published')return;try{['Изменения','Учителя_сайт','Статус_публикации'].forEach(name=>{localStorage.removeItem('school20:sheet:v3:'+name);localStorage.removeItem('school20:sheet:v4:'+name)})}catch(_){}window.School20Features?.refreshFreshness?.();window.School20Features?.showNotification?.('Изменения опубликованы','Расписание школы обновлено.','schedule.html#changes')});
+  // The panel (served by Google from *.googleusercontent.com) reports a publication:
+  // drop this browser's cached copies so the site shows the new data at once.
+  window.addEventListener('message',event=>{let host='';try{host=new URL(event.origin).hostname}catch(_){}if(!/(^|\.)googleusercontent\.com$/.test(host))return;if(!event.data||event.data.type!=='school20-changes-published')return;try{['Изменения','Учителя_сайт','Статус_публикации'].forEach(name=>{localStorage.removeItem('school20:sheet:v3:'+name);localStorage.removeItem('school20:sheet:v4:'+name)})}catch(_){}});
   document.querySelector('[data-reset-admin-url]').addEventListener('click',()=>{try{localStorage.removeItem(KEY)}catch(_){}frame.src='about:blank';showSetup()});
 })();
 </script>

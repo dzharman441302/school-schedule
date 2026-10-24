@@ -9,15 +9,17 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#f5f7fb",
-  "theme_color": "#15366d",
+  "background_color": "#F8FAFC",
+  "theme_color": "#15366D",
   "categories": ["education", "productivity"],
   "icons": [
-    {"src":"assets/school-logo.jpg","sizes":"any","type":"image/jpeg","purpose":"any maskable"}
+    {"src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "assets/icons/icon-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any"},
+    {"src": "assets/icons/icon-maskable-512.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "maskable"}
   ],
   "shortcuts": [
-    {"name":"Расписание","short_name":"Расписание","url":"/schedule.html"},
-    {"name":"Изменения","short_name":"Изменения","url":"/schedule.html#changes"},
-    {"name":"Учителям","short_name":"Учителям","url":"/staff.html"}
+    {"name": "Расписание", "short_name": "Расписание", "url": "/schedule.html"},
+    {"name": "Изменения", "short_name": "Изменения", "url": "/schedule.html#changes"},
+    {"name": "Учителям", "short_name": "Учителям", "url": "/staff.html"}
   ]
 }

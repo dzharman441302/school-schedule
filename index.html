@@ -2,52 +2,94 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Расписание классов, учителей и оперативные изменения МОУ СОШ № 20 г. Твери.">
-  <meta name="theme-color" content="#15366d">
-  <title>МОУ СОШ № 20 г. Твери</title>
-  <link rel="icon" href="assets/school-logo.jpg">
-  <link rel="manifest" href="manifest.webmanifest?v=16">
-  <link rel="stylesheet" href="style.css?v=features-16">
-  <link rel="stylesheet" href="site-schedule.css?v=features-16">
-  <link rel="stylesheet" href="school-ui-refresh.css?v=ui-20260914b">
-  <link rel="stylesheet" href="school-ui-polish.css?v=ui-20260914b">
-  <link rel="stylesheet" href="home-info-card.css?v=info-card-1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Расписание классов, изменения и сетка учителей МОУ СОШ № 20 г. Твери.">
+  <meta name="theme-color" content="#15366D">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="СОШ 20">
+  <title>МОУ СОШ № 20 г. Твери — расписание</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest?v=18">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=18">
 </head>
 <body>
-<div class="site-shell">
-  <a class="skip-link" href="#main">Перейти к содержанию</a>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
 
-  <header class="topbar topbar--official topbar--with-nav">
-    <div class="container topbar__inner">
-      <a class="brand" href="index.html?v=ui-20260914b" aria-label="На главную">
-        <img class="brand__logo" src="assets/school-logo.jpg" alt="Логотип школы № 20">
-        <span class="brand__copy"><strong class="brand__title">МОУ СОШ № 20 г. Твери</strong><span class="brand__subtitle">Расписание и изменения</span></span>
-      </a>
-      <div class="school-official-title">МОУ СОШ № 20<span class="school-official-title__section">Расписание и изменения</span></div>
-      <nav class="nav" aria-label="Основная навигация" data-nav>
-        <div class="nav__links">
-          <a class="nav__link" href="schedule.html?v=ui-20260914b">Расписание</a>
-          <a class="nav__link" href="schedule.html?v=ui-20260914b#changes">Изменения</a>
-          <a class="nav__link" href="staff.html?v=ui-20260914b">Учителям</a>
-        </div>
-        <div class="mobile-external"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div>
-      </nav>
-      <div class="header-actions"><a class="button button--small" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a><button class="menu-button" type="button" aria-label="Открыть меню" aria-expanded="false" data-menu-button><span class="menu-lines" aria-hidden="true"></span></button></div>
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную" aria-current="page">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>г. Тверь · расписание</span></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a class="topnav__link" href="schedule.html">Расписание</a>
+      <a class="topnav__link" href="schedule.html#changes">Изменения</a>
+      <a class="topnav__link" href="staff.html">Учителям</a>
+    </nav>
+    <div class="topbar__actions">
+      <span class="live-pill" data-live-pill hidden></span>
+      <a class="btn btn--ghost btn--sm topbar__contact" href="https://vk.me/school_20_tver" data-contact-link>Связаться со школой</a>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main id="main">
-    <section class="home-hero"><div class="container"><div class="home-hero__panel"><div class="home-hero__copy"><span class="eyebrow">МОУ СОШ № 20 Г. ТВЕРИ</span><h1>Расписание<br>в одном месте.</h1><p class="home-hero__lead">Основное расписание классов, оперативные изменения и актуальная сетка учителей собраны на школьном сайте.</p><div class="hero-actions"><a class="button" href="schedule.html?v=ui-20260914b">Расписание классов <span aria-hidden="true">→</span></a><a class="button button--secondary" href="schedule.html?v=ui-20260914b#changes">Проверить изменения</a><a class="button button--secondary" href="staff.html?v=ui-20260914b">Расписание для учителей</a></div><p class="hero-note">Перед занятиями проверяйте актуальные изменения</p></div><div class="hero-visual" aria-hidden="true"><span class="hero-visual__number">20</span><span class="hero-chip hero-chip--knowledge">Расписание</span><div class="hero-logo-card"><img src="assets/school-logo.jpg" alt=""></div><img class="hero-students" src="assets/illustrations/hero-students.svg" alt=""><span class="hero-chip hero-chip--research">Изменения</span></div></div></div></section>
+<main id="main" class="page">
+  <div class="container stack">
+    <section class="home-hero">
+      <span class="eyebrow">МОУ СОШ № 20 · Тверь</span>
+      <h1>Расписание и изменения</h1>
+      <p class="lead">Уроки, замены, кабинеты и звонки — для учеников, родителей и учителей.</p>
+    </section>
 
-    <section class="section"><div class="container"><div class="section-head"><div class="section-head__copy"><span class="kicker">Основные разделы</span><h2>Расписание для всех</h2></div><p class="section-head__side">Ученики и родители видят своё расписание и изменения, сотрудники — актуальную сетку учителей, а важные сообщения школы собраны в разделе информации.</p></div><div class="core-links-grid"><a class="core-link-card core-link-card--schedule" href="schedule.html?v=ui-20260914b"><span class="core-link-card__number">01</span><span class="feature-card__label">Ученикам и родителям</span><h3>Расписание</h3><p>Недельное расписание каждого класса с выбором нужного класса.</p><strong>Открыть расписание →</strong></a><a class="core-link-card core-link-card--changes" href="schedule.html?v=ui-20260914b#changes"><span class="core-link-card__number">02</span><span class="feature-card__label">Актуальные замены</span><h3>Изменения</h3><p>Изменения на ближайшие учебные дни с фильтрацией по классу.</p><strong>Проверить изменения →</strong></a><a class="core-link-card core-link-card--schedule" href="staff.html?v=ui-20260914b"><span class="core-link-card__number">03</span><span class="feature-card__label">Сотрудникам</span><h3>Расписание для учителей</h3><p>Полная сетка учителей с отменами, заменами и изменениями кабинетов прямо в расписании.</p><strong>Открыть сетку →</strong></a><article class="core-link-card core-link-card--info" id="home-info-card"><span class="core-link-card__number">04</span><span class="feature-card__label">Информация школы</span><h3>Объявления</h3><div class="home-info-card__content" data-home-info-content><p class="home-info-card__empty">Загружаем актуальную информацию…</p></div><div class="home-info-card__footer"><span data-home-info-count>Актуальные объявления</span><button type="button" class="home-info-card__link" data-home-info-all>Смотреть все объявления →</button></div></article></div></div></section>
-  </main>
+    <div class="home-grid">
+      <section class="card my-class" data-home-my aria-live="polite">
+        <div class="loading-state"><strong>Загружаем расписание</strong><span>Получаем данные из школьной таблицы.</span></div>
+      </section>
 
-  <footer class="footer"><div class="container footer__inner footer__inner--compact"><div class="footer__brand"><img src="assets/school-logo.jpg" alt=""><span><strong>МОУ СОШ № 20 г. Твери</strong><span>Расписание и оперативные изменения</span></span></div><div class="footer__column"><h2>Разделы</h2><nav class="footer__links" aria-label="Разделы сайта"><a href="schedule.html?v=ui-20260914b">Расписание</a><a href="schedule.html?v=ui-20260914b#changes">Изменения</a><a href="staff.html?v=ui-20260914b">Учителям</a></nav></div><div class="footer__column"><h2>Школа</h2><div class="footer__links"><a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a><a href="https://vk.ru/school_20_tver" data-vk-link>Паблик ВК</a></div></div></div><div class="container footer__bottom"><span>© <span data-current-year></span> МОУ СОШ № 20</span><span>Информационный ресурс школы</span></div></footer>
-</div>
-<script src="config.js?v=ui-20260914b"></script>
-<script src="content.js?v=features-16"></script>
-<script src="app.js?v=features-16"></script>
-<script src="home-info-card.js?v=info-card-1"></script>
+      <section class="card stack" aria-labelledby="notices-title">
+        <div class="section-head"><h2 id="notices-title">Объявления</h2><span class="status-line" data-publish-status hidden></span></div>
+        <div class="notices" data-notices data-audience="students" data-limit="3" data-empty="Новых объявлений нет. Следите за обновлениями школы.">
+          <div class="loading-state"><strong>Загружаем объявления</strong></div>
+        </div>
+      </section>
+    </div>
+
+    <nav class="link-cards" aria-label="Разделы">
+      <a class="link-card" href="schedule.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        <h3>Расписание класса</h3><p>Неделя с временем уроков и кабинетами.</p>
+      </a>
+      <a class="link-card" href="schedule.html#changes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h8M4 17h6"/><path d="m15 16 2 2 4-5"/></svg>
+        <h3>Изменения</h3><p>Замены и отмены на два ближайших учебных дня.</p>
+      </a>
+      <a class="link-card" href="staff.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <h3>Учителям</h3><p>Сетка учителей с отменами, заменами и кабинетами.</p>
+      </a>
+    </nav>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <span>© <span data-current-year></span> МОУ СОШ № 20 г. Твери · информационный ресурс</span>
+    <nav class="footer__links" aria-label="Ссылки школы">
+      <a href="https://school.tver.ru/school/20" data-official-link>Официальная страница</a>
+      <a href="https://vk.ru/school_20_tver" data-vk-link>ВКонтакте</a>
+      <a href="schedule.html#bells">Звонки</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="subject-names.js?v=18"></script>
+<script src="schedule-core.js?v=18"></script>
+<script src="site-shell.js?v=18"></script>
+<script src="home.js?v=18"></script>
 </body>
 </html>

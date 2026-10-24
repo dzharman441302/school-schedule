@@ -5,38 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Экран для учеников — СОШ №20</title>
-  <link rel="icon" href="assets/school-logo.jpg">
-  <link rel="stylesheet" href="tv-students-v5.css?v=6">
-  <link rel="stylesheet" href="tv-no-notice.css?v=1">
-  <link rel="stylesheet" href="tv-students-compact.css?v=1">
-<link rel="stylesheet" href="schedule-compact.css?v=20261003-ui1">
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="stylesheet" href="tv.css?v=18">
 </head>
 <body>
   <main class="tv">
     <div class="head">
       <div class="head-left">
-        <img class="logo" src="assets/school-logo.jpg" alt="">
+        <img class="logo" src="assets/icons/logo-128.jpg" alt="">
         <div>
-          <span class="school">МОУ СОШ № 20 · экран для учеников</span>
           <div class="title-line"><h1 id="parallel">Параллель</h1><span class="parallel-sub" id="parallel-sub"></span></div>
-          <span class="date" id="date"></span>
+          <span class="date">МОУ СОШ № 20 · <span id="date"></span></span>
         </div>
       </div>
-      <div class="clock"><strong id="time">--:--</strong><span id="countdown">Загрузка…</span></div>
+      <div class="clock">
+        <div class="moment"><small id="countdown-label">Загрузка…</small><b id="countdown"></b></div>
+        <strong id="time">--:--</strong>
+      </div>
     </div>
     <div id="notice"></div>
     <div class="classes" id="classes"></div>
     <div class="foot">
       <span>Показываются только текущие и предстоящие уроки</span>
-      <span id="page"></span>
+      <div class="pager"><div class="segments" id="segments" aria-hidden="true"></div><b id="page"></b></div>
       <span>Данные обновлены: <span id="updated">—</span></span>
     </div>
     <div class="progress"><i id="progress"></i></div>
   </main>
-  <script src="config.js?v=tv-students-5"></script>
-  <script src="content.js?v=features-16"></script>
-  <script src="app.js?v=features-16"></script>
-  <script src="subject-names.js?v=20261003-ui1"></script>
-  <script src="tv-students.js?v=20261003-ui1"></script>
+  <script src="config.js?v=18"></script>
+  <script src="app.js?v=18"></script>
+  <script src="subject-names.js?v=18"></script>
+  <script src="tv-students.js?v=18"></script>
 </body>
 </html>

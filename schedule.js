@@ -3,127 +3,369 @@
 
   const config = window.SCHOOL_CONFIG || {};
   const site = window.SchoolSite;
-  if (!site) return;
+  const core = window.ScheduleCore;
+  if (!site || !core) return;
 
-  const DAY_ORDER = ['ПН','ВТ','СР','ЧТ','ПТ','СБ'];
-  const DAY_NAMES = {ПН:'Понедельник',ВТ:'Вторник',СР:'Среда',ЧТ:'Четверг',ПТ:'Пятница',СБ:'Суббота',ВС:'Воскресенье'};
-  const DAY_ALIASES = {пн:'ПН',понедельник:'ПН',вт:'ВТ',вторник:'ВТ',ср:'СР',среда:'СР',чт:'ЧТ',четверг:'ЧТ',пт:'ПТ',пятница:'ПТ',сб:'СБ',суббота:'СБ',вс:'ВС',воскресенье:'ВС'};
-  const DEFAULT_SCHEDULE_HEADERS = ['Класс','Урок','ПН','ВТ','СР','ЧТ','ПТ'];
-  const DEFAULT_CHANGES_HEADERS = ['Дата','Класс','Урок','Изменения','Примечание'];
-  const BELLS = ['08:00–08:40','08:50–09:30','09:45–10:25','10:45–11:25','11:40–12:20','12:30–13:10','13:20–14:00','14:15–14:55','15:10–15:50','16:05–16:45','17:00–17:40','17:50–18:30'];
-  const classCollator = new Intl.Collator('ru',{numeric:true,sensitivity:'base'});
+  const esc = site.escapeHtml;
+  const { classCollator, bellStart, bellEnd, bellRange } = core;
+  const SHEET_SCHEDULE = config.googleSheets?.sheets?.schedule || 'Расписание';
+  const SHEET_CHANGES = config.googleSheets?.sheets?.changes || 'Изменения';
 
-  let selectedClass='';
-  let availableClasses=[...(Array.isArray(config.classes)?config.classes:[])];
-  let scheduleRows=null, changesRows=null, scheduleError=false, changesError=false;
-  let classButtonsElement=null, classSelectElement=null;
+  let selectedClass = '';
+  let availableClasses = [...(Array.isArray(config.classes) ? config.classes : [])];
+  let scheduleRows = null, changesRows = null, scheduleError = false, changesError = false;
+  let selectedDay = null;
 
-  const esc=site.escapeHtml;
-  const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
-  const fullLesson=v=>window.SchoolSubjects?.expandLessonText?window.SchoolSubjects.expandLessonText(v):String(v??'');
-  const addUtcDays=(date,count)=>new Date(date.getTime()+count*86400000);
-  const dateKey=date=>`${String(date.getUTCDate()).padStart(2,'0')}.${String(date.getUTCMonth()+1).padStart(2,'0')}.${date.getUTCFullYear()}`;
-  const dateDayCode=date=>['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][date.getUTCDay()];
+  const $ = (s) => document.querySelector(s);
+  const fmtDate = core.fmtDay;
+  const sameDay = core.sameDay;
+  const cellInfo = core.cellInfo;
+  const badgeClass = core.BADGE_CLASS;
+  const changeCountLabel = (n) => `${n} ${core.plural(n, 'изменение', 'изменения', 'изменений')}`;
+  const lessonsLabel = (n) => `${n} ${core.plural(n, 'урок', 'урока', 'уроков')}`;
 
-  function nextSchoolDay(date){let d=addUtcDays(date,1);while([0,6].includes(d.getUTCDay()))d=addUtcDays(d,1);return d}
-  function schoolChangeWindow(baseDate=site.getSchoolToday()){
-    let first=new Date(baseDate.getTime()),original=first.getUTCDay();
-    if(original===6)first=addUtcDays(first,2);if(original===0)first=addUtcDays(first,1);
-    return{first,second:nextSchoolDay(first),firstLabel:[0,6].includes(original)?'Ближайший учебный день':'Сегодня',secondLabel:'Следующий учебный день'};
-  }
-  function normalizeDateValue(value){
-    const s=String(value??'').trim();if(!s)return'';
-    let m=s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);if(m){const y=m[3].length===2?`20${m[3]}`:m[3];return`${m[1].padStart(2,'0')}.${m[2].padStart(2,'0')}.${y}`}
-    m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[3].padStart(2,'0')}.${m[2].padStart(2,'0')}.${m[1]}`:s;
-  }
-  function lessonNumber(v){const m=String(v??'').match(/\d+/);return m?Number(m[0]):999}
-  function changeCountLabel(n){const n100=n%100,n10=n%10;if(n100>=11&&n100<=14)return`${n} изменений`;if(n10===1)return`${n} изменение`;if(n10>=2&&n10<=4)return`${n} изменения`;return`${n} изменений`}
-  function parseLessonText(value){
-    if(window.SchoolSubjects?.parseLesson)return window.SchoolSubjects.parseLesson(value);
-    const raw=String(value??'').trim();return{subject:fullSubject(raw),room:'',raw};
-  }
+  /* Tabs: основное расписание / изменения ------------------------- */
 
-  function sameText(a,b){return site.normalize(String(a||''))===site.normalize(String(b||''))}
-
-  function initViewTabs(){
-    const buttons=[...document.querySelectorAll('[data-schedule-view]')],panels=[...document.querySelectorAll('[data-schedule-panel]')];if(!buttons.length||!panels.length)return;
-    const activate=(view,hash=true)=>{buttons.forEach(b=>{const on=b.dataset.scheduleView===view;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1});panels.forEach(p=>p.hidden=p.dataset.schedulePanel!==view);if(hash){try{history.replaceState(null,'',`${location.pathname}${location.search}${view==='changes'?'#changes':'#schedule'}`)}catch(_){}}};
-    buttons.forEach(b=>b.addEventListener('click',()=>activate(b.dataset.scheduleView)));activate(location.hash==='#changes'?'changes':'schedule',false);window.addEventListener('hashchange',()=>activate(location.hash==='#changes'?'changes':'schedule',false));
-  }
-
-  function scheduleTableParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_SCHEDULE_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['класс','урок','пн','понедельник'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_SCHEDULE_HEADERS,data:rows}}
-  function changesTableParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_CHANGES_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['дата','класс','урок','изменения'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_CHANGES_HEADERS,data:rows}}
-  function mapScheduleColumns(headers){const classIndex=site.findHeaderIndex(headers,['класс','классы'],0),lessonIndex=site.findHeaderIndex(headers,['урок','номерурока','№урока'],1),dayColumns=[];headers.forEach((h,i)=>{const code=DAY_ALIASES[site.normalize(h)];if(code&&code!=='ВС'&&!dayColumns.some(x=>x.code===code))dayColumns.push({code,index:i})});dayColumns.sort((a,b)=>DAY_ORDER.indexOf(a.code)-DAY_ORDER.indexOf(b.code));return{classIndex,lessonIndex,dayColumns}}
-  function mapChangesColumns(headers){return{date:site.findHeaderIndex(headers,['дата'],0),className:site.findHeaderIndex(headers,['класс','классы'],1),lesson:site.findHeaderIndex(headers,['урок','номерурока','№урока'],2),change:site.findHeaderIndex(headers,['изменения','изменение','замена'],3),note:site.findHeaderIndex(headers,['примечание','комментарий'],4)}}
-  function deriveClasses(rows){const{headers,data}=scheduleTableParts(rows),ci=site.findHeaderIndex(headers,['класс','классы'],0);return[...new Set(data.map(r=>site.normalizeClass(r[ci])).filter(Boolean))].sort(classCollator.compare)}
-  function renderClassPicker(){if(!classButtonsElement||!classSelectElement)return;classSelectElement.innerHTML='<option value="">Все классы</option>'+availableClasses.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');classButtonsElement.innerHTML=availableClasses.map(c=>`<button class="class-chip" type="button" data-class-name="${esc(c)}">${esc(c)}</button>`).join('');classSelectElement.value=selectedClass;classButtonsElement.querySelectorAll('[data-class-name]').forEach(b=>{const on=b.dataset.className===selectedClass;b.classList.toggle('is-active',on);b.setAttribute('aria-pressed',String(on))})}
-  function setClass(className,{rerender=true}={}){const n=site.normalizeClass(className);selectedClass=availableClasses.includes(n)?n:'';if(classSelectElement)classSelectElement.value=selectedClass;if(classButtonsElement)classButtonsElement.querySelectorAll('[data-class-name]').forEach(b=>{const on=b.dataset.className===selectedClass;b.classList.toggle('is-active',on);b.setAttribute('aria-pressed',String(on))});document.querySelectorAll('[data-selected-class-label]').forEach(el=>el.textContent=selectedClass?`Выбран класс ${selectedClass}`:'Класс не выбран');selectedClass?site.storageSet('school:selectedClass',selectedClass):site.storageRemove('school:selectedClass');const p=new URLSearchParams(location.search);selectedClass?p.set('class',selectedClass):p.delete('class');try{history.replaceState(null,'',`${location.pathname}${p.toString()?`?${p}`:''}${location.hash}`)}catch(_){}if(rerender)renderAll()}
-  function initClassPicker(){classButtonsElement=document.querySelector('[data-class-buttons]');classSelectElement=document.querySelector('[data-class-select]');if(!classButtonsElement||!classSelectElement)return;availableClasses=[...new Set(availableClasses.map(site.normalizeClass).filter(Boolean))].sort(classCollator.compare);const q=site.normalizeClass(new URLSearchParams(location.search).get('class')),saved=site.normalizeClass(site.storageGet('school:selectedClass')),initial=[q,saved].find(x=>availableClasses.includes(x))||'';selectedClass=initial;renderClassPicker();setClass(initial,{rerender:false});classButtonsElement.addEventListener('click',e=>{const b=e.target.closest('[data-class-name]');if(b)setClass(b.dataset.className)});classSelectElement.addEventListener('change',()=>setClass(classSelectElement.value));document.querySelector('[data-clear-class]')?.addEventListener('click',()=>setClass(''))}
-  function applyDerivedClasses(rows){const derived=deriveClasses(rows);if(!derived.length)return;const previous=selectedClass;availableClasses=derived;renderClassPicker();setClass(previous&&availableClasses.includes(previous)?previous:'',{rerender:false})}
-
-  function renderSchedule(){
-    const target=document.querySelector('[data-schedule-output]');if(!target)return;
-    if(!selectedClass){target.innerHTML='<div class="empty-state empty-state--large"><strong>Выберите класс.</strong><span>Расписание появится здесь и сохранится для следующих посещений.</span></div>';return}
-    if(scheduleError&&(!scheduleRows||!scheduleRows.length)){target.innerHTML='<div class="empty-state empty-state--large"><strong>Не удалось загрузить расписание.</strong><span>Проверьте подключение и нажмите «Обновить».</span></div>';return}
-    const{headers,data}=scheduleTableParts(scheduleRows),{classIndex,lessonIndex,dayColumns}=mapScheduleColumns(headers),classRows=data.filter(r=>site.normalizeClass(r[classIndex])===selectedClass).sort((a,b)=>lessonNumber(a[lessonIndex])-lessonNumber(b[lessonIndex]));
-    if(!classRows.length){target.innerHTML=`<div class="empty-state empty-state--large"><strong>Для ${esc(selectedClass)} расписание не найдено.</strong><span>Проверьте написание класса в Google Таблице.</span></div>`;return}
-    const today=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'][site.getSchoolToday().getUTCDay()];
-    target.innerHTML=dayColumns.map(({code,index})=>{const lessons=classRows.filter(r=>String(r[index]??'').trim()).map(r=>({number:r[lessonIndex],subject:r[index]}));return`<article class="day-card${code===today?' is-today':''}"><header class="day-card__header"><div><span class="day-code">${esc(code)}</span><h3>${esc(DAY_NAMES[code]||code)}</h3></div>${code===today?'<span class="today-badge">Сегодня</span>':''}</header><ol class="lesson-list">${lessons.length?lessons.map(l=>`<li><span class="lesson-number">${esc(l.number)}</span><span class="lesson-name">${esc(fullLesson(l.subject)).replace(/\n/g,'<br>')}</span></li>`).join(''):'<li class="lesson-list__empty">Уроков нет</li>'}</ol></article>`}).join('');
+  function initViewTabs() {
+    const buttons = [...document.querySelectorAll('[data-schedule-view]')], panels = [...document.querySelectorAll('[data-schedule-panel]')];
+    if (!buttons.length || !panels.length) return;
+    const activate = (view, hash = true) => {
+      buttons.forEach((b) => { const on = b.dataset.scheduleView === view; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+      panels.forEach((p) => { p.hidden = p.dataset.schedulePanel !== view; });
+      document.querySelectorAll('[data-topnav]').forEach((a) => { const on = a.dataset.topnav === view; if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+      if (hash) { try { history.replaceState(null, '', `${location.pathname}${location.search}${view === 'changes' ? '#changes' : '#schedule'}`); } catch (_) {} window.dispatchEvent(new HashChangeEvent('hashchange')); }
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => activate(b.dataset.scheduleView)));
+    buttons.forEach((b, i) => b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const next = buttons[(i + (e.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length];
+      next.focus(); activate(next.dataset.scheduleView);
+    }));
+    activate(location.hash === '#changes' ? 'changes' : 'schedule', false);
+    window.addEventListener('hashchange', (e) => {
+      if (location.hash === '#bells') { const b = $('#bells'); if (b) { activate('schedule', false); b.open = true; b.scrollIntoView({ block: 'start' }); } return; }
+      activate(location.hash === '#changes' ? 'changes' : 'schedule', false);
+      // Bottom navigation «Изменения» on a phone: bring the tab into view.
+      if (e.isTrusted && location.hash === '#changes') $('.tabs')?.scrollIntoView({ block: 'start' });
+    });
+    window.SchedulePage = { showChanges: () => activate('changes') };
   }
 
-  function baseLessonsFor(date,className){
-    const{headers,data}=scheduleTableParts(scheduleRows),{classIndex,lessonIndex,dayColumns}=mapScheduleColumns(headers),code=dateDayCode(date),day=dayColumns.find(x=>x.code===code);const out=new Map();if(!day)return out;
-    data.filter(r=>site.normalizeClass(r[classIndex])===site.normalizeClass(className)).forEach(r=>{const lesson=lessonNumber(r[lessonIndex]),raw=String(r[day.index]??'').trim();if(lesson>=1&&lesson<=12&&raw)out.set(lesson,{lesson,...parseLessonText(raw)})});return out;
-  }
-  function changeRowsFor(date,className=''){
-    const{headers,data}=changesTableParts(changesRows),c=mapChangesColumns(headers),key=dateKey(date);return data.filter(r=>r.some(x=>String(x??'').trim())&&normalizeDateValue(r[c.date])===key&&(!className||site.normalizeClass(r[c.className])===site.normalizeClass(className))).map(r=>({className:site.normalizeClass(r[c.className]),lesson:lessonNumber(r[c.lesson]),change:String(r[c.change]||'').trim(),note:String(r[c.note]||'').trim()})).filter(x=>x.className&&x.lesson>=1&&x.lesson<=12&&x.change).sort((a,b)=>classCollator.compare(a.className,b.className)||a.lesson-b.lesson);
-  }
-  function classifyChange(base,change){
-    if(/^отмена$/i.test(change.change))return{type:'cancelled',base,newLesson:null,...change};
-    const next=parseLessonText(change.change);
-    if(!base)return{type:'added',base:null,newLesson:next,...change};
-    if(sameText(base.subject,next.subject||base.subject)&&next.room&&String(base.room||'')!==String(next.room||''))return{type:'room',base,newLesson:{subject:next.subject||base.subject,room:next.room,raw:change.change},...change};
-    return{type:'changed',base,newLesson:next,...change};
-  }
-  function actualDay(date,className){
-    const base=baseLessonsFor(date,className),changes=changeRowsFor(date,className),changeMap=new Map(changes.map(x=>[x.lesson,x])),lessons=new Set([...base.keys(),...changeMap.keys()]);
-    return[...lessons].sort((a,b)=>a-b).map(lesson=>{const b=base.get(lesson),ch=changeMap.get(lesson);if(!ch)return{type:'normal',lesson,base:b,newLesson:b,note:''};return classifyChange(b,ch)});
-  }
-  function typeLabel(type){return({cancelled:'ОТМЕНЕНО',changed:'ИЗМЕНЕНО',room:'НОВЫЙ КАБИНЕТ',added:'ДОБАВЛЕНО'})[type]||''}
-  function lessonOldText(base){if(!base)return'';return[base.subject,base.room?`каб. ${base.room}`:''].filter(Boolean).join(' · ')}
-  function lessonNewText(next){if(!next)return'';return[next.subject,next.room?`каб. ${next.room}`:''].filter(Boolean).join(' · ')}
-  function lessonMarkup(x){
-    const time=BELLS[x.lesson-1]||'',cancel=x.type==='cancelled',next=x.newLesson||x.base||{},base=x.base;
-    const title=cancel?'Урок отменён':next.subject||x.change||'Урок';
-    const meta=`<span class="student-lesson__time">${esc(time)}</span>${!cancel&&next.room?`<span class="student-lesson__room">Кабинет ${esc(next.room)}</span>`:''}`;
-    let detail='';
-    if(cancel&&base)detail=`<span class="student-lesson__previous">${esc(base.subject||'')}${base.room?' · '+esc(base.room):''}</span>`;
-    else if(x.type==='room')detail=`<span class="student-room-change">Был кабинет ${esc(base?.room||'—')}</span>`;
-    else if(x.type!=='normal'&&base)detail=`<span class="student-lesson__previous">Было: ${esc(lessonOldText(base))}</span>`;
-    const label=x.type==='room'?'Новый кабинет':x.type==='changed'?'Изменён':x.type==='added'?'Новый урок':'';
-    return `<div class="student-lesson ${x.type}" data-lesson="${x.lesson}"><div class="student-lesson__number">${x.lesson}</div><div class="student-lesson__body"><strong>${esc(title)}</strong><div class="student-lesson__meta">${meta}</div>${detail}${x.note?`<small>${esc(x.note)}</small>`:''}${label?`<span class="student-lesson__badge">${label}</span>`:''}</div></div>`;
+  /* Class picker --------------------------------------------------- */
+
+  function gradeOf(cls) { const m = String(cls).match(/^\d+/); return m ? m[0] : '—'; }
+
+  function renderClassPicker() {
+    const box = $('[data-class-buttons]');
+    if (!box) return;
+    const groups = new Map();
+    availableClasses.forEach((c) => { const g = gradeOf(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); });
+    box.innerHTML = [...groups].map(([g, list]) => `<div class="class-group" role="group" aria-label="${esc(g)}-е классы"><span class="class-group__label">${esc(g)}</span>${list.map((c) => `<button class="chip" type="button" data-class-name="${esc(c)}" aria-pressed="${String(c === selectedClass)}">${esc(c)}</button>`).join('')}</div>`).join('');
   }
 
-  function summaryMarkup(rows){const changed=rows.filter(x=>x.type!=='normal'),counts={cancelled:0,changed:0,room:0,added:0};changed.forEach(x=>counts[x.type]=(counts[x.type]||0)+1);return`<span class="student-change-pill">${changeCountLabel(changed.length)}</span>${counts.cancelled?`<span class="student-change-pill cancelled">отмен ${counts.cancelled}</span>`:''}${counts.changed?`<span class="student-change-pill changed">замен ${counts.changed}</span>`:''}${counts.room?`<span class="student-change-pill room">кабинетов ${counts.room}</span>`:''}${counts.added?`<span class="student-change-pill added">добавлено ${counts.added}</span>`:''}`}
-  function renderSelectedClassDay(label,date){const rows=actualDay(date,selectedClass),title=site.formatSchoolDate(date,{weekday:true});return`<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)} · ${esc(selectedClass)}</span><h3>${esc(title)}</h3></div><div class="student-change-summary">${summaryMarkup(rows)}</div></header><div class="student-day-lessons">${rows.length?rows.map(lessonMarkup).join(''):'<div class="empty-state"><strong>Уроков нет.</strong><span>На этот день расписание не найдено.</span></div>'}</div></section>`}
-  function renderAllClassesDay(label,date){
-    const rows=changeRowsFor(date),title=site.formatSchoolDate(date,{weekday:true});if(!rows.length)return`<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)}</span><h3>${esc(title)}</h3></div><span class="status status--ok">Без изменений</span></header><div class="empty-state"><strong>Изменений нет.</strong><span>Все классы занимаются по основному расписанию.</span></div></section>`;
-    const grouped=new Map();rows.forEach(r=>{if(!grouped.has(r.className))grouped.set(r.className,[]);grouped.get(r.className).push(r)});
-    return`<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)}</span><h3>${esc(title)}</h3></div><span class="status">${changeCountLabel(rows.length)}</span></header><div class="all-change-groups">${[...grouped].map(([cls,list])=>`<article class="class-change-card"><div class="class-change-card__head"><strong>${esc(cls)}</strong><span class="student-change-pill">${changeCountLabel(list.length)}</span></div><div class="class-change-list">${list.map(ch=>{const b=baseLessonsFor(date,cls).get(ch.lesson),x=classifyChange(b,ch);return`<div class="class-change-row"><span class="class-change-row__lesson">${x.lesson} урок</span><div>${x.type==='cancelled'?`<b>Урок отменён</b><span class="student-lesson__previous">${esc(lessonOldText(b)||'Урок')}</span>`:x.type==='room'?`<b>${esc(x.newLesson?.subject||b?.subject||'')}</b><span class="student-room-change">каб. ${esc(b?.room||'—')} → ${esc(x.newLesson?.room||'—')}</span>`:`${b?`<span class="student-lesson__previous">Было: ${esc(lessonOldText(b))}</span>`:''}<b>${esc(lessonNewText(x.newLesson)||ch.change)}</b>`}${ch.note?`<small>${esc(ch.note)}</small>`:''}</div><span class="student-lesson__badge ${x.type}">${typeLabel(x.type)}</span></div>`}).join('')}</div></article>`).join('')}</div></section>`;
+  function setCollapsed(collapsed) {
+    const picker = $('[data-picker]'), toggle = $('[data-picker-toggle]');
+    if (!picker) return;
+    picker.dataset.collapsed = String(Boolean(collapsed && selectedClass));
+    if (toggle) { toggle.setAttribute('aria-expanded', String(picker.dataset.collapsed !== 'true')); toggle.textContent = picker.dataset.collapsed === 'true' ? 'Сменить класс' : 'Свернуть'; toggle.hidden = !selectedClass; }
   }
 
-  function renderChanges(){
-    const target=document.querySelector('[data-changes-output]');if(!target)return;
-    if(changesError&&(!changesRows||!changesRows.length)){target.innerHTML='<div class="empty-state empty-state--large"><strong>Не удалось проверить изменения.</strong><span>Основное расписание доступно выше. Повторите загрузку кнопкой «Обновить».</span></div>';return}
-    const w=schoolChangeWindow();
-    target.innerHTML=`<div class="change-context change-context--visual"><span>${selectedClass?`Показано <strong>актуальное расписание ${esc(selectedClass)}</strong> с уже внесёнными изменениями.`:'Изменения сгруппированы по классам. Выберите класс выше — увидите готовое актуальное расписание дня.'}</span><span>Суббота и воскресенье автоматически пропускаются.</span></div><div class="change-days">${selectedClass?renderSelectedClassDay(w.firstLabel,w.first):renderAllClassesDay(w.firstLabel,w.first)}${selectedClass?renderSelectedClassDay(w.secondLabel,w.second):renderAllClassesDay(w.secondLabel,w.second)}</div>`;
+  function setClass(className, { rerender = true } = {}) {
+    const n = site.normalizeClass(className);
+    selectedClass = availableClasses.includes(n) ? n : '';
+    selectedDay = null;
+    document.querySelectorAll('[data-class-name]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.className === selectedClass)));
+    document.querySelectorAll('[data-selected-class-label]').forEach((el) => { el.innerHTML = selectedClass ? `Выбран <b>${esc(selectedClass)}</b>` : 'Класс не выбран'; });
+    const title = $('[data-page-title]'); if (title) title.textContent = selectedClass ? `Расписание ${selectedClass}` : 'Расписание';
+    document.title = `${selectedClass ? `${selectedClass} — ` : ''}Расписание — МОУ СОШ № 20`;
+    const clear = $('[data-clear-class]'); if (clear) clear.hidden = !selectedClass;
+    const share = $('[data-share]'); if (share) share.hidden = !selectedClass;
+    if (selectedClass) site.storageSet('school:selectedClass', selectedClass); else site.storageRemove('school:selectedClass');
+    const p = new URLSearchParams(location.search);
+    if (selectedClass) p.set('class', selectedClass); else p.delete('class');
+    p.delete('v');
+    try { history.replaceState(null, '', `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`); } catch (_) {}
+    if (rerender) renderAll();
   }
 
-  function statusText(scheduleSheetName,changesSheetName,failed){const metas=[site.getSheetMeta(scheduleSheetName),site.getSheetMeta(changesSheetName)].filter(Boolean),stale=metas.find(m=>m.stale);if(stale)return`Сохранённая версия: ${site.formatCacheTime(stale.savedAt)}`;if(failed)return'Часть данных недоступна';const latest=Math.max(0,...metas.map(m=>m.savedAt||0));return latest?`Обновлено: ${site.formatCacheTime(latest)}`:'Данные загружены'}
-  async function loadData({force=false}={}){const s=document.querySelector('[data-schedule-output]'),c=document.querySelector('[data-changes-output]');if(s)s.innerHTML='<div class="loading-state"><strong>Загружаем расписание</strong><span>Получаем данные из школьной таблицы.</span></div>';if(c)c.innerHTML='<div class="loading-state"><strong>Проверяем изменения</strong><span>Формируем актуальное расписание.</span></div>';const scheduleSheetName=config.googleSheets?.sheets?.schedule||'Расписание',changesSheetName=config.googleSheets?.sheets?.changes||'Изменения',[sr,cr]=await Promise.allSettled([site.loadSheet(scheduleSheetName,{force}),site.loadSheet(changesSheetName,{force})]);scheduleError=sr.status==='rejected';changesError=cr.status==='rejected';scheduleRows=scheduleError?[]:sr.value;changesRows=changesError?[]:cr.value;if(!scheduleError)applyDerivedClasses(scheduleRows);renderAll();const st=document.querySelector('[data-sync-status]');if(st){const failed=scheduleError||changesError;st.textContent=statusText(scheduleSheetName,changesSheetName,failed);st.classList.toggle('has-error',failed)}}
-  function renderAll(){renderSchedule();renderChanges()}
-  function initRefresh(){const b=document.querySelector('[data-refresh]');if(!b)return;b.addEventListener('click',async()=>{b.disabled=true;b.classList.add('is-loading');try{await loadData({force:true})}finally{b.disabled=false;b.classList.remove('is-loading')}})}
+  function initClassPicker() {
+    availableClasses = [...new Set(availableClasses.map(site.normalizeClass).filter(Boolean))].sort(classCollator.compare);
+    const q = site.normalizeClass(new URLSearchParams(location.search).get('class')), saved = site.normalizeClass(site.storageGet('school:selectedClass'));
+    selectedClass = [q, saved].find((x) => availableClasses.includes(x)) || '';
+    renderClassPicker();
+    setClass(selectedClass, { rerender: false });
+    setCollapsed(true);
+    $('[data-class-buttons]')?.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-class-name]');
+      if (!b) return;
+      setClass(b.dataset.className);
+      setCollapsed(true);
+    });
+    $('[data-picker-toggle]')?.addEventListener('click', () => setCollapsed($('[data-picker]').dataset.collapsed !== 'true'));
+    $('[data-clear-class]')?.addEventListener('click', () => { setClass(''); setCollapsed(false); });
+  }
 
-  window.ScheduleUtils=Object.freeze({nextSchoolDay,schoolChangeWindow,normalizeDateValue,dateKey});
-  document.addEventListener('DOMContentLoaded',()=>{initViewTabs();initClassPicker();initRefresh();loadData()});
+  function applyDerivedClasses(rows) {
+    const derived = core.deriveClasses(rows);
+    if (!derived.length) return;
+    const previous = selectedClass;
+    availableClasses = derived;
+    renderClassPicker();
+    setClass(previous && availableClasses.includes(previous) ? previous : '', { rerender: false });
+    setCollapsed(true);
+  }
+
+  /* Lesson presentation ------------------------------------------- */
+
+  function todayState() { return core.todayFor(scheduleRows, changesRows, selectedClass); }
+
+  function lessonTiming(date, lesson, state) {
+    if (!sameDay(date, state.today) || state.moment.type === 'off') return '';
+    const m = state.moment;
+    if (m.type === 'lesson' && m.current.lesson === lesson) return 'now';
+    if (m.type === 'after') return 'past';
+    if (m.type === 'lesson' || m.type === 'break') return core.toMin(bellEnd(lesson)) <= core.nowMinutes() ? 'past' : '';
+    return '';
+  }
+
+  /* Week model ------------------------------------------------------ */
+
+  function weekModel(state) {
+    const cols = core.dayColumns(scheduleRows);
+    const win = site.schoolChangeWindow();
+    const anchor = win.first;
+    const monday = site.addUtcDays(anchor, -((anchor.getUTCDay() + 6) % 7));
+    const days = cols.map((c) => {
+      const date = site.addUtcDays(monday, core.DAY_ORDER.indexOf(c.code));
+      const holiday = site.holidayFor(date);
+      const lessons = holiday ? [] : core.actualDay(scheduleRows, changesRows, date, selectedClass);
+      return { code: c.code, date, holiday, lessons, isToday: sameDay(date, state.today), changes: lessons.filter((x) => x.type !== 'normal').length };
+    });
+    const numbers = [...new Set(days.flatMap((d) => d.lessons.map((x) => x.lesson)))].sort((a, b) => a - b);
+    return { days, numbers, monday };
+  }
+
+  function weekRange(first, last) {
+    if (!first || !last) return '';
+    const a = site.formatSchoolDate(first, { year: false }), b = site.formatSchoolDate(last, { year: false });
+    return first.getUTCMonth() === last.getUTCMonth() ? `${first.getUTCDate()}–${b}` : `${a} – ${b}`;
+  }
+
+  function weekMarkup(model, state) {
+    const { days, numbers } = model;
+    const range = weekRange(days[0]?.date, days[days.length - 1]?.date);
+    const head = `<div class="week__row" role="row"><span class="week__time" role="columnheader"><span>Урок</span></span>${days.map((d) => `<span class="week__head${d.isToday ? ' is-today' : ''}" role="columnheader"><b>${esc(core.DAY_NAMES[d.code] || d.code)}</b><span>${esc(site.formatSchoolDate(d.date, { year: false, shortMonth: true }))}${d.isToday ? ' · сегодня' : ''}</span></span>`).join('')}</div>`;
+    const rows = numbers.map((n) => `<div class="week__row" role="row"><span class="week__time" role="rowheader"><b>${n}</b><span>${esc(bellRange(n))}</span></span>${days.map((d) => {
+      if (d.holiday) return `<span class="cell cell--holiday" role="cell"><span class="cell__subject">${n === numbers[0] ? esc(d.holiday.title) : ''}</span></span>`;
+      const x = d.lessons.find((l) => l.lesson === n);
+      if (!x) return '<span class="cell cell--empty" role="cell"><span class="cell__subject">—</span></span>';
+      const info = cellInfo(x), timing = lessonTiming(d.date, n, state);
+      const kind = x.type !== 'normal' ? x.type : timing === 'now' ? 'now' : timing === 'past' ? 'past' : d.isToday ? 'today' : '';
+      const nowBadge = timing === 'now' ? '<span class="badge badge--now">Сейчас</span>' : '';
+      return `<span class="cell${kind ? ` cell--${kind}` : ''}${timing === 'now' && kind !== 'now' ? ' cell--now' : ''}" role="cell">${nowBadge}${info.badge ? `<span class="badge ${badgeClass[x.type]}">${esc(info.badge)}</span>` : ''}<span class="cell__subject">${esc(info.subject)}</span>${info.old ? `<span class="cell__old">${esc(info.old)}</span>` : ''}${info.room ? `<span class="cell__room">каб. ${esc(info.room)}</span>` : ''}</span>`;
+    }).join('')}</div>`).join('');
+    return `<div class="week card" style="--days:${days.length}">
+      <div class="section-head" style="margin-bottom:14px"><h2>Неделя ${esc(range)}</h2>
+        <ul class="legend" aria-label="Обозначения"><li class="badge badge--now">Сейчас</li><li class="badge badge--changed">Замена</li><li class="badge badge--room">Другой кабинет</li><li class="badge badge--cancelled">Отменён</li><li class="badge badge--added">Добавлен</li></ul></div>
+      <div class="week__scroll"><div class="week__grid" role="table" aria-label="Уроки ${esc(selectedClass)} по дням">${head}${rows || `<div class="empty-state"><strong>Для ${esc(selectedClass)} уроки не найдены.</strong></div>`}</div></div>
+    </div>`;
+  }
+
+  function daysMarkup(model, state) {
+    const { days } = model;
+    if (!days.length) return '';
+    let index = selectedDay;
+    if (index === null || index >= days.length) {
+      const win = site.schoolChangeWindow();
+      index = Math.max(0, days.findIndex((d) => sameDay(d.date, win.first)));
+    }
+    const d = days[index];
+    const tabs = days.map((x, i) => `<button class="day-tab${i === index ? ' is-active' : ''}${x.isToday ? ' is-today' : ''}" type="button" role="tab" aria-selected="${String(i === index)}" data-day-index="${i}" aria-label="${esc(fmtDate(x.date))}${x.isToday ? ', сегодня' : ''}"><b>${esc(x.code)}</b><span>${x.date.getUTCDate()}</span></button>`).join('');
+    let body;
+    if (d.holiday) body = `<div class="empty-state"><strong>${esc(d.holiday.title)}</strong><span>Уроков нет.</span></div>`;
+    else if (!d.lessons.length) body = '<div class="empty-state"><strong>Уроков нет.</strong></div>';
+    else body = `<ol class="lessons" aria-label="Уроки">${d.lessons.map((x) => {
+      const info = cellInfo(x), timing = lessonTiming(d.date, x.lesson, state);
+      const kind = x.type !== 'normal' ? x.type : timing;
+      const meta = [bellRange(x.lesson), timing === 'now' && state.moment.remaining ? `осталось ${state.moment.remaining} мин` : timing === 'past' ? 'прошёл' : '', info.note].filter(Boolean).join(' · ');
+      return `<li class="lesson${kind ? ` lesson--${kind}` : ''}${timing === 'now' && kind !== 'now' ? ' lesson--now' : ''}"><div class="lesson__no"><b>${x.lesson}</b><span>${esc(bellStart(x.lesson))}</span></div><div class="lesson__main">${timing === 'now' ? '<span class="badge badge--now">Идёт сейчас</span>' : ''}${info.badge ? `<span class="badge ${badgeClass[x.type]}">${esc(info.badge)}</span>` : ''}<span class="lesson__subject">${esc(info.subject)}</span>${info.old ? `<span class="lesson__meta">${esc(info.old)}</span>` : ''}<span class="lesson__meta">${esc(meta)}</span></div>${info.room ? `<span class="lesson__room">каб. ${esc(info.room)}</span>` : ''}</li>`;
+    }).join('')}</ol>`;
+    const real = d.lessons.filter((x) => x.type !== 'cancelled');
+    const summary = real.length ? `${lessonsLabel(real.length)} · ${bellStart(real[0].lesson)}–${bellEnd(real[real.length - 1].lesson)}${d.changes ? ` · ${changeCountLabel(d.changes)}` : ''}` : '';
+    return `<div class="days"><div class="day-tabs" role="tablist" aria-label="День недели" style="--days:${days.length}">${tabs}</div><div class="day-head"><h3>${esc(fmtDate(d.date))}</h3><span>${esc(summary)}</span></div>${body}</div>`;
+  }
+
+  function renderSchedule(state) {
+    const target = $('[data-schedule-output]');
+    if (!target) return;
+    if (!selectedClass) { target.innerHTML = '<div class="empty-state empty-state--large"><strong>Выберите класс.</strong><span>Расписание появится здесь и сохранится для следующих посещений.</span></div>'; return; }
+    if (scheduleError && (!scheduleRows || !scheduleRows.length)) { target.innerHTML = '<div class="empty-state empty-state--large"><strong>Не удалось загрузить расписание.</strong><span>Проверьте подключение и нажмите «Обновить».</span></div>'; return; }
+    const { data, headers } = core.scheduleParts(scheduleRows), { classIndex } = core.mapScheduleColumns(headers);
+    if (!data.some((r) => site.normalizeClass(r[classIndex]) === selectedClass)) { target.innerHTML = `<div class="empty-state empty-state--large"><strong>Для ${esc(selectedClass)} расписание не найдено.</strong><span>Проверьте написание класса в Google Таблице.</span></div>`; return; }
+    const model = weekModel(state);
+    target.innerHTML = weekMarkup(model, state) + daysMarkup(model, state);
+  }
+
+  /* «Сейчас» и сводка изменений ----------------------------------- */
+
+  function renderNow(state) {
+    const box = $('[data-now-card]');
+    if (!box) return;
+    if (!selectedClass || !scheduleRows || !scheduleRows.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.className = 'now-card';
+    box.innerHTML = core.nowCardMarkup(scheduleRows, changesRows, selectedClass, state);
+    box.hidden = false;
+  }
+
+  function renderAlert() {
+    const box = $('[data-today-alert]'), count = $('[data-changes-count]');
+    const win = site.schoolChangeWindow();
+    const first = changesRows ? core.changeRowsFor(changesRows, win.first, selectedClass).length : 0;
+    const second = changesRows ? core.changeRowsFor(changesRows, win.second, selectedClass).length : 0;
+    if (count) { count.textContent = String(first + second); count.hidden = !(first + second); }
+    if (!box) return;
+    if (!selectedClass || !(first + second)) { box.hidden = true; box.innerHTML = ''; return; }
+    const tomorrow = sameDay(win.second, site.addUtcDays(win.first, 1));
+    const parts = [first ? `${win.firstIsToday ? 'сегодня' : fmtDate(win.first).toLowerCase()} — ${changeCountLabel(first)}` : '', second ? `${tomorrow && win.firstIsToday ? 'завтра' : fmtDate(win.second).toLowerCase()} — ${changeCountLabel(second)}` : ''].filter(Boolean);
+    box.className = 'alert';
+    box.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><div><strong>Есть изменения в ${esc(selectedClass)}</strong><p>${esc(site.capitalize(parts.join(', ')))}.</p><a href="#changes" data-open-changes>Посмотреть изменения →</a></div>`;
+    box.hidden = false;
+    box.querySelector('[data-open-changes]')?.addEventListener('click', (e) => { e.preventDefault(); window.SchedulePage?.showChanges(); $('#changes-panel')?.scrollIntoView({ block: 'start' }); });
+  }
+
+  function highlightBells(state) {
+    const bell = site.isSchoolDay(state.today) ? core.bellMoment() : { type: 'off' };
+    document.querySelectorAll('[data-bell]').forEach((el) => el.classList.toggle('is-now', bell.type === 'lesson' && Number(el.dataset.bell) === bell.lesson));
+  }
+
+  /* Изменения (two school days) ----------------------------------- */
+
+  function lessonOldText(base) { return core.lessonText(base); }
+  function lessonNewText(next) { return core.lessonText(next); }
+  function typeLabel(type) { return ({ cancelled: 'ОТМЕНЕНО', changed: 'ИЗМЕНЕНО', room: 'НОВЫЙ КАБИНЕТ', added: 'ДОБАВЛЕНО' })[type] || ''; }
+
+  function lessonMarkup(x, isNow) {
+    const time = bellRange(x.lesson), cancel = x.type === 'cancelled', next = x.newLesson || x.base || {}, base = x.base;
+    const title = cancel ? 'Урок отменён' : next.subject || x.change || 'Урок';
+    const meta = `<span class="student-lesson__time">${esc(time)}</span>${!cancel && next.room ? `<span class="student-lesson__room">Кабинет ${esc(next.room)}</span>` : ''}`;
+    let detail = '';
+    if (cancel && base) detail = `<span class="student-lesson__previous">${esc(base.subject || '')}${base.room ? ' · каб. ' + esc(base.room) : ''}</span>`;
+    else if (x.type === 'room') detail = `<span class="student-room-change">Был кабинет ${esc(base?.room || '—')}</span>`;
+    else if (x.type !== 'normal' && base) detail = `<span class="student-lesson__previous">Было: ${esc(lessonOldText(base))}</span>`;
+    const label = x.type === 'room' ? 'Новый кабинет' : x.type === 'changed' ? 'Изменён' : x.type === 'added' ? 'Новый урок' : x.type === 'cancelled' ? 'Отменён' : '';
+    return `<div class="student-lesson ${x.type}${isNow ? ' is-now' : ''}" data-lesson="${x.lesson}"><div class="student-lesson__number">${x.lesson}</div><div class="student-lesson__body">${isNow ? '<span class="student-lesson__badge badge--now">Идёт сейчас</span>' : ''}<strong>${esc(title)}</strong><div class="student-lesson__meta">${meta}</div>${detail}${x.note ? `<small>${esc(x.note)}</small>` : ''}${label ? `<span class="student-lesson__badge">${label}</span>` : ''}</div></div>`;
+  }
+
+  function summaryMarkup(rows) {
+    const changed = rows.filter((x) => x.type !== 'normal'), counts = { cancelled: 0, changed: 0, room: 0, added: 0 };
+    changed.forEach((x) => { counts[x.type] = (counts[x.type] || 0) + 1; });
+    if (!changed.length) return '<span class="student-change-pill is-ok">Без изменений</span>';
+    return `<span class="student-change-pill">${changeCountLabel(changed.length)}</span>${counts.cancelled ? `<span class="student-change-pill cancelled">отмен ${counts.cancelled}</span>` : ''}${counts.changed ? `<span class="student-change-pill changed">замен ${counts.changed}</span>` : ''}${counts.room ? `<span class="student-change-pill room">кабинетов ${counts.room}</span>` : ''}${counts.added ? `<span class="student-change-pill added">добавлено ${counts.added}</span>` : ''}`;
+  }
+
+  function renderSelectedClassDay(label, date, state) {
+    const rows = core.actualDay(scheduleRows, changesRows, date, selectedClass), title = fmtDate(date);
+    const nowLesson = sameDay(date, state.today) && state.moment.type === 'lesson' ? state.moment.current.lesson : 0;
+    return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)} · ${esc(selectedClass)}</span><h3>${esc(title)}</h3></div><div class="student-change-summary">${summaryMarkup(rows)}</div></header><div class="student-day-lessons">${rows.length ? rows.map((x) => lessonMarkup(x, x.lesson === nowLesson)).join('') : '<div class="empty-state"><strong>Уроков нет.</strong><span>На этот день расписание не найдено.</span></div>'}</div></section>`;
+  }
+
+  function renderAllClassesDay(label, date) {
+    const rows = core.changeRowsFor(changesRows, date), title = fmtDate(date);
+    if (!rows.length) return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)}</span><h3>${esc(title)}</h3></div><span class="status status--ok">Без изменений</span></header><div class="student-day-lessons"><div class="empty-state"><strong>Изменений нет.</strong><span>Все классы занимаются по основному расписанию.</span></div></div></section>`;
+    const grouped = new Map();
+    rows.forEach((r) => { if (!grouped.has(r.className)) grouped.set(r.className, []); grouped.get(r.className).push(r); });
+    return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)}</span><h3>${esc(title)}</h3></div><span class="status">${changeCountLabel(rows.length)}</span></header><div class="all-change-groups">${[...grouped].map(([cls, list]) => `<article class="class-change-card"><div class="class-change-card__head"><strong>${esc(cls)}</strong><span class="student-change-pill">${changeCountLabel(list.length)}</span></div><div class="class-change-list">${list.map((ch) => {
+      const b = core.baseLessonsFor(scheduleRows, date, cls).get(ch.lesson), x = core.classifyChange(b, ch);
+      return `<div class="class-change-row"><span class="class-change-row__lesson">${x.lesson} урок</span><div>${x.type === 'cancelled' ? `<b>Урок отменён</b><span class="student-lesson__previous">${esc(lessonOldText(b) || 'Урок')}</span>` : x.type === 'room' ? `<b>${esc(x.newLesson?.subject || b?.subject || '')}</b><span class="student-room-change">каб. ${esc(b?.room || '—')} → ${esc(x.newLesson?.room || '—')}</span>` : `${b ? `<span class="student-lesson__previous">Было: ${esc(lessonOldText(b))}</span>` : ''}<b>${esc(lessonNewText(x.newLesson) || ch.change)}</b>`}${ch.note ? `<small>${esc(ch.note)}</small>` : ''}</div><span class="student-lesson__badge ${x.type}">${typeLabel(x.type)}</span></div>`;
+    }).join('')}</div></article>`).join('')}</div></section>`;
+  }
+
+  function renderChanges(state) {
+    const target = $('[data-changes-output]');
+    if (!target) return;
+    if (changesError && (!changesRows || !changesRows.length)) { target.innerHTML = '<div class="empty-state empty-state--large"><strong>Не удалось проверить изменения.</strong><span>Основное расписание доступно на соседней вкладке. Повторите загрузку кнопкой «Обновить».</span></div>'; return; }
+    const w = site.schoolChangeWindow();
+    const firstLabel = w.firstIsToday ? 'Сегодня' : 'Ближайший учебный день', secondLabel = 'Следующий учебный день';
+    target.innerHTML = `<div class="change-context"><span>${selectedClass ? `Показано <strong>актуальное расписание ${esc(selectedClass)}</strong> с уже внесёнными изменениями.` : 'Изменения сгруппированы по классам. Выберите класс выше — увидите готовое актуальное расписание дня.'}</span><span>Выходные и каникулы пропускаются автоматически.</span></div><div class="change-days">${selectedClass ? renderSelectedClassDay(firstLabel, w.first, state) + renderSelectedClassDay(secondLabel, w.second, state) : renderAllClassesDay(firstLabel, w.first) + renderAllClassesDay(secondLabel, w.second)}</div>`;
+  }
+
+  /* Data ----------------------------------------------------------- */
+
+  function statusText(failed) {
+    const metas = [site.getSheetMeta(SHEET_SCHEDULE), site.getSheetMeta(SHEET_CHANGES)].filter(Boolean), stale = metas.find((m) => m.stale);
+    if (stale) return `Сохранённая версия: ${site.formatCacheTime(stale.savedAt)}`;
+    if (failed) return 'Часть данных недоступна';
+    const latest = Math.max(0, ...metas.map((m) => m.savedAt || 0));
+    return latest ? `Обновлено: ${site.formatCacheTime(latest)}` : 'Данные загружены';
+  }
+
+  async function loadData({ force = false, quiet = false } = {}) {
+    const s = $('[data-schedule-output]'), c = $('[data-changes-output]');
+    if (!quiet) {
+      if (s) s.innerHTML = '<div class="loading-state"><strong>Загружаем расписание</strong><span>Получаем данные из школьной таблицы.</span></div>';
+      if (c) c.innerHTML = '<div class="loading-state"><strong>Проверяем изменения</strong><span>Формируем актуальное расписание.</span></div>';
+    }
+    const [sr, cr] = await Promise.allSettled([site.loadSheet(SHEET_SCHEDULE, { force }), site.loadSheet(SHEET_CHANGES, { force }), site.loadCalendar({ force })]);
+    scheduleError = sr.status === 'rejected'; changesError = cr.status === 'rejected';
+    scheduleRows = scheduleError ? (scheduleRows || []) : sr.value;
+    changesRows = changesError ? (changesRows || []) : cr.value;
+    if (!scheduleError) applyDerivedClasses(scheduleRows);
+    renderAll();
+    const st = $('[data-sync-status]');
+    if (st) { const failed = scheduleError || changesError; st.textContent = statusText(failed); st.classList.toggle('has-error', failed); }
+  }
+
+  function renderAll() {
+    const state = todayState();
+    renderNow(state);
+    renderAlert();
+    renderSchedule(state);
+    renderChanges(state);
+    highlightBells(state);
+  }
+
+  function initActions() {
+    const refresh = $('[data-refresh]');
+    refresh?.addEventListener('click', async () => {
+      refresh.disabled = true; refresh.classList.add('is-loading');
+      try { await loadData({ force: true }); window.SiteShell?.refreshFreshness(); } finally { refresh.disabled = false; refresh.classList.remove('is-loading'); }
+    });
+    $('[data-print]')?.addEventListener('click', () => window.print());
+    const share = $('[data-share]');
+    share?.addEventListener('click', async () => {
+      if (!selectedClass) return;
+      const url = `${location.origin}${location.pathname}?class=${encodeURIComponent(selectedClass)}`;
+      const label = share.querySelector('span');
+      try {
+        if (navigator.share) await navigator.share({ title: `Расписание ${selectedClass} — МОУ СОШ № 20`, url });
+        else { await navigator.clipboard.writeText(url); if (label) { label.textContent = 'Ссылка скопирована'; setTimeout(() => { label.textContent = 'Ссылка на класс'; }, 2000); } }
+      } catch (_) { /* пользователь закрыл окно «Поделиться» */ }
+    });
+    $('[data-schedule-output]')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-day-index]');
+      if (!tab) return;
+      selectedDay = Number(tab.dataset.dayIndex);
+      renderSchedule(todayState());
+      $(`[data-day-index="${selectedDay}"]`)?.focus();
+    });
+    setInterval(renderAll, 30000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && scheduleRows) loadData({ quiet: true }); });
+  }
+
+  window.ScheduleUtils = Object.freeze({
+    nextSchoolDay: site.nextSchoolDay,
+    schoolChangeWindow: (d) => { const w = site.schoolChangeWindow(d); return { ...w, firstLabel: w.firstIsToday ? 'Сегодня' : 'Ближайший учебный день', secondLabel: 'Следующий учебный день' }; },
+    normalizeDateValue: core.normalizeDateValue,
+    dateKey: site.dateKey
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initViewTabs();
+    initClassPicker();
+    initActions();
+    loadData().then(() => {
+      if (location.hash === '#changes' && window.matchMedia('(max-width: 979px)').matches) $('.tabs')?.scrollIntoView({ block: 'start' });
+    });
+    if (location.hash === '#bells') { const b = $('#bells'); if (b) { b.open = true; setTimeout(() => b.scrollIntoView({ block: 'start' }), 300); } }
+  });
 })();

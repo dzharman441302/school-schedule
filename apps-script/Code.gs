@@ -17,9 +17,21 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+// After LOGIN_MAX_FAILS wrong PINs in LOGIN_WINDOW_SECONDS, login is paused for
+// everyone until the window passes: a PIN cannot be guessed by trying them all.
+const LOGIN_MAX_FAILS = 20;
+const LOGIN_WINDOW_SECONDS = 900;
+
 function login(pin) {
   const expected = getRequiredProperty_('ADMIN_PIN');
-  if (String(pin || '') !== String(expected)) throw new Error('Неверный PIN-код');
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get('login:fails') || 0);
+  if (fails >= LOGIN_MAX_FAILS) throw new Error('Слишком много неверных попыток. Подождите 15 минут и попробуйте снова.');
+  if (String(pin || '') !== String(expected)) {
+    cache.put('login:fails', String(fails + 1), LOGIN_WINDOW_SECONDS);
+    Utilities.sleep(1000);
+    throw new Error('Неверный PIN-код');
+  }
   const token = Utilities.getUuid();
   CacheService.getScriptCache().put('session:' + token, '1', CONFIG.sessionSeconds);
   return { token, expiresHours: 6 };

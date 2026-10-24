@@ -9,10 +9,7 @@ on:
       - 'subject-names.js'
       - 'tv.html'
       - 'tv-students.html'
-      - 'tv-no-notice.css'
-      - 'tv-teachers-v5.css'
-      - 'tv-students-v5.css'
-      - 'tv-students-compact.css'
+      - 'tv.css'
       - 'tests/tv-rotation.js'
       - '.github/workflows/validate-tv-js.yml'
 
@@ -37,18 +34,14 @@ jobs:
           grep -q "hasRealLesson" tv.js
           grep -q "rebuildCards" tv.js
           grep -q "activeParallelSnapshots" tv-students.js
-          grep -q "ПЕРЕМЕНА · далее" tv-students.js
-      - name: Check TV notice is hidden and layout remains full-height
+          grep -q "Перемена · далее" tv-students.js
+      - name: Check TV notice is hidden and both screens share tv.css
         run: |
-          grep -q "tv-no-notice.css" tv.html
-          grep -q "tv-no-notice.css" tv-students.html
-          grep -q '#notice{display:none!important}' tv-no-notice.css
-          grep -q 'grid-template-rows:auto minmax(0,1fr) auto auto' tv-no-notice.css
-      - name: Check compact student TV layout
-        run: |
-          grep -q 'tv-students-compact.css' tv-students.html
-          grep -q 'min-height:42px!important' tv-students-compact.css
-          grep -q 'grid-template-columns:48px minmax(0,1fr) 54px!important' tv-students-compact.css
+          grep -q "tv.css" tv.html
+          grep -q "tv.css" tv-students.html
+          grep -q '#notice{display:none!important}' tv.css
+          grep -q 'id="segments"' tv.html
+          grep -q 'id="segments"' tv-students.html
       - name: Check full subject names and script load order
         run: |
           node <<'JS'
