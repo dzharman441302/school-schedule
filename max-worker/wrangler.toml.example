@@ -15,7 +15,7 @@ database_name = "school20-max"
 database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
 [triggers]
-crons = ["*/2 * * * *"]
+crons = ["* * * * *"]
 
 # Секреты добавляются ТОЛЬКО через Cloudflare Secrets / wrangler secret put:
 # BOT_TOKEN

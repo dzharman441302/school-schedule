@@ -16,4 +16,4 @@ database_name = "school20-max"
 database_id = "efee5015-f515-4b8d-b441-6bdd65e55e80"
 
 [triggers]
-crons = ["*/2 * * * *"]
+crons = ["* * * * *"]
