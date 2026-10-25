@@ -113,22 +113,30 @@ var S20Schedule = (function () {
         const moved=!own&&moveIndex>=0?missingOwn[moveIndex]:null;
         if(moved)usedMoved.add(moveIndex);
         const matching=removed.filter(x=>sameSubject(x.subject,f.subject));
-        const original=matching.length===1?matching[0]:removed.length===1?removed[0]:null;
+        let original=matching.length===1?matching[0]:removed.length===1?removed[0]:null;
+        // A lesson of the class that another teacher lost today and did not teach at another
+        // time: giving the class to this teacher at a different lesson is a replacement too.
+        const dayLost=!removed.length&&!own&&!moved?missingOwn.filter(x=>x.className===cls&&teacherKey(x.teacher)!==teacherKey(f.teacher)&&
+          !fAssign.some(y=>teacherKey(y.teacher)===teacherKey(x.teacher)&&y.className===cls&&sameSubject(y.subject,x.subject)&&!bAssign.some(z=>exact(z,y)))):[];
+        const dayMatching=dayLost.filter(x=>sameSubject(x.subject,f.subject));
+        const dayOriginal=dayMatching.length===1?dayMatching[0]:dayLost.length===1?dayLost[0]:null;
+        if(!original&&dayOriginal)original=dayOriginal;
         if(original&&!own&&!moved)origins.push(original.teacher);
-        choices.push(...removed.map(x=>x.teacher));
+        choices.push(...removed.map(x=>x.teacher),...dayLost.map(x=>x.teacher));
         const change=changes.get(classKey(cls,f.lesson));
         const parts=change ? text(change.change).split(/\s+\/\s+/).map(parseLesson) : [];
         const conflict=!!change && (/^отмен/i.test(text(change.change)) || (parts.length&&!parts.some(p=>sameSubject(p.subject,f.subject))));
         if(conflict)mismatch=true;
         evidence.push({className:cls,oldTeachers:old.map(x=>({teacher:x.teacher,subject:subject(x.subject),room:text(x.room)})),
           removedTeachers:removed.map(x=>x.teacher),retained:!!own,movedFrom:moved?moved.lesson:null,
-          originalTeacher:original?original.teacher:'',ambiguous:!original&&removed.length>1,
+          dayRemoved:dayLost.map(x=>({teacher:x.teacher,lesson:x.lesson,subject:subject(x.subject)})),fromLesson:dayOriginal&&original===dayOriginal?dayOriginal.lesson:null,
+          originalTeacher:original?original.teacher:'',ambiguous:!original&&(removed.length>1||dayLost.length>1),
           studentChange:change?text(change.change):'',studentMismatch:conflict});
       });
       if(!isDifferent&&!mismatch)return;
       // Only the receiving teacher is a replacement candidate. A cancellation,
       // room change, own-lesson move or an extra lesson has no transferred assignment.
-      const transferred=evidence.some(e=>!e.retained&&!e.movedFrom&&e.removedTeachers.some(t=>teacherKey(t)!==teacherKey(f.teacher)));
+      const transferred=evidence.some(e=>!e.retained&&!e.movedFrom&&(e.removedTeachers.some(t=>teacherKey(t)!==teacherKey(f.teacher))||e.dayRemoved.some(x=>teacherKey(x.teacher)!==teacherKey(f.teacher))));
       if(!cs.length||!transferred)return;
       let kind='added', reason='Новый урок: исходный заменяемый учитель не установлен.', recommend='exclude';
       if(!cs.length){kind='cancelled';reason='Урок снят. Само снятие урока не является часом замены.';}
@@ -136,6 +144,7 @@ var S20Schedule = (function () {
       else if(evidence.every(e=>e.retained)&&sameSubject(b.subject,f.subject)) {kind='room';reason='Учитель и предмет те же: изменился кабинет.';}
       else if(evidence.every(e=>e.retained||e.movedFrom)){kind='moved';reason='Перенос собственного урока, а не автоматическое замещение другого педагога.';}
       else if(evidence.some(e=>e.ambiguous)){kind='ambiguous';reason='Несколько исходных учителей/подгрупп. Выберите, кого действительно заменяли.';}
+      else if(origins.length&&evidence.some(e=>e.fromLesson)){kind='replacement';reason='Урок другого учителя у этого класса снят, а новый урок поставлен в другое время (по расписанию — '+evidence.find(e=>e.fromLesson).fromLesson+' урок). Требуется ваше подтверждение.';recommend='pending';}
       else if(origins.length){kind='replacement';reason='На месте занятия другого учителя появилось новое назначение. Требуется ваше подтверждение.';recommend='confirm';}
       if(mismatch){kind='student-mismatch';reason='Учительская сетка расходится с ручными изменениями для учеников. Проверьте обе записи.';recommend='pending';}
       if(kind==='combined'||kind==='ambiguous')recommend='pending';

@@ -60,7 +60,7 @@
   <main id="app-view" hidden>
     <header class="workspace-head">
       <a class="workspace-brand" href="https://sosh20tver.ru/" target="_blank" rel="noopener"><span class="school-mark" aria-hidden="true">20</span><span><strong id="school-name">МОУ СОШ № 20</strong><small>Панель расписания</small></span></a>
-      <nav class="workspace-nav" aria-label="Разделы панели"><button class="tab active" data-tab="teachers">Расписание</button><span id="replacements-slot" class="top-actions"></span></nav>
+      <nav class="workspace-nav" aria-label="Разделы панели"><button class="tab active" data-tab="teachers">Изменения</button><span id="replacements-slot" class="top-actions"></span></nav>
       <details class="workspace-more" id="workspace-more"><summary class="btn quiet small">Ещё <span aria-hidden="true">⌄</span></summary><div class="more-menu">
         <button id="reload-button">Обновить данные</button><button id="preview-button">Предпросмотр для учеников</button>
         <button data-tab="rooms">Свободные кабинеты</button><button data-tab="notices">Объявления</button>
@@ -92,9 +92,24 @@
       </div>
       <div class="mobile-modebar" role="group" aria-label="Представление расписания"><button data-mobile-mode="teacher" class="active">По учителям</button><button data-mobile-mode="lesson">По уроку</button><button data-mobile-mode="grid">Сетка</button></div>
       <div class="mobile-selection" id="mobile-selection"><label id="mobile-teacher-field">Учитель<select id="mobile-teacher-select"></select></label><label id="mobile-lesson-field" hidden>Номер урока<select id="mobile-lesson-select"></select></label><label id="mobile-free-field" hidden><input type="checkbox" id="mobile-free"> Только свободные учителя</label></div>
-      <div class="grid-scroll" id="workspace-grid-scroll"><div class="teacher-grid" id="teacher-grid" role="grid" aria-label="Расписание учителей"></div></div>
-      <div class="workspace-mobile-list" id="workspace-mobile-list"></div>
-      <footer class="workspace-legend"><span><i class="normal"></i>Обычный урок</span><span><i class="changed"></i>Изменён</span><span><i class="room-change"></i>Кабинет</span><span><i class="cancelled"></i>Снят</span><span><i class="added"></i>Новый</span><span id="workspace-visible-count"></span></footer>
+      <div class="workspace-split" id="workspace-split">
+       <div class="workspace-main">
+        <div class="grid-scroll" id="workspace-grid-scroll"><div class="teacher-grid" id="teacher-grid" role="grid" aria-label="Расписание учителей"></div></div>
+        <div class="workspace-mobile-list" id="workspace-mobile-list"></div>
+        <footer class="workspace-legend"><span><i class="normal"></i>Обычный урок</span><span><i class="changed"></i>Изменён</span><span><i class="added"></i>Новый</span><span><i class="room-change"></i>Кабинет</span><span><i class="cancelled"></i>Снят</span><span class="legend-tip">Наведите на урок: × снимает его, в пустой клетке — «+ урок». Delete снимает выбранный урок.</span><span id="workspace-visible-count"></span></footer>
+       </div>
+       <aside class="workspace-side" id="workspace-side" aria-label="Урок и кабинеты">
+        <div class="side-stack" id="side-home">
+         <section class="side-card side-help"><h2>Правки вручную</h2><p>Нажмите на урок — здесь откроется форма: класс (можно два), предмет, кабинет.</p><p>Крестик на уроке снимает его сразу, без вопросов. Любое действие можно отменить.</p></section>
+         <section class="side-card" aria-labelledby="side-rooms-title"><div class="side-card-head"><h2 id="side-rooms-title">Свободные кабинеты</h2><span class="side-muted" id="side-rooms-count"></span></div><span class="side-muted" id="side-rooms-label"></span><div class="side-steps" role="group" aria-label="Номер урока" id="side-rooms-steps"></div><div id="side-rooms-floors"></div></section>
+         <section class="side-card"><h2>Изменения дня</h2><div class="side-summary" id="side-summary"></div><button class="btn quiet" id="side-publish-preview" type="button">Что увидят ученики и учителя</button></section>
+        </div>
+        <div class="side-stack" id="side-teacher" hidden>
+         <section class="side-card" aria-labelledby="side-teacher-name"><div class="side-card-head"><h2 id="side-teacher-name"></h2><button class="icon-button" id="side-teacher-close" type="button" aria-label="Закрыть">×</button></div><ul class="side-lessons" id="side-teacher-lessons"></ul><button class="btn danger" id="side-cancel-all" type="button">Снять все уроки учителя</button><button class="btn quiet" id="side-reset-all" type="button">Вернуть все уроки как по расписанию</button></section>
+        </div>
+        <div id="editor-slot"></div>
+       </aside>
+      </div>
       <div hidden aria-hidden="true"><span id="zoom-value">100%</span><button id="zoom-in">+</button><button id="zoom-out">−</button><button id="print-teachers-inline">Печать</button></div>
     </section>
     <section id="preview-view" class="panel card" hidden><div class="panel-head"><h2>Предпросмотр для учеников</h2><button class="btn quiet small" data-tab="teachers">Вернуться к сетке</button></div><p class="student-help">Результат учительской сетки. Ничего дополнительно публиковать здесь не нужно.</p><label class="preview-class-label">Класс<select id="preview-class"></select></label><div id="student-preview"></div></section>
@@ -149,15 +164,21 @@
  <div class="modal wide-modal">
   <header class="modal-head editor-head"><div><h3 id="cell-modal-title">Редактирование урока</h3><p id="cell-modal-context"></p></div><button class="icon-button" id="cell-close" type="button" aria-label="Закрыть редактирование">×</button></header>
   <div class="modal-body editor-body">
-   <div class="field editor-class"><label for="edit-class">Класс</label><input id="edit-class" list="classes-list" autocomplete="off" placeholder="Например, 5А"><button class="second-class-toggle" id="add-second-class" type="button">+ Второй класс</button></div>
-   <div class="field editor-second" id="second-class-field" hidden><label for="edit-class-2">Второй класс <button class="remove-second" type="button" id="remove-second-class" aria-label="Убрать второй класс">×</button></label><input id="edit-class-2" list="classes-list" autocomplete="off" placeholder="Например, 5Б"></div>
-   <div class="field editor-subject"><label for="edit-subject">Предмет</label><input id="edit-subject" list="subjects-list" autocomplete="off" placeholder="Полное название"></div>
-   <div class="field editor-room"><label for="edit-room">Кабинет</label><input id="edit-room" list="rooms-list" autocomplete="off" placeholder="Номер или название"></div>
    <p class="editor-original" id="cell-modal-subtitle"></p>
-   <details class="editor-extra" id="editor-extra"><summary>Примечание и свободные учителя / кабинеты</summary><div class="field"><label for="edit-note">Примечание</label><input id="edit-note" placeholder="Необязательно"></div><div class="section-mini"><h4>Свободные кабинеты</h4><div class="chip-list" id="free-rooms"></div></div><div class="section-mini"><h4>Свободные учителя на этот урок</h4><div class="chip-list" id="free-teachers"></div></div></details>
+   <span class="editor-badge" id="cell-modal-badge"></span>
+   <div class="editor-classes">
+    <div class="field editor-class"><label for="edit-class">Класс</label><input id="edit-class" list="classes-list" autocomplete="off" placeholder="5А"></div>
+    <div class="field editor-second" id="second-class-field" hidden><label for="edit-class-2">Второй класс</label><input id="edit-class-2" list="classes-list" autocomplete="off" placeholder="5Б"></div>
+    <button class="remove-second icon-button" type="button" id="remove-second-class" aria-label="Убрать второй класс" hidden>×</button>
+    <button class="second-class-toggle" id="add-second-class" type="button">+ второй класс</button>
+   </div>
+   <div class="field editor-subject"><label for="edit-subject">Предмет</label><input id="edit-subject" list="subjects-list" autocomplete="off" placeholder="Полное название"><div class="chip-list editor-chips" id="teacher-subjects" role="group" aria-label="Предметы этого учителя"></div></div>
+   <div class="field editor-room"><div class="editor-label-row"><label for="edit-room">Кабинет</label><span id="free-rooms-count"></span></div><div class="chip-list editor-chips" id="free-rooms" role="group" aria-label="Свободные кабинеты на этот урок"></div><input id="edit-room" list="rooms-list" autocomplete="off" placeholder="или впишите: 304/301, спортзал"></div>
+   <div class="field editor-note"><label for="edit-note">Примечание</label><input id="edit-note" placeholder="Необязательно"></div>
+   <p class="editor-journal" id="editor-journal" hidden>Урок у этого учителя не по расписанию — он попадёт в «Учёт замен» на проверку в конце недели.</p>
    <p class="editor-error" id="editor-error" role="alert"></p>
   </div>
-  <footer class="modal-actions editor-actions"><button class="btn primary" id="cell-save" type="button">Сохранить</button><button class="btn danger" id="cell-cancel" type="button">Снять урок</button><button class="btn quiet" id="cell-reset" type="button">Вернуть исходное</button></footer>
+  <footer class="modal-actions editor-actions"><button class="btn primary" id="cell-save" type="button">Сохранить</button><button class="btn danger" id="cell-cancel" type="button">Снять урок</button><button class="btn quiet" id="cell-reset" type="button">Как по расписанию</button></footer>
  </div>
 </section>
 <datalist id="rooms-list"></datalist>
@@ -182,17 +203,22 @@
 const ROOMS=['106','107','108','109','204','205','206','207','208','209','211','301','303','304','305','306','307','308','309','310','402','404','406','407'];
 const ONLY6=new Set(['106','108','204','207','208']), ONLY56=new Set(['107','206']);
 const BELLS=[['08:00','08:40'],['08:50','09:30'],['09:45','10:25'],['10:45','11:25'],['11:40','12:20'],['12:30','13:10'],['13:20','14:00'],['14:15','14:55'],['15:10','15:50'],['16:05','16:45'],['17:00','17:40'],['17:50','18:30']];
-const state={token:'',today:'',classes:[],subjects:[],teachers:[],day:null,edits:new Map(),existing:[],overrides:new Map(),suppressed:new Set(),dirty:false,selected:null,zoom:100,studentEditKey:'',undo:[],redo:[],lastWarnings:[],publicationMeta:null,photoSuggestions:[],loading:false,publishing:false,loadSerial:0,editorInitial:'',editorOpen:false,previewSnapshot:null,ui:{mode:'teacher',teacher:'',search:'',grade:'',subject:'',room:'',view:'teachers'}};
+const state={token:'',today:'',classes:[],subjects:[],teachers:[],day:null,edits:new Map(),existing:[],overrides:new Map(),suppressed:new Set(),dirty:false,selected:null,zoom:100,studentEditKey:'',undo:[],redo:[],lastWarnings:[],publicationMeta:null,photoSuggestions:[],loading:false,publishing:false,loadSerial:0,editorInitial:'',editorOpen:false,previewSnapshot:null,ui:{mode:'teacher',teacher:'',search:'',grade:'',subject:'',room:'',view:'teachers',sideTeacher:'',roomLesson:1}};
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'').trim();
 const fullLesson=v=>window.SchoolSubjects?.expandLessonText?window.SchoolSubjects.expandLessonText(v):String(v??'').trim();
 function fullChangeText(v){const raw=String(v??'').trim();if(!raw||/^отмен/i.test(raw))return raw;return raw.split(/\s+\/\s+/).map(x=>fullLesson(x)).join(' / ')}
-const classList=v=>[...new Set(String(v||'').split(/[+,;/]/).map(x=>x.trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,'')).filter(x=>/^(?:10|11|[1-9])[А-Я]$/.test(x)))];
-const normClass=v=>String(v||'').trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,''),key=(c,l)=>normClass(c)+'|'+Number(l),cellKey=(t,l)=>String(t)+'|'+Number(l);
+// Class letters typed in the Latin layout («5a») become Cyrillic («5А»).
+const LATIN_CLASS={A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',X:'Х',Y:'У'},cyrClass=v=>v.replace(/^(\d+)([ABEKMHOPCTXY])$/,(_,n,ch)=>n+LATIN_CLASS[ch]);
+const classList=v=>[...new Set(String(v||'').split(/[+,;/]/).map(x=>cyrClass(x.trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,''))).filter(x=>/^(?:10|11|[1-9])[А-Я]$/.test(x)))];
+const normClass=v=>cyrClass(String(v||'').trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,'')),key=(c,l)=>normClass(c)+'|'+Number(l),cellKey=(t,l)=>String(t)+'|'+Number(l);
 const call=(name,...args)=>new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message?e.message:String(e))))[name](...args));
 const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 function setStatus(t,type=''){const e=$('#status');e.textContent=t;e.className='status'+(type?' '+type:'')}
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2500)}
+// A short message; with opt.action it carries a button (usually «Отменить») and stays longer.
+let toastTimer=null;
+function toast(t,opt){const e=$('#toast');e.textContent='';const s=document.createElement('span');s.textContent=t;e.append(s);if(opt?.action){const b=document.createElement('button');b.type='button';b.className='toast-action';b.textContent=opt.action;b.onclick=()=>{e.classList.remove('show','has-action');opt.onAction();};e.append(b);}e.classList.toggle('has-action',!!opt?.action);e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show','has-action'),opt?.action?10000:2500)}
+function undoToast(text){toast(text,{action:'Отменить',onAction:()=>{undo();refreshEditor();}})}
 function setDirty(v=true){state.dirty=!!v;$('#publish-note').textContent=v?'Есть неопубликованные изменения':'Опубликованная версия';renderSummary();scheduleLocalDraft();}
 
 function makeStudentText(subject,room){subject=fullSubject(subject);room=String(room||'').trim();return subject?(room?`${subject} (${room})`:subject):''}
@@ -248,28 +274,33 @@ async function loadDay(force=false){
  const target=$('#date').value,previous=workingDate();
  if(state.loading||state.publishing){$('#date').value=previous||target;return;}
  if(!target){$('#date').value=previous;return;}
- if(!force&&(!canLeaveEditor()||(state.dirty&&!confirm('Есть неопубликованные изменения. Сохранить их локально и перейти к выбранной дате?')))){$('#date').value=previous;return;}
+ if(!force&&!canLeaveEditor()){$('#date').value=previous;return;}
+ // Unpublished edits are kept as this device's draft of that day; returning offers to restore them.
+ const keptDraft=!force&&state.dirty&&previous&&previous!==target?previous:'';
  draftSaveLocal();closeCell(true);state.loading=true;state.previewSnapshot=null;const serial=++state.loadSerial;syncWorkspaceControls();setStatus('Загружаю день…');
  try{
   const d=await call('getAdminDay',state.token,target);if(serial!==state.loadSerial)return;
   d.date=d.date||target;state.day=d;$('#date').value=d.date;state.teachers=(d.teachers?.length?d.teachers:state.teachers)||[];
   state.edits=new Map((d.edits||[]).map(x=>{const y={...x,subject:fullSubject(x.subject)};return[cellKey(y.teacher,y.lesson),y];}));state.existing=(d.studentChanges||[]).map(x=>({...x,change:fullChangeText(x.change)}));
-  state.selected=null;state.undo=[];state.redo=[];state.lastWarnings=[];initManualState();state.dirty=false;$('#draft-status').textContent='';updateFilters();renderAll();updateUndoButtons();offerDraft();await loadMeta();setStatus(d.weekend?'Выходной день':'Данные загружены','ok');
+  state.selected=null;state.ui.sideTeacher='';state.ui.roomLesson=d.date===state.today?currentLessonNumber():1;state.undo=[];state.redo=[];state.lastWarnings=[];initManualState();state.dirty=false;$('#draft-status').textContent='';updateFilters();renderAll();updateUndoButtons();offerDraft();if(keptDraft)toast('Правки за '+keptDraft.split('-').reverse().join('.')+' сохранены на этом устройстве');await loadMeta();setStatus(d.weekend?'Выходной день':'Данные загружены','ok');
  }catch(e){$('#date').value=previous||target;handleError(e);}finally{if(serial===state.loadSerial){state.loading=false;syncWorkspaceControls();window.SchoolReplacementUI?.dayLoaded();}}
 }
 
 function renderGrid(){
- parkEditor();const bm=baseMap(),teachers=visibleTeachers();
- let html='<div role="row" class="grid-header-row"><div class="ghead teacher" role="columnheader">Учитель</div>'+BELLS.map((t,i)=>`<div class="ghead" role="columnheader" data-lesson="${i+1}"><b>${i+1}</b><small>${t.join('–')}</small></div>`).join('')+'</div>';
+ parkEditor();const bm=baseMap(),teachers=visibleTeachers(),now=currentLessonIfToday();
+ let html='<div role="row" class="grid-header-row"><div class="ghead teacher" role="columnheader">Учитель</div>'+BELLS.map((t,i)=>`<div class="ghead${i+1===now?' now':''}" role="columnheader" data-lesson="${i+1}"><b>${i+1}</b><small>${t[0]}</small></div>`).join('')+'</div>';
  let first=true;
  for(const t of teachers){
-  html+=`<div class="teacher-row" role="row"><div class="teacher-name ${teacherHasEdit(t)?'changed':''}" role="rowheader">${esc(t)}</div>`;
+  let count=0;for(let l=1;l<=12;l++){const b=bm.get(cellKey(t,l));if(currentCell(b||{teacher:t,lesson:l,className:'',subject:'',room:''}).className)count++;}
+  html+=`<div class="teacher-row" role="row"><div class="teacher-name ${teacherHasEdit(t)?'changed':''}${state.ui.sideTeacher===t?' picked':''}" role="rowheader"><button type="button" class="teacher-open" data-teacher-card="${esc(t)}" tabindex="-1" title="Уроки учителя за день"><span>${esc(t)}</span><small>${count?count+' '+lessonWord(count):'нет уроков'}</small></button></div>`;
   for(let l=1;l<=12;l++){
-   const b=bm.get(cellKey(t,l))||{teacher:t,lesson:l,className:'',subject:'',room:''},c=currentCell(b),v=cellPresentation(b,c),selected=state.selected===cellKey(t,l),label=[t,l+' урок',v.label,v.cls,v.subject,v.room].filter(Boolean).join(' · ');
-   html+=`<button type="button" role="gridcell" tabindex="${selected||(!state.selected&&first)?'0':'-1'}" aria-selected="${selected}" aria-label="${esc(label||'Свободно')}" title="${esc(label)}" class="schedule-cell ${v.kind}${selected?' selected':''}${matchesCell(b,c)?'':' filter-muted'}" data-teacher="${esc(t)}" data-lesson="${l}">${cellContents(b,c)}</button>`;first=false;
+   const b=bm.get(cellKey(t,l))||{teacher:t,lesson:l,className:'',subject:'',room:''},c=currentCell(b),v=cellPresentation(b,c),selected=state.selected===cellKey(t,l)&&state.editorOpen;
+   const label=[t,l+' урок',v.label,v.cls,v.subject,v.room&&'каб. '+v.room,v.kind==='room-change'&&b.room?'было каб. '+b.room:''].filter(Boolean).join(' · ');
+   // The × and ↺ sit beside the cell button (a button cannot hold another button).
+   const act=c.className?`<button type="button" class="cell-act cancel" data-act="cancel" data-act-teacher="${esc(t)}" data-act-lesson="${l}" tabindex="-1" title="Снять урок" aria-label="Снять урок: ${esc(t)}, ${l} урок"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`:c.status==='cancel'?`<button type="button" class="cell-act restore" data-act="reset" data-act-teacher="${esc(t)}" data-act-lesson="${l}" tabindex="-1" title="Вернуть как по расписанию" aria-label="Вернуть урок: ${esc(t)}, ${l} урок"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg></button>`:'';
+   html+=`<div class="slot${selected?' selected':''}" role="gridcell" aria-selected="${selected}"><button type="button" tabindex="${selected||(!state.selected&&first)?'0':'-1'}" aria-label="${esc((label||t+' · '+l+' урок · свободно')+(c.className?'. Delete — снять урок':''))}" title="${esc(label)}" class="schedule-cell ${v.kind}${selected?' selected':''}${matchesCell(b,c)?'':' filter-muted'}" data-teacher="${esc(t)}" data-lesson="${l}">${cellContents(b,c)}</button>${act}</div>`;first=false;
   }
   html+='</div>';
-  if(state.editorOpen&&selectedParts()?.teacher===t)html+='<div class="editor-mount" data-editor-mount></div>';
  }
  $('#teacher-grid').innerHTML=teachers.length?html:'<div class="empty grid-empty">Учителя по выбранным фильтрам не найдены.</div>';
  $('#workspace-visible-count').textContent=`Учителей: ${teachers.length} из ${state.teachers.length}`;
@@ -320,10 +351,67 @@ async function saveNoticeFromForm(){
 }
 async function deleteNoticeFromList(id){if(!confirm('Удалить это объявление?'))return;try{await call('deleteNotice',state.token,id);toast('Объявление удалено');await loadNoticesAdmin()}catch(e){alert(e.message)}}
 
-function renderAll(){renderGrid();renderStudents();renderRooms();if(state.ui.view==='preview')renderStudentPreview();}
+function renderAll(){renderGrid();renderStudents();renderRooms();renderSide();if(state.ui.view==='preview')renderStudentPreview();}
+
+// Right-hand panel: the lesson form while a lesson is open, a teacher's day after a click on the
+// name, otherwise free rooms for the chosen lesson and the day's totals.
+const FLOORS=[...new Set(ROOMS.map(r=>r[0]))].map(f=>[f+' этаж',ROOMS.filter(r=>r[0]===f)]);
+function lessonWord(n){const a=n%10,b=n%100;return a===1&&b!==11?'урок':a>=2&&a<=4&&(b<10||b>=20)?'урока':'уроков'}
+function currentLessonIfToday(){return workingDate()&&workingDate()===state.today?currentLessonNumber():0}
+function renderSide(){
+ if(!$('#workspace-side'))return;const editing=state.editorOpen&&!matchMedia('(max-width:760px)').matches,teacher=!editing&&state.ui.sideTeacher&&state.teachers.includes(state.ui.sideTeacher)?state.ui.sideTeacher:'';
+ $('#side-home').hidden=editing||!!teacher;$('#side-teacher').hidden=!teacher;$('#workspace-split').classList.toggle('side-open',editing||!!teacher);
+ if(teacher)renderSideTeacher(teacher);else if(!editing)renderSideHome();
+}
+function renderSideHome(){
+ if(!state.day)return;const l=state.ui.roomLesson||1,used=usedRoomMap(l,''),free=ROOMS.filter(r=>roomAllowed(r,l)&&!used.has(r)).length;
+ $('#side-rooms-label').textContent=l+' урок · '+BELLS[l-1].join('–')+(l===currentLessonIfToday()?' · сейчас':'');$('#side-rooms-count').textContent='свободно '+free;
+ $('#side-rooms-steps').innerHTML=BELLS.map((_,i)=>`<button type="button" class="side-step${i+1===l?' on':''}" data-room-lesson="${i+1}" aria-pressed="${i+1===l}">${i+1}</button>`).join('');
+ $('#side-rooms-floors').innerHTML=FLOORS.map(([name,rooms])=>`<div class="side-floor"><span>${name}</span><div class="side-rooms">${rooms.map(r=>{const u=used.get(r),ok=roomAllowed(r,l),kind=u?'busy':ok?'free':'reserved',note=u?u:ok?'свободен':ONLY6.has(r)?'только 6':'5–6';return`<span class="side-room ${kind}" title="Кабинет ${r}: ${esc(u?'занят, '+u:ok?'свободен':'только для 5–6 урока')}"><b>${r}</b><small>${esc(note)}</small></span>`}).join('')}</div></div>`).join('');
+ const n={cancelled:0,changed:0,added:0,'room-change':0};for(const b of state.day.cells||[]){const v=cellPresentation(b,currentCell(b));if(v.kind in n)n[v.kind]++;}
+ $('#side-summary').innerHTML=[['Снято',n.cancelled],['Изменено',n.changed],['Новых',n.added],['Кабинетов',n['room-change']]].map(([a,b])=>`<div><b>${b}</b><span>${a}</span></div>`).join('');
+}
+function renderSideTeacher(t){
+ const bm=baseMap();let html='',hasLessons=false,hasEdits=false;
+ for(let l=1;l<=12;l++){const b=bm.get(cellKey(t,l))||{teacher:t,lesson:l,className:'',subject:'',room:''},c=currentCell(b),v=cellPresentation(b,c);if(v.kind==='empty')continue;if(c.className)hasLessons=true;if(state.edits.has(cellKey(t,l)))hasEdits=true;
+  html+=`<li><button type="button" data-side-lesson="${l}"><span>${l} урок · ${esc(v.cls)} · ${esc(v.subject)}</span><span class="side-state ${v.kind}">${v.kind==='normal'?'по расписанию':esc(v.label.toLowerCase())}</span></button></li>`;}
+ $('#side-teacher-name').textContent=t;$('#side-teacher-lessons').innerHTML=html||'<li class="hint">Уроков нет.</li>';$('#side-cancel-all').disabled=!hasLessons;$('#side-reset-all').disabled=!hasEdits;
+}
+function openTeacherCard(t){if(state.editorOpen&&!closeCell())return;state.ui.sideTeacher=t;renderGrid();renderSide();}
+function cancelAllTeacher(t){
+ const bm=baseMap();let n=0;mutate(()=>{for(let l=1;l<=12;l++){const k=cellKey(t,l),b=bm.get(k)||{teacher:t,lesson:l,className:''},c=currentCell(b);if(!c.className)continue;n++;if(b.className)state.edits.set(k,{teacher:t,lesson:l,type:'cancel',className:'',subject:'',room:'',note:''});else state.edits.delete(k);}});
+ undoToast(t+': снято '+n+' '+lessonWord(n));
+}
+function resetAllTeacher(t){mutate(()=>{for(let l=1;l<=12;l++)state.edits.delete(cellKey(t,l));});undoToast(t+': уроки как по расписанию');}
 
 function selectedParts(){if(!state.selected)return null;const p=state.selected.split('|');return{teacher:p.slice(0,-1).join('|'),lesson:Number(p[p.length-1])}}
-function renderCellHelpers(t,l,subject){const rooms=freeRooms(l);$('#free-rooms').innerHTML=rooms.length?rooms.map(r=>`<button class="choice-chip good" data-room="${r}">${r}</button>`).join(''):'<span class="hint">Свободных кабинетов по текущей сетке не найдено.</span>';const teachers=freeTeachers(l,subject,t).slice(0,18);$('#free-teachers').innerHTML=teachers.length?teachers.map(x=>`<button class="choice-chip ${x.same?'same':''}" data-free-teacher="${esc(x.teacher)}" data-free-lesson="${l}">${esc(x.teacher)}${x.same?' · тот же предмет':''}</button>`).join(''):'<span class="hint">Свободных преподавателей не найдено.</span>'}
+// Form helpers: rooms free at this lesson (the edited slot's own room counts as free) and the
+// subjects this teacher has today, both as one-click chips.
+function renderCellHelpers(t,l){
+ const rooms=freeRoomsFor(l,cellKey(t,l)),cur=splitRooms($('#edit-room').value);
+ $('#free-rooms-count').textContent='свободно: '+rooms.length;
+ $('#free-rooms').innerHTML=rooms.length?rooms.map(r=>`<button type="button" class="choice-chip room-pick${cur.includes(r)?' on':''}" data-room="${r}" aria-pressed="${cur.includes(r)}">${r}</button>`).join(''):'<span class="hint">Свободных кабинетов на этот урок нет — впишите вручную.</span>';
+ const subjects=teacherSubjectList(t),now=canonical(fullSubject($('#edit-subject').value));
+ $('#teacher-subjects').innerHTML=subjects.map(s=>`<button type="button" class="choice-chip${canonical(s)===now?' on':''}" data-subject="${esc(s)}" aria-pressed="${canonical(s)===now}">${esc(s)}</button>`).join('');
+ $('#teacher-subjects').hidden=!subjects.length;
+}
+function teacherSubjectList(t){return[...new Set((state.day?.cells||[]).filter(c=>c.teacher===t&&c.subject).map(c=>fullSubject(c.subject)))]}
+function freeRoomsFor(lesson,exceptKey){const used=usedRoomMap(lesson,exceptKey);return ROOMS.filter(r=>roomAllowed(r,lesson)&&!used.has(r))}
+function usedRoomMap(lesson,exceptKey){const used=new Map();for(const b of state.day?.cells||[]){if(b.lesson!==lesson||cellKey(b.teacher,b.lesson)===exceptKey)continue;const c=currentCell(b);if(c.status!=='cancel'&&c.className)splitRooms(c.room).forEach(r=>used.set(r,c.className));}return used}
+// Whether the lesson in the form would go to «Учёт замен»: the teacher gets a class they did not
+// have in this slot, it is not their own lesson moved from another slot, and another teacher lost
+// a lesson of that class today. Mirrors S20Schedule.candidates closely enough for a hint.
+function journalHint(teacher,lesson,classes){
+ const cells=state.day?.cells||[],base=classList(baseMap().get(cellKey(teacher,lesson))?.className);
+ return classes.some(cls=>{
+  if(base.includes(cls))return false;
+  const ownMoved=cells.some(b=>b.teacher===teacher&&b.lesson!==lesson&&classList(b.className).includes(cls)&&!classList(currentCell(b).className).includes(cls));
+  if(ownMoved)return false;
+  return cells.some(b=>b.teacher!==teacher&&classList(b.className).includes(cls)&&!classList(currentCell(b).className).includes(cls));
+ });
+}
+function updateJournalHint(){const p=selectedParts();if(!p)return;$('#editor-journal').hidden=!journalHint(p.teacher,p.lesson,classList([$('#edit-class').value,$('#edit-class-2').value].join('+')));}
+function toggleSecond(on){$('#second-class-field').hidden=!on;$('#remove-second-class').hidden=!on;$('#add-second-class').hidden=on;if(!on)$('#edit-class-2').value='';}
 function currentLessonNumber(){const tm=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()),[h,m]=tm.split(':').map(Number),n=h*60+m;for(let i=0;i<BELLS.length;i++){const[a,b]=BELLS[i].map(x=>{const[p,q]=x.split(':').map(Number);return p*60+q});if(n>=a&&n<b)return i+1;if(n<a)return i+1}return 12}
 function roomChips(rooms){return rooms.length?rooms.map(r=>`<span class="room-chip">${r}</span>`).join(''):'<span class="hint">Нет доступных кабинетов.</span>'}
 function renderRooms(){const lesson=Number($('#rooms-lesson')?.value)||1,rooms=freeRooms(lesson),now=$('#rooms-current'),day=$('#rooms-day');if(!now||!day)return;now.innerHTML=`<strong>${lesson} урок · свободно ${rooms.length}</strong><div class="chip-list">${roomChips(rooms)}</div>`;day.innerHTML=Array.from({length:12},(_,i)=>{const l=i+1,r=freeRooms(l);return`<div class="room-day-row"><strong>${l} урок</strong><div class="chip-list">${roomChips(r)}</div></div>`}).join('')}
@@ -331,28 +419,55 @@ function copyRooms(){const lesson=Number($('#rooms-lesson')?.value)||1,text=`${$
 function printRooms(){const rows=Array.from({length:12},(_,i)=>{const l=i+1;return`<tr><td>${l}</td><td>${esc(freeRooms(l).join(', ')||'—')}</td></tr>`}).join('');$('#print-sheet').innerHTML=`<h1>Свободные кабинеты</h1><p class="print-subtitle">${esc($('#day-label').textContent)}</p><table><tr><th>Урок</th><th>Свободные кабинеты</th></tr>${rows}</table>`;setTimeout(()=>window.print(),30)}
 function autoFillForClass(){const p=selectedParts();if(!p)return;const cls=normClass($('#edit-class').value),txt=state.day?.baseStudent?.[key(cls,p.lesson)]||'',parsed=previewParse(txt);if(!$('#edit-subject').value.trim())$('#edit-subject').value=fullSubject(parsed.subject||'');if(!$('#edit-room').value.trim())$('#edit-room').value=parsed.room||'';}
 
-function openCell(t,l){
- if(state.loading||state.publishing||!workingDate())return;if(state.editorOpen&&!canLeaveEditor())return;
- state.selected=cellKey(t,l);state.editorOpen=true;const b=baseMap().get(state.selected)||{teacher:t,lesson:l,className:'',subject:'',room:''},c=currentCell(b);
+// The lesson form lives in the right-hand panel (full screen on a phone). Opening another lesson
+// never asks: unsaved form input is kept in a toast with «Вернуть».
+function openCell(t,l,refresh=false){
+ if(state.loading||state.publishing||!workingDate())return;
+ const k=cellKey(t,l);if(!refresh&&state.editorOpen&&state.selected===k){focusCell(t,l);return;}
+ if(!refresh&&state.editorOpen)stashEditor();
+ state.selected=k;state.editorOpen=true;state.ui.sideTeacher='';
+ const b=baseMap().get(k)||{teacher:t,lesson:l,className:'',subject:'',room:''},c=currentCell(b),v=cellPresentation(b,c),src=c.status==='cancel'?b:c;
  $('#cell-modal-title').textContent=t+' · '+l+' урок';$('#cell-modal-context').textContent=$('#day-label').textContent+' · '+(BELLS[l-1]||[]).join('–');
- $('#cell-modal-subtitle').textContent=b.className?'Исходно: '+[b.className,fullSubject(b.subject),b.room].filter(Boolean).join(' · '):'Исходная клетка свободна';
- $('#edit-class').value=classList(c.className)[0]||'';$('#edit-class-2').value=classList(c.className)[1]||'';$('#edit-subject').value=fullSubject(c.subject||'');$('#edit-room').value=c.room||'';$('#edit-note').value=c.note||'';
- $('#second-class-field').hidden=!$('#edit-class-2').value;$('#add-second-class').hidden=!!$('#edit-class-2').value;$('#editor-extra').open=!!c.note;
- $('#cell-cancel').disabled=!b.className;$('#cell-reset').disabled=!state.edits.has(state.selected);showEditorError('');state.editorInitial=JSON.stringify(editorValues());
- renderCellHelpers(t,l,c.subject||b.subject);renderGrid();
- setTimeout(()=>{if(!state.editorOpen)return;if(matchMedia('(max-width:760px)').matches)$('#cell-close').focus({preventScroll:true});else $('#cell-modal').scrollIntoView({block:'nearest',behavior:'smooth'});},0);
+ $('#cell-modal-subtitle').textContent=b.className?'По расписанию: '+[b.className,fullSubject(b.subject),b.room&&'каб. '+b.room].filter(Boolean).join(' · '):'По расписанию урока нет';
+ const badge=$('#cell-modal-badge');badge.className='editor-badge '+v.kind;badge.textContent=v.kind==='empty'?'Окно':v.kind==='normal'?'По расписанию':v.label;
+ $('#edit-class').value=classList(src.className)[0]||'';$('#edit-class-2').value=classList(src.className)[1]||'';$('#edit-subject').value=fullSubject(src.subject||'');$('#edit-room').value=src.room||'';$('#edit-note').value=c.status==='cancel'?'':c.note||'';
+ toggleSecond(!!$('#edit-class-2').value);
+ $('#cell-cancel').disabled=!c.className;$('#cell-reset').disabled=!state.edits.has(k);$('#cell-save').textContent=b.className||c.className?'Сохранить':'Добавить урок';
+ showEditorError('');state.editorInitial=JSON.stringify(editorValues());
+ renderCellHelpers(t,l);updateJournalHint();renderGrid();renderSide();
+ if(refresh)return;
+ setTimeout(()=>{if(!state.editorOpen)return;if(matchMedia('(max-width:760px)').matches)$('#cell-close').focus({preventScroll:true});else if(!c.className&&c.status!=='cancel')$('#edit-class').focus({preventScroll:true});else focusCell(t,l);},0);
+}
+function focusCell(t,l){const target=[...$('#teacher-grid').querySelectorAll('button[data-teacher]')].find(b=>b.dataset.teacher===t&&Number(b.dataset.lesson)===l);if(target){$('#teacher-grid').querySelectorAll('button[data-teacher][tabindex="0"]').forEach(b=>b.tabIndex=-1);target.tabIndex=0;target.focus({preventScroll:true});}}
+function refreshEditor(k){if(!state.editorOpen||!state.selected||(k&&k!==state.selected))return;const p=selectedParts();openCell(p.teacher,p.lesson,true);}
+function stashEditor(){
+ if(!editorChanged())return;const prev={key:state.selected,values:editorValues(),date:workingDate()};
+ toast('Правка урока не сохранена',{action:'Вернуть',onAction:()=>{if(workingDate()!==prev.date)return;const p=prev.key.split('|'),l=Number(p.pop()),t=p.join('|');state.editorOpen=false;openCell(t,l);
+  ['edit-class','edit-class-2','edit-subject','edit-room','edit-note'].forEach((id,i)=>$('#'+id).value=prev.values[i]);toggleSecond(!!prev.values[1]);renderCellHelpers(t,l);updateJournalHint();}});
 }
 
-function closeCell(force=false){if(force!==true&&!canLeaveEditor())return false;state.editorOpen=false;$('#cell-modal').hidden=true;$('#editor-parking').append($('#cell-modal'));document.body.classList.remove('editing-mobile');const slot=state.selected;document.querySelectorAll('[data-editor-mount]').forEach(el=>el.remove());if(slot){const p=selectedParts(),target=[...$('#teacher-grid').querySelectorAll('button[data-teacher]')].find(b=>b.dataset.teacher===p?.teacher&&Number(b.dataset.lesson)===p?.lesson);target?.focus({preventScroll:true});}return true;}
+function closeCell(force=false){if(force!==true&&!canLeaveEditor())return false;state.editorOpen=false;$('#cell-modal').hidden=true;$('#editor-parking').append($('#cell-modal'));document.body.classList.remove('editing-mobile');const slot=state.selected;document.querySelectorAll('[data-editor-mount]').forEach(el=>el.remove());renderGrid();renderSide();if(slot){const p=selectedParts();if(p)focusCell(p.teacher,p.lesson);}return true;}
 
-function resetSelected(){if(!state.selected)return;mutate(()=>{state.edits.delete(state.selected)})}
-function cancelSelected(){const p=selectedParts(),b=baseMap().get(state.selected);if(!p||!b?.className)return toast('Исходная клетка свободна');mutate(()=>{state.edits.set(state.selected,{teacher:p.teacher,lesson:p.lesson,type:'cancel',className:'',subject:'',room:'',note:''})})}
+// Cancel / restore one slot right away; «Отменить» in the toast brings it back.
+function cancelSlot(t,l){
+ if(state.loading||state.publishing)return;const k=cellKey(t,l),b=baseMap().get(k)||{teacher:t,lesson:l,className:''},c=currentCell(b);if(!c.className)return;
+ mutate(()=>{if(b.className)state.edits.set(k,{teacher:t,lesson:l,type:'cancel',className:'',subject:'',room:'',note:''});else state.edits.delete(k);});
+ undoToast(b.className?'Урок снят':'Добавленный урок убран');refreshEditor(k);
+}
+function resetSlot(t,l){if(state.loading||state.publishing)return;const k=cellKey(t,l);if(!state.edits.has(k))return;mutate(()=>state.edits.delete(k));undoToast('Вернули как по расписанию');refreshEditor(k);}
+function resetSelected(){const p=selectedParts();if(p)resetSlot(p.teacher,p.lesson)}
+function cancelSelected(){const p=selectedParts();if(p)cancelSlot(p.teacher,p.lesson)}
 function saveCell(){
  if(state.loading||state.publishing)return;
  const p=selectedParts(),raw=[$('#edit-class').value,$('#edit-class-2').value].map(x=>normClass(x)).filter(Boolean),classes=classList(raw.join(' + ')),subject=fullSubject($('#edit-subject').value.trim());
  if(!p||!classes.length||classes.length!==raw.length||raw.some(x=>!/^(?:10|11|[1-9])[А-Я]$/.test(x)))return showEditorError('Укажите один или два разных класса, например 5А и 5Б.');
  if(!subject)return showEditorError('Укажите предмет.');
- mutate(()=>state.edits.set(state.selected,{teacher:p.teacher,lesson:p.lesson,type:'set',className:classes.join(' + '),subject,room:$('#edit-room').value.trim(),note:$('#edit-note').value.trim()}));closeCell(true);toast('Изменение сохранено в черновик');
+ const value={teacher:p.teacher,lesson:p.lesson,type:'set',className:classes.join(' + '),subject,room:$('#edit-room').value.trim(),note:$('#edit-note').value.trim()},b=baseMap().get(state.selected);
+ // Saving exactly what the timetable says removes the edit instead of storing a copy.
+ const asBase=b?.className&&normClass(classList(b.className).join('+'))===normClass(classes.join('+'))&&canonical(fullSubject(b.subject))===canonical(subject)&&String(b.room||'').trim()===value.room&&!value.note;
+ mutate(()=>{if(asBase)state.edits.delete(state.selected);else state.edits.set(state.selected,value);});
+ undoToast(b?.className?'Урок сохранён':'Урок добавлен');
+ if(matchMedia('(max-width:760px)').matches)closeCell(true);else refreshEditor();
 }
 
 function openStudent(k=''){state.studentEditKey=k;const x=k?finalChanges().find(v=>key(v.className,v.lesson)===k):null;$('#student-class').value=x?.className||'';$('#student-lesson').value=x?.lesson||'';$('#student-change').value=x?.change||'';$('#student-note').value=x?.note||'';$('#student-save').textContent=k?'Сохранить':'Добавить';$('#student-modal').hidden=false;setTimeout(()=>$('#student-class').focus(),20)}
@@ -397,7 +512,7 @@ async function recognizePhoto(){const file=$('#photo-file').files?.[0];if(!file)
 function applyPhoto(i,cancel=false){const x=state.photoSuggestions[i];if(!x)return;const k=cellKey(x.teacher,x.lesson),b=baseMap().get(k)||{teacher:x.teacher,lesson:x.lesson,className:'',subject:'',room:''};if(cancel||x.cancel){state.selected=k;cancelSelected();return}if(!x.className)return toast('В кандидате не распознан класс');const assignment=(state.day?.cells||[]).find(c=>classList(c.className).includes(x.className)&&c.lesson===x.lesson);mutate(()=>{state.edits.set(k,{teacher:x.teacher,lesson:x.lesson,type:'set',className:x.className,subject:assignment?.subject||b.subject||'',room:x.room||assignment?.room||b.room||'',note:'Распознано с фото — проверьте'})});toast('Кандидат добавлен в сетку')}
 function handleError(e){draftSaveLocal();setStatus(e.message,'bad');if(/сессия/i.test(e.message)){sessionStorage.removeItem('school20:adminSession');state.token='';$('#app-view').hidden=true;$('#login-view').hidden=false;$('#login-error').textContent='Сессия завершилась. Войдите снова; локальный черновик сохранён.';}}
 
-$('#login-button').onclick=login;$('#pin').addEventListener('keydown',e=>{if(e.key==='Enter')login()});$('#reload-button').onclick=()=>loadDay(false);$('#date').onchange=()=>loadDay(false);document.querySelectorAll('[data-offset]').forEach(b=>b.onclick=()=>{$('#date').value=addDays(state.today,Number(b.dataset.offset));loadDay(false)});document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));$('#teachers-view').hidden=b.dataset.tab!=='teachers';$('#students-view').hidden=b.dataset.tab!=='students';$('#rooms-view').hidden=b.dataset.tab!=='rooms';$('#notices-view').hidden=b.dataset.tab!=='notices';if(b.dataset.tab==='rooms')renderRooms();if(b.dataset.tab==='notices')loadNoticesAdmin()});$('#only-changed').onchange=renderGrid;$('#rooms-lesson').onchange=renderRooms;$('#rooms-current-button').onclick=()=>{$('#rooms-lesson').value=String(currentLessonNumber());renderRooms()};$('#rooms-copy-button').onclick=copyRooms;$('#rooms-print-button').onclick=printRooms;$('#notice-refresh').onclick=loadNoticesAdmin;$('#notice-reset').onclick=resetNoticeForm;$('#notice-save').onclick=saveNoticeFromForm;$('#notice-list').onclick=e=>{const a=e.target.closest('[data-notice-edit]'),d=e.target.closest('[data-notice-delete]');if(a)editNotice(a.dataset.noticeEdit);if(d)deleteNoticeFromList(d.dataset.noticeDelete)};$('#zoom-in').onclick=()=>{state.zoom=Math.min(140,state.zoom+10);renderGrid()};$('#zoom-out').onclick=()=>{state.zoom=Math.max(70,state.zoom-10);renderGrid()};$('#teacher-grid').onclick=e=>{const b=e.target.closest('[data-teacher]');if(b)openCell(b.dataset.teacher,Number(b.dataset.lesson))};$('#cell-close').onclick=closeCell;$('#cell-reset').onclick=()=>{resetSelected();closeCell(true)};$('#cell-cancel').onclick=()=>{cancelSelected();closeCell(true)};$('#cell-save').onclick=saveCell;$('#edit-class').addEventListener('change',autoFillForClass);$('#free-rooms').onclick=e=>{const b=e.target.closest('[data-room]');if(b)$('#edit-room').value=b.dataset.room};$('#free-teachers').onclick=e=>{const b=e.target.closest('[data-free-teacher]');if(b&&closeCell())openCell(b.dataset.freeTeacher,Number(b.dataset.freeLesson))};$('#student-list').onclick=e=>{const a=e.target.closest('[data-student-edit]'),h=e.target.closest('[data-student-hide]');if(a)return openStudent(a.dataset.studentEdit);if(h){const k=h.dataset.studentHide;mutate(()=>{state.overrides.delete(k);state.suppressed.add(k)})}};$('#add-manual').onclick=()=>openStudent();$('#reset-manual').onclick=()=>mutate(()=>{state.overrides.clear();state.suppressed.clear()});$('#student-close').onclick=()=>$('#student-modal').hidden=true;$('#student-save').onclick=saveStudent;$('#check-button').onclick=()=>checkGrid(true);$('#publish-button').onclick=preparePublish;$('#publish-top').onclick=preparePublish;$('#preview-button').onclick=preparePublish;$('#prepub-close').onclick=()=>$('#prepublish-modal').hidden=true;$('#prepub-confirm').onclick=doPublish;$('#clear-day').onclick=()=>{if(confirm('Сбросить изменения дня?'))mutate(()=>{state.edits.clear();state.overrides.clear();state.suppressed.clear()})};$('#history-button').onclick=openArchive;$('#history-close').onclick=()=>$('#history-modal').hidden=true;$('#history-list').onclick=e=>{const b=e.target.closest('[data-rollback]');if(b)rollback(b.dataset.rollback)};$('#archive-list').onclick=e=>{const b=e.target.closest('[data-print-archive]');if(b)printArchive(b.dataset.printArchive)};$('#print-teachers-button').onclick=()=>printMode('teachers');$('#print-teachers-inline').onclick=()=>printMode('teachers');$('#print-students-button').onclick=openStudentPrintOptions;$('#print-students-inline').onclick=openStudentPrintOptions;$('#student-print-close').onclick=()=>$('#student-print-modal').hidden=true;$('#student-print-modal').onclick=e=>{const b=e.target.closest('[data-student-print-scope]');if(b)printMode('students',b.dataset.studentPrintScope)};$('#undo-button').onclick=undo;$('#redo-button').onclick=redo;$('#photo-button').onclick=()=>$('#photo-modal').hidden=false;$('#photo-close').onclick=()=>$('#photo-modal').hidden=true;$('#photo-file').onchange=()=>{const f=$('#photo-file').files?.[0];if(!f)return;$('#photo-preview').src=URL.createObjectURL(f);$('#photo-preview').hidden=false;$('#ocr-status').textContent='Фото загружено. Нажмите «Распознать».'};$('#photo-recognize').onclick=recognizePhoto;$('#ocr-suggestions').onclick=e=>{const a=e.target.closest('[data-photo-apply]'),c=e.target.closest('[data-photo-cancel]');if(a)applyPhoto(Number(a.dataset.photoApply),false);if(c)applyPhoto(Number(c.dataset.photoCancel),true)};$('#schedule-publish-button').onclick=openScheduled;$('#schedule-close').onclick=()=>$('#schedule-modal').hidden=true;$('#schedule-save').onclick=scheduleCurrent;$('#scheduled-list').onclick=async e=>{const b=e.target.closest('[data-cancel-scheduled]');if(b){try{await call('cancelScheduledPublication',state.token,b.dataset.cancelScheduled);await refreshScheduled();toast('Отложенная публикация отменена')}catch(err){handleError(err)}}};$('#logout-button').onclick=async()=>{try{await call('logout',state.token)}catch(_){}sessionStorage.removeItem('school20:adminSession');location.reload()};window.addEventListener('beforeunload',e=>{if(state.dirty||window.SchoolReplacementUI?.isDirty()){e.preventDefault();e.returnValue=''}});document.addEventListener('keydown',e=>{if(state.loading||state.publishing||state.editorOpen)return;if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();return}if(((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y')||((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='z')){e.preventDefault();redo();return}if(document.querySelector('.repl-dialog:not([hidden])')||!$('#cell-modal').hidden||!$('#student-modal').hidden||!state.selected||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='x'||e.key==='X'){e.preventDefault();cancelSelected()}else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();resetSelected()}else if(e.key==='Enter'){const p=selectedParts();if(p)openCell(p.teacher,p.lesson)}});
+$('#login-button').onclick=login;$('#pin').addEventListener('keydown',e=>{if(e.key==='Enter')login()});$('#reload-button').onclick=()=>loadDay(false);$('#date').onchange=()=>loadDay(false);document.querySelectorAll('[data-offset]').forEach(b=>b.onclick=()=>{$('#date').value=addDays(state.today,Number(b.dataset.offset));loadDay(false)});document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));$('#teachers-view').hidden=b.dataset.tab!=='teachers';$('#students-view').hidden=b.dataset.tab!=='students';$('#rooms-view').hidden=b.dataset.tab!=='rooms';$('#notices-view').hidden=b.dataset.tab!=='notices';if(b.dataset.tab==='rooms')renderRooms();if(b.dataset.tab==='notices')loadNoticesAdmin()});$('#only-changed').onchange=renderGrid;$('#rooms-lesson').onchange=renderRooms;$('#rooms-current-button').onclick=()=>{$('#rooms-lesson').value=String(currentLessonNumber());renderRooms()};$('#rooms-copy-button').onclick=copyRooms;$('#rooms-print-button').onclick=printRooms;$('#notice-refresh').onclick=loadNoticesAdmin;$('#notice-reset').onclick=resetNoticeForm;$('#notice-save').onclick=saveNoticeFromForm;$('#notice-list').onclick=e=>{const a=e.target.closest('[data-notice-edit]'),d=e.target.closest('[data-notice-delete]');if(a)editNotice(a.dataset.noticeEdit);if(d)deleteNoticeFromList(d.dataset.noticeDelete)};$('#zoom-in').onclick=()=>{state.zoom=Math.min(140,state.zoom+10);renderGrid()};$('#zoom-out').onclick=()=>{state.zoom=Math.max(70,state.zoom-10);renderGrid()};$('#teacher-grid').onclick=e=>{const b=e.target.closest('[data-teacher]');if(b)openCell(b.dataset.teacher,Number(b.dataset.lesson))};$('#cell-close').onclick=closeCell;$('#cell-reset').onclick=()=>{resetSelected();closeCell(true)};$('#cell-cancel').onclick=()=>{cancelSelected();closeCell(true)};$('#cell-save').onclick=saveCell;$('#edit-class').addEventListener('change',autoFillForClass);$('#student-list').onclick=e=>{const a=e.target.closest('[data-student-edit]'),h=e.target.closest('[data-student-hide]');if(a)return openStudent(a.dataset.studentEdit);if(h){const k=h.dataset.studentHide;mutate(()=>{state.overrides.delete(k);state.suppressed.add(k)})}};$('#add-manual').onclick=()=>openStudent();$('#reset-manual').onclick=()=>mutate(()=>{state.overrides.clear();state.suppressed.clear()});$('#student-close').onclick=()=>$('#student-modal').hidden=true;$('#student-save').onclick=saveStudent;$('#check-button').onclick=()=>checkGrid(true);$('#publish-button').onclick=preparePublish;$('#publish-top').onclick=preparePublish;$('#preview-button').onclick=preparePublish;$('#prepub-close').onclick=()=>$('#prepublish-modal').hidden=true;$('#prepub-confirm').onclick=doPublish;$('#history-button').onclick=openArchive;$('#history-close').onclick=()=>$('#history-modal').hidden=true;$('#history-list').onclick=e=>{const b=e.target.closest('[data-rollback]');if(b)rollback(b.dataset.rollback)};$('#archive-list').onclick=e=>{const b=e.target.closest('[data-print-archive]');if(b)printArchive(b.dataset.printArchive)};$('#print-teachers-button').onclick=()=>printMode('teachers');$('#print-teachers-inline').onclick=()=>printMode('teachers');$('#print-students-button').onclick=openStudentPrintOptions;$('#print-students-inline').onclick=openStudentPrintOptions;$('#student-print-close').onclick=()=>$('#student-print-modal').hidden=true;$('#student-print-modal').onclick=e=>{const b=e.target.closest('[data-student-print-scope]');if(b)printMode('students',b.dataset.studentPrintScope)};$('#undo-button').onclick=undo;$('#redo-button').onclick=redo;$('#photo-button').onclick=()=>$('#photo-modal').hidden=false;$('#photo-close').onclick=()=>$('#photo-modal').hidden=true;$('#photo-file').onchange=()=>{const f=$('#photo-file').files?.[0];if(!f)return;$('#photo-preview').src=URL.createObjectURL(f);$('#photo-preview').hidden=false;$('#ocr-status').textContent='Фото загружено. Нажмите «Распознать».'};$('#photo-recognize').onclick=recognizePhoto;$('#ocr-suggestions').onclick=e=>{const a=e.target.closest('[data-photo-apply]'),c=e.target.closest('[data-photo-cancel]');if(a)applyPhoto(Number(a.dataset.photoApply),false);if(c)applyPhoto(Number(c.dataset.photoCancel),true)};$('#schedule-publish-button').onclick=openScheduled;$('#schedule-close').onclick=()=>$('#schedule-modal').hidden=true;$('#schedule-save').onclick=scheduleCurrent;$('#scheduled-list').onclick=async e=>{const b=e.target.closest('[data-cancel-scheduled]');if(b){try{await call('cancelScheduledPublication',state.token,b.dataset.cancelScheduled);await refreshScheduled();toast('Отложенная публикация отменена')}catch(err){handleError(err)}}};$('#logout-button').onclick=async()=>{try{await call('logout',state.token)}catch(_){}sessionStorage.removeItem('school20:adminSession');location.reload()};window.addEventListener('beforeunload',e=>{if(state.dirty||window.SchoolReplacementUI?.isDirty()){e.preventDefault();e.returnValue=''}});document.addEventListener('keydown',e=>{if(state.loading||state.publishing||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||document.querySelector('.repl-dialog:not([hidden])')||!$('#student-modal').hidden||!(e.ctrlKey||e.metaKey))return;const z=e.code==='KeyZ',y=e.code==='KeyY';if(z&&!e.shiftKey){e.preventDefault();undo();refreshEditor();}else if(y||(z&&e.shiftKey)){e.preventDefault();redo();refreshEditor();}});
 window.SchoolAdmin=Object.freeze({rpc:(name,...args)=>call(name,state.token,...args),getContext:()=>({date:workingDate()||state.today,teachers:state.teachers,classes:state.classes,ready:!!state.day&&!state.loading,dirty:state.dirty})});
 // Compact workspace. The scheduler and the weekly ledger keep their original data contracts.
 let localDraftTimer=null;
@@ -405,14 +520,15 @@ const workspaceVersion='2026.10.03-ui1';
 function workingDate(){return state.day?.date||'';}
 function editorValues(){return ['edit-class','edit-class-2','edit-subject','edit-room','edit-note'].map(id=>$('#'+id).value);}
 function editorChanged(){return state.editorOpen&&JSON.stringify(editorValues())!==state.editorInitial;}
-function canLeaveEditor(){return !editorChanged()||confirm('В форме урока есть несохранённые изменения. Закрыть без сохранения?');}
+// Never blocks: unsaved form input goes to a toast with «Вернуть» (see stashEditor).
+function canLeaveEditor(){stashEditor();return true;}
 function showEditorError(text){$('#editor-error').textContent=text;}
 function parkEditor(){const editor=$('#cell-modal');if(editor.parentElement?.closest('#teacher-grid'))$('#editor-parking').append(editor);}
 function placeEditor(){
   const editor=$('#cell-modal');if(!state.editorOpen){editor.hidden=true;$('#editor-parking').append(editor);return;}
   const small=matchMedia('(max-width: 760px)').matches;
   if(small){document.body.append(editor);editor.classList.add('mobile-editor');editor.setAttribute('role','dialog');editor.setAttribute('aria-modal','true');document.body.classList.add('editing-mobile');}
-  else{const mount=$('#teacher-grid [data-editor-mount]');(mount||$('#editor-parking')).append(editor);editor.classList.remove('mobile-editor');editor.setAttribute('role','region');editor.removeAttribute('aria-modal');document.body.classList.remove('editing-mobile');}
+  else{$('#editor-slot').append(editor);editor.classList.remove('mobile-editor');editor.setAttribute('role','region');editor.removeAttribute('aria-modal');document.body.classList.remove('editing-mobile');}
   editor.hidden=false;
 }
 function cellPresentation(base,cell){
@@ -436,10 +552,12 @@ function visibleTeachers(){const bm=baseMap();return state.teachers.filter(t=>{
   return false;
 });}
 function subjectHtml(value){return esc(value).replace(/Обществознание/g,'Общество&shy;знание').replace(/Программирование/g,'Програм&shy;мирование').replace(/Изобразительное/g,'Изобрази&shy;тельное').replace(/Функциональная/g,'Функцио&shy;нальная');}
+// Compact cell: class and room on the first line, subject (or the state) on the second.
 function cellContents(base,cell){
-  const v=cellPresentation(base,cell);if(v.kind==='empty')return '<span class="empty-mark" aria-hidden="true">—</span><span class="sr-only">Свободно</span>';
-  const room=v.kind==='room-change'?`${esc(base.room||'—')} <span aria-hidden="true">→</span> ${esc(v.room||'—')}`:esc(v.room||'');
-  return `${v.label?`<span class="cell-state ${v.kind}">${v.label}</span>`:''}<span class="cls">${esc(v.cls)}</span><span class="subj">${subjectHtml(v.subject)}</span>${room?`<span class="room">${room}</span>`:''}`;
+  const v=cellPresentation(base,cell);if(v.kind==='empty')return '<span class="empty-mark" aria-hidden="true">—</span><span class="plus-mark" aria-hidden="true">+ урок</span>';
+  if(v.kind==='cancelled')return `<span class="cell-top"><span class="cls">${esc(v.cls)}</span></span><span class="subj">снят</span>`;
+  const room=v.room?`<span class="room${v.kind==='room-change'?' moved-room':''}">${esc(v.room)}</span>`:'';
+  return `<span class="cell-top"><span class="cls">${esc(v.cls)}</span>${room}</span><span class="subj">${v.kind==='added'?'новый · ':''}${subjectHtml(v.subject)}</span>`;
 }
 function renderMobileWorkspace(){
   const bm=baseMap(),teachers=visibleTeachers();
@@ -514,11 +632,10 @@ async function openServerDraft(){
   if(!workingDate()||state.loading||state.publishing)return;const date=workingDate();
   try{const d=await call('getAdminDraft',state.token,date);if(date!==workingDate())return;
     if(!d)return toast('Для этой даты серверный черновик не найден.');
-    if(!confirm('Открыть сохранённый черновик за '+date.split('-').reverse().join('.')+'? Текущие правки останутся в локальном черновике. Перед публикацией проверьте назначения.'))return;
     if(!canLeaveEditor())return;draftSaveLocal();closeCell(true);pushUndo();
     state.edits=new Map((d.teacherEdits||[]).map(e=>[cellKey(e.teacher,e.lesson),{...e,subject:fullSubject(e.subject)}]));
     state.existing=d.studentChanges||[];const published=state.day.edits;state.day.edits=d.teacherEdits||[];initManualState();state.day.edits=published;
-    setDirty(true);renderAll();updateUndoButtons();setStatus('Открыт черновик. На сайте остаётся опубликованная версия.','warn');
+    setDirty(true);renderAll();updateUndoButtons();setStatus('Открыт черновик. На сайте остаётся опубликованная версия.','warn');undoToast('Открыт черновик за '+date.split('-').reverse().join('.'));
   }catch(e){handleError(e);}
 }
 function previewParse(text){
@@ -549,7 +666,7 @@ function initWorkspace(){
   document.querySelectorAll('[data-bottom]').forEach(b=>b.onclick=()=>{const v=b.dataset.bottom;if(v==='ledger')return $('#replacements-button')?.click();if(v==='more'){$('#workspace-more').open=!$('#workspace-more').open;return;}if(!canLeaveEditor())return;closeCell(true);state.ui.mode=v;setWorkspaceView('teachers');renderMobileWorkspace();document.querySelectorAll('[data-bottom]').forEach(x=>x.classList.toggle('active',x===b));});
   $('#mobile-lesson-select').innerHTML=BELLS.map((t,i)=>`<option value="${i+1}">${i+1}-й урок · ${t.join('–')}</option>`).join('');
   $('#mobile-overview-button').onclick=()=>{if(!canLeaveEditor())return;closeCell(true);state.ui.mode='grid';setWorkspaceView('teachers');renderMobileWorkspace();};
-  $('#undo-button').onclick=()=>{if(!canLeaveEditor())return;closeCell(true);undo();};$('#redo-button').onclick=()=>{if(!canLeaveEditor())return;closeCell(true);redo();};
+  $('#undo-button').onclick=()=>{undo();refreshEditor();};$('#redo-button').onclick=()=>{redo();refreshEditor();};
   $('#workspace-search').oninput=()=>{state.ui.search=$('#workspace-search').value;renderGrid();};
   [['filter-grade','grade'],['filter-subject','subject'],['filter-room','room']].forEach(([id,prop])=>$('#'+id).onchange=()=>{if(!canLeaveEditor()){$('#'+id).value=state.ui[prop];return;}closeCell(true);state.ui[prop]=$('#'+id).value;renderGrid();});
   $('#show-all').onclick=()=>{if(!canLeaveEditor())return;closeCell(true);resetFilters();};
@@ -560,15 +677,33 @@ function initWorkspace(){
   document.querySelectorAll('[data-mobile-mode]').forEach(b=>b.onclick=()=>{if(!canLeaveEditor())return;closeCell(true);state.ui.mode=b.dataset.mobileMode;renderMobileWorkspace();});
   $('#mobile-teacher-select').onchange=()=>{state.ui.teacher=$('#mobile-teacher-select').value;renderMobileWorkspace();};$('#mobile-lesson-select').onchange=renderMobileWorkspace;$('#mobile-free').onchange=renderMobileWorkspace;
   $('#workspace-mobile-list').onclick=e=>{const b=e.target.closest('[data-mobile-teacher]');if(b&&!state.loading&&!state.publishing)openCell(b.dataset.mobileTeacher,Number(b.dataset.mobileLesson));};
-  $('#add-second-class').onclick=()=>{$('#second-class-field').hidden=false;$('#add-second-class').hidden=true;$('#edit-class-2').focus();};
-  $('#remove-second-class').onclick=()=>{$('#edit-class-2').value='';$('#second-class-field').hidden=true;$('#add-second-class').hidden=false;$('#edit-class').focus();};
-  $('#cell-cancel').onclick=()=>{if(!confirm('Снять этот урок? Назначение останется в истории.'))return;cancelSelected();closeCell(true);};
-  $('#cell-reset').onclick=()=>{resetSelected();closeCell(true);};
+  $('#add-second-class').onclick=()=>{toggleSecond(true);$('#edit-class-2').focus();};
+  $('#remove-second-class').onclick=()=>{toggleSecond(false);updateJournalHint();$('#edit-class').focus();};
+  $('#cell-cancel').onclick=cancelSelected;$('#cell-reset').onclick=resetSelected;
+  $('#cell-modal').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();saveCell();}});
+  $('#free-rooms').onclick=e=>{const b=e.target.closest('[data-room]'),p=selectedParts();if(!b||!p)return;$('#edit-room').value=b.dataset.room;renderCellHelpers(p.teacher,p.lesson);};
+  $('#teacher-subjects').onclick=e=>{const b=e.target.closest('[data-subject]'),p=selectedParts();if(!b||!p)return;$('#edit-subject').value=b.dataset.subject;renderCellHelpers(p.teacher,p.lesson);};
+  ['edit-room','edit-subject'].forEach(id=>$('#'+id).addEventListener('input',()=>{const p=selectedParts();if(p)renderCellHelpers(p.teacher,p.lesson);}));
+  ['edit-class','edit-class-2'].forEach(id=>$('#'+id).addEventListener('input',updateJournalHint));
+  // Grid: click opens the form, × / ↺ act at once, a click on the name shows the teacher's day.
+  $('#teacher-grid').onclick=e=>{
+    const a=e.target.closest('[data-act]');if(a){if(a.dataset.act==='cancel')cancelSlot(a.dataset.actTeacher,Number(a.dataset.actLesson));else resetSlot(a.dataset.actTeacher,Number(a.dataset.actLesson));return;}
+    const tc=e.target.closest('[data-teacher-card]');if(tc)return openTeacherCard(tc.dataset.teacherCard);
+    const b=e.target.closest('[data-teacher]');if(b)openCell(b.dataset.teacher,Number(b.dataset.lesson));
+  };
+  $('#side-rooms-steps').onclick=e=>{const b=e.target.closest('[data-room-lesson]');if(b){state.ui.roomLesson=Number(b.dataset.roomLesson);renderSideHome();}};
+  $('#side-teacher-close').onclick=()=>{state.ui.sideTeacher='';renderGrid();renderSide();};
+  $('#side-teacher-lessons').onclick=e=>{const b=e.target.closest('[data-side-lesson]');if(b)openCell(state.ui.sideTeacher,Number(b.dataset.sideLesson));};
+  $('#side-cancel-all').onclick=()=>cancelAllTeacher(state.ui.sideTeacher);$('#side-reset-all').onclick=()=>resetAllTeacher(state.ui.sideTeacher);
+  $('#side-publish-preview').onclick=preparePublish;
+  $('#clear-day').onclick=()=>{if(!state.edits.size&&!state.overrides.size&&!state.suppressed.size)return toast('Изменений за день нет');mutate(()=>{state.edits.clear();state.overrides.clear();state.suppressed.clear();});undoToast('Изменения дня сброшены');refreshEditor();};
   $('#save-draft-button').onclick=saveWorkspaceDraft;$('#restore-draft-button').onclick=openServerDraft;$('#restore-local-draft').onclick=restoreLocalDraft;
   $('#dismiss-local-draft').onclick=()=>{if(confirm('Удалить локальный черновик для этой даты?'))clearLocalDraft(workingDate());};
   $('#preview-button').onclick=()=>setWorkspaceView('preview');$('#preview-class').onchange=renderStudentPreview;
   $('#teacher-grid').onkeydown=e=>{
-    const b=e.target.closest('button[data-teacher]');if(!b||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+    const b=e.target.closest('button[data-teacher]');if(!b)return;
+    if(e.key==='Delete'||e.key==='Backspace'||e.key==='x'||e.key==='X'||e.key==='ч'||e.key==='Ч'){e.preventDefault();const t=b.dataset.teacher,l=Number(b.dataset.lesson);cancelSlot(t,l);focusCell(t,l);return;}
+    if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
     e.preventDefault();const ts=visibleTeachers(),row=ts.indexOf(b.dataset.teacher);let r=row,l=Number(b.dataset.lesson);
     if(e.key==='ArrowLeft')l--;if(e.key==='ArrowRight')l++;if(e.key==='ArrowUp')r--;if(e.key==='ArrowDown')r++;
     if(r<0||r>=ts.length||l<1||l>12)return;
@@ -584,7 +719,7 @@ function initWorkspace(){
     if(e.key==='Tab'&&state.editorOpen&&matchMedia('(max-width:760px)').matches){const list=[...$('#cell-modal').querySelectorAll('button,input,summary')].filter(el=>!el.disabled&&el.getClientRects().length);if(!list.length)return;const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
   });
   window.addEventListener('beforeunload',e=>{if(editorChanged()){e.preventDefault();e.returnValue='';}draftSaveLocal();});
-  window.addEventListener('resize',()=>{if(state.editorOpen)placeEditor();});
+  window.addEventListener('resize',()=>{if(state.editorOpen)placeEditor();renderSide();});
   const viewport=()=>{if(window.visualViewport)document.documentElement.style.setProperty('--editor-viewport',window.visualViewport.height+'px');};window.visualViewport?.addEventListener('resize',viewport);viewport();
 }
 

@@ -110,8 +110,8 @@ function replacementEligible_(r){
   if(r.kind==='manual')return true; // Explicit administrator entry; confirmation validates its origin.
   if(['cancelled','room','moved','added'].includes(r.kind))return false;
   const evidence=r.details&&r.details.evidence||[];
-  return evidence.some(e=>!e.retained&&!e.movedFrom&&(e.removedTeachers||[]).some(t=>
-    S20Schedule.teacherKey(t)!==S20Schedule.teacherKey(r.replacementTeacher)));
+  const other=t=>S20Schedule.teacherKey(t)!==S20Schedule.teacherKey(r.replacementTeacher);
+  return evidence.some(e=>!e.retained&&!e.movedFrom&&((e.removedTeachers||[]).some(other)||(e.dayRemoved||[]).some(x=>other(x.teacher))));
 }
 function replacementPublicRow_(r,ready){
   return{id:r.id,date:r.date,lesson:r.lesson,className:r.className,subject:S20Schedule.subject(r.subject),room:r.room,

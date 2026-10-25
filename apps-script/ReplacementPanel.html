@@ -39,6 +39,33 @@
 #replacement-dialog .repl-edit>label:nth-child(2){grid-column:3;grid-row:1}
 #replacement-dialog .repl-edit>label:nth-child(3){grid-column:1;grid-row:1}
 #replacement-dialog .repl-edit>label:nth-child(4){grid-column:1/-1;grid-row:2}
+/* Week review, 25.10.2026: one line per lesson with «Учесть» / «Не учитывать», totals on the side. */
+#replacement-dialog .repl-window{width:min(1320px,100%)}
+.repl-review-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.repl-review-side{position:sticky;top:0;display:grid;gap:12px}
+.repl-card{display:grid;gap:10px;padding:14px;background:#fff;border:1px solid #dce5f2;border-radius:12px}
+.repl-card h3{margin:0;font-size:15px;color:#18345f}.repl-card .btn{min-height:38px}#repl-save-state{font-size:12px;color:#795b12}#repl-save-state:empty{display:none}
+.repl-progress{height:8px;border-radius:999px;background:#eef1f5;overflow:hidden}.repl-progress span{display:block;height:100%;width:0;border-radius:999px;background:#2f9e66}
+.repl-hours{list-style:none;margin:0;padding:0}.repl-hours li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #f2f4f7;font-size:13px;color:#233b61}
+.repl-explain{margin:0 0 12px;padding:10px 12px;background:#fff;border:1px solid #dce5f2;border-radius:10px;font-size:12.5px;line-height:1.45;color:#4a5565}
+.repl-day{margin:0 0 12px;background:#fff;border:1px solid #dce5f2;border-radius:12px;overflow:hidden}
+.repl-day-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #eef1f5}
+.repl-day-head h3{margin:0;font-size:14px;color:#18345f}.repl-day-head span{font-size:12px;color:#5c718e}
+.repl-row{padding:10px 14px;border-top:1px solid #f2f4f7}.repl-row:first-of-type{border-top:0}
+.repl-row-main{display:grid;grid-template-columns:52px minmax(0,1.25fr) minmax(0,1.2fr) minmax(0,1.3fr) 236px;gap:12px;align-items:center}
+.repl-lesson{font-size:14px;color:#18345f;font-variant-numeric:tabular-nums}
+.repl-two{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}.repl-two b{font-size:13px;color:#18345f}.repl-two span{font-size:12px;color:#5c718e}
+.repl-two .repl-chip{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
+.repl-chip.same{background:#fff2e0;color:#8a4204!important}.repl-chip.moved{background:#eaf1fd;color:#174aa8!important}.repl-chip.plain{background:#f2f4f7;color:#4a5565!important}.repl-chip.warn{background:#fdeded;color:#a21a1f!important}
+.repl-decide{display:flex;gap:4px;padding:3px;background:#eef1f5;border-radius:9px}
+.repl-decide button{flex:1;min-height:34px;padding:0 8px;border:0;border-radius:7px;background:transparent;color:#101828;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.repl-decide button[data-decide="confirm"][aria-pressed="true"]{background:#2f9e66;color:#fff}.repl-decide button[data-decide="exclude"][aria-pressed="true"]{background:#4a5565;color:#fff}
+.repl-row.confirm{background:#f6fbf8}.repl-row.exclude{background:#fafbfc}
+.repl-more{margin-top:8px;font-size:12px;color:#526783}.repl-more summary{cursor:pointer;color:#3a6099}.repl-more p{margin:6px 0}.repl-more small{display:block;color:#637796}
+.repl-fields{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:7px;margin-top:8px}.repl-fields .wide{grid-column:1/-1}
+.repl-fields label{display:grid;gap:3px;font-size:11px;color:#526783}.repl-fields input{width:100%;min-width:0;box-sizing:border-box;min-height:36px;padding:7px 8px;border:1px solid #c9d6e8;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+@media(max-width:980px){.repl-review-layout{grid-template-columns:1fr}.repl-review-side{position:static}.repl-row-main{grid-template-columns:44px minmax(0,1fr)}.repl-row-main>.repl-two:not(:first-of-type),.repl-row-main>.repl-decide{grid-column:2}}
+@media(max-width:760px){.repl-fields{grid-template-columns:1fr}.repl-fields input{font-size:16px;min-height:44px}.repl-decide button{min-height:42px}}
 .repl-basis{margin-top:6px;color:#607793;font-size:11px}.repl-basis summary{cursor:pointer}.repl-basis p{margin:5px 0!important}
 @media(max-width:760px){
  #replacement-dialog .repl-head{flex-wrap:nowrap;padding:11px}#replacement-dialog .repl-head>div{flex:1 1 0}#replacement-dialog .repl-head p{font-size:11px}#replacement-dialog .repl-head h2{font-size:18px}
@@ -69,13 +96,16 @@ reminder.innerHTML='<div><strong>Проверьте замены за недел
 const controls=$('#app-view .controls');if(controls)controls.after(reminder);else $('#app-view').prepend(reminder);
 const dialog=document.createElement('section');dialog.className='repl-dialog';dialog.id='replacement-dialog';dialog.hidden=true;
 dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','replacement-title');
-dialog.innerHTML=`<div class="repl-window"><header class="repl-head"><div><h2 id="replacement-title">Замены за неделю</h2><p>Только переданные уроки. Часы учитываются после вашего подтверждения.</p></div><button class="btn quiet small" id="repl-close">Закрыть</button></header>
+dialog.innerHTML=`<div class="repl-window"><header class="repl-head"><div><h2 id="replacement-title">Замены за неделю</h2><p>Каждый урок, отданный другому учителю. Отметьте «Учесть» или «Не учитывать» и сохраните — часы считаются только после вашего решения.</p></div><button class="btn quiet small" id="repl-close">Закрыть</button></header>
 <div class="repl-tabs"><button data-repl-tab="review" class="active">Проверить неделю</button><button data-repl-tab="journal">Журнал</button><button data-repl-tab="summary">Сводка часов</button><button data-repl-tab="audit">История решений</button></div>
 <div class="repl-tools"><button class="btn quiet small" id="repl-prev" aria-label="Предыдущая неделя">← Неделя</button><button class="btn quiet small" id="repl-current">Текущая неделя</button><button class="btn quiet small" id="repl-next" aria-label="Следующая неделя">Неделя →</button><strong id="repl-week-label"></strong></div>
 <div class="repl-tools"><label>Период с<input type="date" id="repl-from"></label><label>по<input type="date" id="repl-to"></label><label id="repl-audit-day" hidden>День истории<input type="date" id="repl-date"></label><label>Учитель<select id="repl-teacher"><option value="">Все учителя</option></select></label><label>Записи<select id="repl-filter"><option value="active">Актуальные</option><option value="confirm">Учтённые</option><option value="pending">Ожидают решения</option><option value="exclude">Не учитывать</option><option value="all">Все, включая архив</option></select></label><button class="btn quiet small" id="repl-refresh">Обновить</button><button class="btn quiet small" id="repl-restore">Восстановить период</button></div>
 <div class="repl-content"><div id="repl-message" class="repl-notice" role="status"></div>
-<div id="repl-review" class="repl-view"><div class="repl-actions"><button class="btn quiet small" id="repl-recommend">Применить рекомендации</button><button class="btn success" id="repl-save">Сохранить решения за неделю</button><button class="btn quiet small" id="repl-manual-toggle">Добавить запись вручную</button><span id="repl-save-state"></span></div>
+<div id="repl-review" class="repl-view"><div class="repl-review-layout"><div class="repl-review-main">
+<p class="repl-explain">Сюда сам попадает каждый урок, отданный другому учителю: и замена в тот же урок, и урок, поставленный другому учителю в другое время. Снятые уроки, смены кабинета и перестановки своих уроков сюда не попадают.</p>
 <form class="repl-manual" id="repl-manual" hidden><label>Дата<input name="date" type="date" required></label><label>Кто заменяет<input name="replacementTeacher" list="repl-teachers" required></label><label>Кого заменяет<input name="originalTeachers" list="repl-teachers" required></label><label>Номер урока<input name="lesson" type="number" min="1" max="12" required></label><label>Класс / два класса<input name="className" placeholder="5А + 5Б" required></label><label>Предмет<input name="subject" list="subjects-list" required></label><label>Кабинет<input name="room"></label><label>Причина ручной записи<input name="comment" required></label><div class="wide"><button class="btn" type="submit">Добавить для проверки</button></div></form><div id="repl-review-list"></div></div>
+<aside class="repl-review-side"><section class="repl-card"><h3 id="repl-progress-title">Проверено 0 из 0</h3><div class="repl-progress" aria-hidden="true"><span id="repl-progress-bar"></span></div><button class="btn quiet small" id="repl-recommend">Учесть все замены в тот же урок</button><button class="btn primary" id="repl-save">Сохранить решения</button><span id="repl-save-state" role="status"></span><button class="btn quiet small" id="repl-manual-toggle">Добавить запись вручную</button></section>
+<section class="repl-card"><h3>Часы по учителям</h3><ul class="repl-hours" id="repl-hours"></ul></section></aside></div></div>
 <div id="repl-journal" class="repl-view" hidden><div class="repl-actions"><button class="btn quiet small" id="repl-csv">CSV подтверждённых замен</button><button class="btn quiet small" id="repl-print-detail">Печать подтверждённых</button></div><div id="repl-journal-list"></div></div>
 <div id="repl-summary" class="repl-view" hidden><div class="repl-actions"><button class="btn quiet small" id="repl-print-summary">Печать сводки</button></div><div id="repl-summary-list"></div></div><div id="repl-audit" class="repl-view" hidden></div></div>
 <footer class="repl-footer">Одна запись — один учитель и один номер урока. Два класса не удваивают часы автоматически. Повторная публикация не дублирует записи. Проверить любую неделю можно в любой момент.</footer><datalist id="repl-teachers"></datalist></div>`;
@@ -92,7 +122,7 @@ function message(text,error=false){$('#repl-message').textContent=text;$('#repl-
 function dirty(){return changed.size>0;}
 function updateSave(){
   $('#repl-save-state').textContent=dirty()?`Несохранённых решений: ${changed.size}`:'';
-  $('#repl-save').disabled=busy||!dirty();
+  $('#repl-save').disabled=busy||!dirty();$('#repl-save').textContent=dirty()?`Сохранить решения (${changed.size})`:'Сохранить решения';
 }
 function disabled(value){
   busy=value;dialog.querySelectorAll('button,input,select').forEach(el=>el.disabled=value);button.disabled=value;$('#replacement-week-open').disabled=value;updateSave();
@@ -108,13 +138,11 @@ async function badge(){
   api=window.SchoolAdmin;if(!api||!ctx().ready)return;const run=++badgeRun;
   try{
     const data=await rpc('getReplacementWeeklyStatus',ctx().date||today());if(run!==badgeRun)return;
-    $('#replacement-badge').textContent=data.pending||0;button.title=`Замены за неделю ${ru(data.selectedWeek.from)} — ${ru(data.selectedWeek.to)}. Ожидают решения: ${data.pending||0}`;
-    reminderWeek=data.weeks?.[0]||null;reminder.hidden=!reminderWeek;
-    if(reminderWeek){
-      reminder.classList.remove('error');reminder.querySelector('strong').textContent='Проверьте замены за неделю';
-      $('#replacement-week-text').textContent=`${ru(reminderWeek.from)} — ${ru(reminderWeek.to)} · ожидают решения: ${reminderWeek.pending}`+(data.weeks.length>1?` · непроверенных недель: ${data.weeks.length}`:'');
-      $('#replacement-week-open').textContent='Открыть неделю';
-    }
+    $('#replacement-badge').textContent=data.pending||0;
+    // From Friday an unchecked week is shown on the button itself, not as a banner over the grid.
+    reminderWeek=data.weeks?.[0]||null;if(!reminder.classList.contains('error'))reminder.hidden=true;button.classList.toggle('due',!!reminderWeek);
+    button.title=`Замены за неделю ${ru(data.selectedWeek.from)} — ${ru(data.selectedWeek.to)}. Ожидают решения: ${data.pending||0}`+
+      (reminderWeek?`. Пора проверить неделю ${ru(reminderWeek.from)} — ${ru(reminderWeek.to)}: ожидают решения ${reminderWeek.pending}`+(data.weeks.length>1?`, непроверенных недель: ${data.weeks.length}`:''):'');
   }catch(e){
     if(run!==badgeRun)return;$('#replacement-badge').textContent='!';button.title='Не удалось проверить журнал замен: '+e.message;
   }
@@ -123,12 +151,35 @@ function filterRows(rows){
   const teacher=$('#repl-teacher').value,filter=$('#repl-filter').value;
   return(rows||[]).filter(r=>(!teacher||r.replacementTeacher===teacher)&&(filter==='all'||(filter==='active'?!['obsolete','legacy'].includes(r.decision):r.decision===filter)));
 }
-function entry(r){return `<article class="repl-entry" data-repl-id="${esc(r.id)}"><div><h3>${esc(r.replacementTeacher)}</h3><div class="repl-meta"><strong>${ru(r.date)} · ${r.lesson} урок · ${esc(r.className)}</strong><br>${esc(r.subject)}${r.room?' · '+esc(r.room):''}</div><details class="repl-basis" ${['combined','ambiguous','student-mismatch'].includes(r.kind)?'open':''}><summary>${esc(kinds[r.kind]||r.kind)} · основание</summary><p>${esc(r.reason)}</p>${r.originalChoices?.length?`<small>Исходные учителя: ${esc(r.originalChoices.join('; '))}</small>`:''}${r.source==='history-current-baseline'?'<small>История восстановлена по текущему основному расписанию — проверьте соответствие.</small>':''}</details></div>
-<div class="repl-edit"><label>Решение<select data-field="decision">${['pending','confirm','exclude'].map(s=>`<option value="${s}" ${r.decision===s?'selected':''}>${status[s]}</option>`).join('')}</select></label><label>Часы<input data-field="hours" type="number" min="0.5" max="2" step="0.5" value="${r.hours||r.suggestedHours||1}"></label><label class="wide">Кого заменяет (несколько — через «;»)<input data-field="originalTeachers" list="repl-teachers" value="${esc(r.originalTeachers.join('; '))}" placeholder="Исходный учитель"></label><label class="wide">Пояснение решения<input data-field="comment" value="${esc(r.comment)}" placeholder="Для объединения и неоднозначных случаев"></label></div></article>`;}
+// How the lesson came to the receiving teacher, in words the review screen shows.
+function kindInfo(r){
+  const moved=(r.evidence||[]).find(e=>e.fromLesson);
+  if(r.kind==='replacement')return moved?{label:'Урок у другого учителя в другое время',hint:'по расписанию был '+moved.fromLesson+' урок',cls:'moved'}:{label:'Замена в тот же урок',hint:'',cls:'same'};
+  return({combined:{label:'Два класса вместе',hint:'один час, если классы сидели вместе',cls:'plain'},ambiguous:{label:'Подгруппы — выберите, кого заменяли',hint:'',cls:'warn'},manual:{label:'Ручная запись',hint:'',cls:'plain'},'student-mismatch':{label:'Расходится с изменениями учеников',hint:'',cls:'warn'}})[r.kind]||{label:kinds[r.kind]||r.kind,hint:'',cls:'plain'};
+}
+// A row needs its details (original teacher, hours, comment) when the server will ask for them.
+function needsDetails(r){return r.kind!=='replacement'||!r.originalTeachers.length;}
+function entry(r){
+  const k=kindInfo(r),done=r.decision==='confirm'||r.decision==='exclude',open=(needsDetails(r)&&r.decision!=='exclude')||r.openDetails;
+  return `<article class="repl-row ${esc(r.decision)}" data-repl-id="${esc(r.id)}"><div class="repl-row-main">
+<b class="repl-lesson">${r.lesson} ур.</b>
+<div class="repl-two"><b>${esc(r.className)} · ${esc(r.subject)}</b><span>${esc([r.room&&'каб. '+r.room,r.decision==='confirm'&&(r.hours||r.suggestedHours||1)+' ч'].filter(Boolean).join(' · '))}</span></div>
+<div class="repl-two"><b>${esc(r.replacementTeacher)}</b><span>вместо ${r.originalTeachers.length?esc(r.originalTeachers.join(', ')):'— укажите в «Подробнее»'}</span></div>
+<div class="repl-two"><span class="repl-chip ${k.cls}">${esc(k.label)}</span>${k.hint?`<span>${esc(k.hint)}</span>`:''}</div>
+${['obsolete','legacy'].includes(r.decision)?`<span class="repl-tag ${esc(r.decision)}">${esc(status[r.decision])}</span>`:`<div class="repl-decide" role="group" aria-label="Решение: ${esc(r.className)}, ${r.lesson} урок, ${esc(r.replacementTeacher)}"><button type="button" data-decide="confirm" aria-pressed="${r.decision==='confirm'}">Учесть</button><button type="button" data-decide="exclude" aria-pressed="${r.decision==='exclude'}">Не учитывать</button></div>`}
+</div><details class="repl-more" ${open?'open':''}><summary>Подробнее${needsDetails(r)&&!done?' · нужно заполнить':''}</summary><p>${esc(r.reason)}</p>${r.originalChoices?.length?`<small>Кого могли заменять: ${esc(r.originalChoices.join('; '))}</small>`:''}${r.source==='history-current-baseline'?'<small>История восстановлена по текущему основному расписанию — проверьте соответствие.</small>':''}
+<div class="repl-fields"><label>Кого заменяет (несколько — через «;»)<input data-field="originalTeachers" list="repl-teachers" value="${esc(r.originalTeachers.join('; '))}" placeholder="Исходный учитель"></label><label>Часы<input data-field="hours" type="number" min="0.5" max="2" step="0.5" value="${r.hours||r.suggestedHours||1}"></label><label class="wide">Пояснение${r.kind!=='replacement'?' (обязательно, чтобы учесть)':''}<input data-field="comment" value="${esc(r.comment)}" placeholder="Например: объединили 8Б и 8В"></label></div></details></article>`;
+}
+function renderSide(){
+  const rows=(review?.rows||[]).filter(r=>!['obsolete','legacy'].includes(r.decision)),done=rows.filter(r=>r.decision==='confirm'||r.decision==='exclude').length;
+  $('#repl-progress-title').textContent=`Проверено ${done} из ${rows.length}`;$('#repl-progress-bar').style.width=(rows.length?Math.round(100*done/rows.length):0)+'%';
+  const map=new Map();rows.forEach(r=>{if(!map.has(r.replacementTeacher))map.set(r.replacementTeacher,{hours:0,pending:0});const t=map.get(r.replacementTeacher);if(r.decision==='confirm')t.hours+=Number(r.hours||r.suggestedHours||1);else if(r.decision==='pending')t.pending++;});
+  $('#repl-hours').innerHTML=map.size?[...map].sort((a,b)=>a[0].localeCompare(b[0],'ru')).map(([t,v])=>`<li><span>${esc(t)}</span><span><b>${v.hours} ч</b>${v.pending?` · ждёт ${v.pending}`:''}</span></li>`).join(''):'<li><span>Замен за период нет.</span></li>';
+}
 function renderReview(){
   const rows=filterRows(review?.rows),groups=new Map();rows.forEach(r=>{if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r);});
-  $('#repl-review-list').innerHTML=rows.length?[...groups].map(([date,list])=>`<section class="repl-day-group" data-repl-day="${date}"><h3 class="repl-day-title">${esc(dateLabel(date))} <small>${recordCount(list.length)}</small></h3>${list.map(entry).join('')}</section>`).join(''):'<div class="empty">В выбранном периоде нет передач уроков другому учителю по этому фильтру. Простые отмены не требуют решения.</div>';
-  updateSave();
+  $('#repl-review-list').innerHTML=rows.length?[...groups].map(([date,list])=>`<section class="repl-day" data-repl-day="${date}"><header class="repl-day-head"><h3>${esc(dateLabel(date))}</h3><span>${recordCount(list.length)}</span></header>${list.map(entry).join('')}</section>`).join(''):'<div class="empty">В выбранном периоде нет уроков, отданных другому учителю, по этому фильтру. Простые отмены не требуют решения.</div>';
+  renderSide();updateSave();
 }
 function table(rows){return `<div class="repl-scroll"><table class="repl-table"><thead><tr><th>Дата</th><th>Урок / классы</th><th>Кто заменяет</th><th>Кого заменяет</th><th>Предмет</th><th>Решение</th><th>Часы в итоге</th><th>Пояснение</th></tr></thead><tbody>${rows.map(r=>`<tr><td><button class="btn quiet small" data-review-date="${esc(r.date)}">${ru(r.date)}</button></td><td>${r.lesson} · ${esc(r.className)}</td><td>${esc(r.replacementTeacher)}</td><td>${esc(r.originalTeachers.join('; ')||'—')}</td><td>${esc(r.subject)}</td><td><span class="repl-tag ${esc(r.decision)}">${esc(status[r.decision]||r.decision)}</span></td><td>${r.countedHours||0}</td><td>${esc(r.comment||r.reason||'')}${r.decision==='confirm'&&!r.countedHours?'<br>Публикация не завершена — исключено из итога':''}</td></tr>`).join('')}</tbody></table></div>`;}
 function confirmed(){const teacher=$('#repl-teacher').value;return(ledger?.rows||[]).filter(r=>r.countedHours>0&&(!teacher||r.replacementTeacher===teacher));}
@@ -186,15 +237,38 @@ $('#repl-review-list').addEventListener('input',e=>{
   const row=review?.rows.find(r=>r.id===id);if(!row)return;
   row[field]=field==='originalTeachers'?e.target.value.split(';').map(x=>x.trim()).filter(Boolean):field==='hours'?Number(e.target.value):e.target.value;
   if(field==='hours')row.hoursEdited=true;
-  if(field==='decision'&&row.decision==='confirm'&&!row.hours&&!row.hoursEdited)row.hours=row.suggestedHours||1;changed.add(id);updateSave();
+  if(field==='decision'&&row.decision==='confirm'&&!row.hours&&!row.hoursEdited)row.hours=row.suggestedHours||1;changed.add(id);renderSide();updateSave();
 });
+// «Учесть» / «Не учитывать»; pressing the active one again returns the row to «Проверить».
+$('#repl-review-list').addEventListener('click',e=>{
+  const b=e.target.closest('[data-decide]'),art=b?.closest('[data-repl-id]');if(!b||!art||busy)return;
+  const row=review?.rows.find(r=>r.id===art.dataset.replId);if(!row)return;
+  row.decision=row.decision===b.dataset.decide?'pending':b.dataset.decide;
+  if(row.decision==='confirm'&&!row.hours&&!row.hoursEdited)row.hours=row.suggestedHours||1;
+  row.openDetails=!!art.querySelector('details')?.open&&row.decision!=='exclude';changed.add(row.id);
+  art.outerHTML=entry(row);renderSide();updateSave();
+  dialog.querySelector(`[data-repl-id="${CSS.escape(row.id)}"] [data-decide="${b.dataset.decide}"]`)?.focus();
+});
+// The server rejects these; say which row and open it instead of failing the whole save.
+function invalidRow(){
+  return review.rows.find(r=>changed.has(r.id)&&r.decision==='confirm'&&(!r.originalTeachers.length||(r.kind!=='replacement'&&!String(r.comment||'').trim())));
+}
 $('#repl-recommend').onclick=()=>{
   if(!review||busy)return;filterRows(review.rows).filter(r=>r.decision==='pending'&&r.suggestedDecision!=='pending').forEach(r=>{
     r.decision=r.suggestedDecision;r.hours=r.decision==='confirm'?(r.suggestedHours||1):0;changed.add(r.id);
   });renderReview();message('Рекомендации применены только к видимым строкам формы. Проверьте неделю и сохраните решения. Неоднозначные случаи оставлены на проверку.');
 };
-$('#repl-save').onclick=()=>run(async()=>{
-  if(!review||!dirty())return;
+$('#repl-save').onclick=()=>{
+  if(!review||!dirty()||busy)return;
+  const bad=invalidRow();
+  if(bad){
+    const field=bad.originalTeachers.length?'comment':'originalTeachers';bad.openDetails=true;renderReview();
+    message(field==='originalTeachers'?`Укажите, кого заменял(а) ${bad.replacementTeacher} — ${ru(bad.date)}, ${bad.lesson} урок.`:`Добавьте пояснение: ${bad.replacementTeacher}, ${ru(bad.date)}, ${bad.lesson} урок — это нестандартный случай.`,true);
+    dialog.querySelector(`[data-repl-id="${CSS.escape(bad.id)}"] [data-field="${field}"]`)?.focus();return;
+  }
+  return saveDecisions();
+};
+const saveDecisions=()=>run(async()=>{
   const days=review.days.map(day=>({date:day.date,revision:day.revision,reviewVersion:day.reviewVersion,
     decisions:review.rows.filter(r=>r.date===day.date&&changed.has(r.id)).map(r=>({id:r.id,decision:r.decision,hours:r.hours,originalTeachers:r.originalTeachers,comment:r.comment}))})).filter(d=>d.decisions.length);
   const from=review.from,to=review.to;await rpc('saveReplacementPeriodDecisions',from,to,days);
