@@ -1,4 +1,4 @@
-const CACHE='school20-pwa-v19';
+const CACHE='school20-pwa-v20';
 const SHELL=['./','index.html','schedule.html','staff.html','site.css','home.css','config.js','app.js','subject-names.js','schedule-core.js','site-shell.js','home.js','schedule.js','staff.js','assets/fonts/onest-cyrillic.woff2','assets/fonts/onest-latin.woff2','assets/fonts/unbounded-cyrillic.woff2','assets/fonts/unbounded-latin.woff2','assets/icons/logo-128.jpg','assets/icons/favicon-48.png','manifest.webmanifest'];
 const STATUS_URL='https://docs.google.com/spreadsheets/d/1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4/gviz/tq?tqx=out:csv&sheet=%D0%A1%D1%82%D0%B0%D1%82%D1%83%D1%81_%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D0%B8';
 self.addEventListener('install',event=>{

@@ -4,52 +4,104 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta name="theme-color" content="#092c4e">
+<meta name="theme-color" content="#15366D">
 <meta name="description" content="Отчёты классных руководителей — МОУ СОШ № 20 г. Твери">
 <title>Итоги триместра · МОУ СОШ № 20</title>
-<link rel="icon" href="../assets/school-logo.jpg">
+<link rel="icon" href="../assets/icons/favicon-48.png" type="image/png">
+<link rel="preload" href="../assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../site.css?v=19">
 <style>
-:root{--navy:#092c4e;--gold:#b48a43;--cream:#f6f5f1;--muted:#66798c;--border:#e0e6e9}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.6 "Segoe UI",Arial,sans-serif;color:#16354d;background:var(--cream)}
-a{color:#174f7a}a:focus-visible{outline:3px solid #d6aa60;outline-offset:4px}
-.wrap{max-width:1180px;margin:0 auto;padding:0 25px}
-header{background:white;border-bottom:1px solid var(--border)}
-.header{min-height:94px;display:flex;justify-content:space-between;align-items:center;gap:20px}
-.brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--navy)}
-.crest{width:60px;height:60px;border:1.5px solid var(--gold);border-radius:50%;object-fit:contain;background:#fff}
-.brand strong{display:block;font:700 23px/1.1 Georgia,serif}.brand span{display:block;color:#748394;font-size:12px;margin-top:4px}
-.back{font-size:14px;font-weight:700;text-decoration:none;border:1px solid #d5e0e7;border-radius:10px;padding:10px 14px;white-space:nowrap}
-main{padding:34px 0 64px}
-.hero{border-radius:25px;overflow:hidden;background:linear-gradient(125deg,#092d4d,#123e61);display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.75fr);position:relative;box-shadow:0 20px 50px #102a3c1c}
-.hero::before{content:"";width:680px;height:680px;border:1px solid #c9aa6f55;box-shadow:0 0 0 45px #ffffff10,0 0 0 93px #d1b47b17;position:absolute;border-radius:50%;right:-280px;top:-140px;pointer-events:none}
-.hero-copy{padding:70px 60px 66px;position:relative;z-index:1}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:800;color:#e1bd79}
-h1{font:400 clamp(40px,4.5vw,63px)/1.08 Georgia,serif;color:white;letter-spacing:-.02em;margin:17px 0 19px}h1 em{font-style:normal;color:#dfba77}
-.hero p{color:#dbe5ee;font-size:17px;line-height:1.75;max-width:580px;margin:0}
-.hero-actions{display:flex;gap:11px;align-items:center;flex-wrap:wrap;margin-top:31px}
-.cta{min-height:53px;display:inline-flex;justify-content:space-between;gap:22px;align-items:center;background:#e7c992;color:#173451;padding:12px 20px;border-radius:11px;font-size:16px;font-weight:800;text-decoration:none;border:1px solid #e7c992}
-.cta:hover{background:#f2dbb0}.cta[aria-disabled="true"]{opacity:.6;cursor:default;pointer-events:none}
-.status{color:#aebfce;font-size:12px;line-height:1.6;max-width:240px}
-.hero-visual{display:grid;place-items:center;padding:30px 45px;position:relative;z-index:1}.hero-emblem{width:min(310px,85%);height:auto;aspect-ratio:1;border-radius:50%;background:white;object-fit:contain;border:6px solid #f9f9f8;box-shadow:0 0 0 3px #b68c43,0 13px 40px #010f2328}
-h2{font:400 34px/1.2 Georgia,serif;color:var(--navy);margin:44px 0 20px}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px}
-.step{background:white;border:1px solid #e0e6e9;padding:26px;border-radius:18px;box-shadow:0 8px 26px #0b294b08;min-height:225px}
-.num{display:grid;place-items:center;background:#eee1c7;border:1px solid #d6b985;width:42px;height:42px;border-radius:12px;color:#98712e;font:700 22px Georgia,serif}
-.step h3{font-size:20px;margin:17px 0 9px;color:var(--navy)}.step p{font-size:15px;color:var(--muted);margin:0}
-.privacy{display:flex;gap:18px;background:#fffaf1;border:1px solid #ebdec2;border-radius:16px;margin-top:25px;padding:21px 24px}.privacy-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:50%;flex:0 0 35px;background:#f0e4cf;color:#8b6427;font-size:20px}.privacy strong{color:var(--navy)}.privacy p{font-size:14px;line-height:1.7;color:#756648;margin:4px 0 0}
-footer{border-top:1px solid #e6e8e8;padding:26px 0;color:#758595;font-size:13px}
-@media(max-width:900px){.hero-copy{padding:44px 30px}.hero-visual{padding:25px}.hero-emblem{width:min(250px,90%)}}
-@media(max-width:680px){.wrap{padding:0 15px}.header{min-height:78px}.crest{width:48px;height:48px}.brand strong{font-size:18px}.brand span{font-size:11px}.back{font-size:12px;padding:8px 11px}main{padding:19px 0 39px}.hero{grid-template-columns:1fr;border-radius:17px}.hero-copy{padding:34px 23px 27px}.hero-visual{display:none}h1{font-size:40px}.hero p{font-size:15px}.hero-actions{display:block}.cta{width:100%;justify-content:center}.status{display:block;margin-top:13px}.steps{grid-template-columns:1fr;gap:12px}.step{min-height:0;padding:19px}h2{font-size:30px;margin:29px 0 15px}.privacy{padding:17px;gap:11px}}
-.subject-entry{display:flex;align-items:center;justify-content:space-between;gap:26px;background:#fff;border:1px solid #dedfda;border-left:4px solid var(--gold);border-radius:18px;padding:24px 27px;margin:25px 0 0}.subject-entry h2{margin:6px 0 9px;font-size:22px;color:var(--navy)}.subject-entry p{margin:0;max-width:740px;color:#4e657c;font-size:15px}.subject-entry__link{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:11px;background:#0e375c;color:#fff;text-decoration:none;padding:13px 20px;font-weight:700;min-height:48px}.subject-entry__link:hover{background:#082949;color:#fff}.subject-entry__link[aria-disabled="true"]{pointer-events:none;opacity:.45}@media(max-width:720px){.subject-entry{flex-direction:column;align-items:stretch;padding:20px}.subject-entry__link{width:100%}}
+.an-page{padding:16px 0 48px}
+@media (min-width:980px){.an-page{padding:28px 0 64px}}
+@media (max-width:979px){.footer{padding-bottom:0}}
+.an-hero{position:relative;display:grid;gap:24px;padding:28px 20px;border:2px solid var(--ink-line);border-radius:30px;background:var(--brand);color:#fff;box-shadow:6px 6px 0 var(--ink-line);overflow:hidden}
+@media (min-width:760px){.an-hero{grid-template-columns:minmax(0,1fr) 260px;align-items:center;padding:44px;border-radius:32px;box-shadow:8px 8px 0 var(--ink-line)}}
+.an-hero::before{content:"";position:absolute;right:-90px;bottom:-110px;width:320px;height:320px;border-radius:50%;background:#1D4580;pointer-events:none}
+.an-hero>*{position:relative}
+.an-hero .eyebrow{color:var(--sun)}
+.an-hero h1{margin:12px 0 14px;font-family:var(--display);font-size:36px;font-weight:800;line-height:1.05;letter-spacing:-.02em}
+@media (min-width:760px){.an-hero h1{font-size:54px}}
+.an-hero h1 mark{padding:0 .12em;border-radius:10px;background:var(--sun);color:var(--ink-line)}
+.an-hero p{max-width:580px;color:#DBEAFE;font-size:16px;line-height:1.7}
+.an-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:24px}
+.an-cta{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:52px;padding:0 20px;border:2px solid var(--ink-line);border-radius:14px;background:var(--sun);color:var(--ink-line);font-weight:800;text-decoration:none;box-shadow:4px 4px 0 var(--ink-line);transition:transform .15s ease}
+.an-cta:hover{color:var(--ink-line);transform:translate(-1px,-1px)}
+.an-cta[aria-disabled="true"],.an-subject a[aria-disabled="true"]{opacity:.55;pointer-events:none;box-shadow:none}
+.an-status{max-width:260px;color:#BFDBFE;font-size:13px;line-height:1.5}
+.an-emblem{display:none;justify-self:center;width:220px;aspect-ratio:1;border:2px solid var(--ink-line);border-radius:50%;background:#fff;object-fit:contain;box-shadow:6px 6px 0 var(--ink-line)}
+@media (min-width:760px){.an-emblem{display:block}}
+@media (max-width:759px){.an-cta{width:100%}}
+.an-title{margin-top:12px;font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:-.01em}
+@media (min-width:760px){.an-title{font-size:28px}}
+.an-steps{display:grid;gap:14px}
+@media (min-width:760px){.an-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}}
+.an-step{padding:20px;border:2px solid var(--ink-line);border-radius:24px;box-shadow:4px 4px 0 var(--ink-line)}
+@media (min-width:760px){.an-step{min-height:220px;padding:24px;border-radius:28px;box-shadow:5px 5px 0 var(--ink-line)}}
+.an-step:nth-child(1){background:#DBEAFE}.an-step:nth-child(2){background:#FEF3C7}.an-step:nth-child(3){background:#D1FAE5}
+.an-num{display:grid;place-items:center;width:46px;height:46px;border:2px solid var(--ink-line);border-radius:15px;background:#fff;font-family:var(--display);font-size:20px;font-weight:800}
+.an-step h3{margin:16px 0 8px;font-family:var(--display);font-size:18px;font-weight:800}
+.an-step p{color:var(--ink-2);font-size:15px}
+.an-subject{display:flex;flex-direction:column;gap:16px;padding:22px 20px;border:2px solid var(--ink-line);border-radius:26px;background:var(--surface);box-shadow:var(--hard)}
+@media (min-width:760px){.an-subject{flex-direction:row;align-items:center;justify-content:space-between;gap:28px;padding:26px 28px}}
+.an-subject h2{margin:6px 0 8px;font-family:var(--display);font-size:20px;font-weight:800}
+.an-subject p{max-width:740px;color:var(--muted);font-size:15px}
+.an-subject .btn{flex-shrink:0;min-height:50px}
+.an-privacy{display:flex;gap:14px;padding:18px 20px;border:2px solid var(--ink-line);border-radius:20px;background:var(--add-tint);box-shadow:var(--hard-sm)}
+.an-privacy__mark{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:2px solid var(--ink-line);border-radius:50%;background:#D1FAE5;color:#065F46;font-weight:800}
+.an-privacy p{margin-top:4px;color:var(--ink-2);font-size:14px;line-height:1.65}
 </style>
 </head>
 <body>
-<header><div class="wrap header"><a class="brand" href="../staff.html"><img class="crest" src="../assets/school-logo.jpg" alt="Эмблема МОУ СОШ № 20"><div><strong>МОУ СОШ № 20</strong><span>г. Тверь</span></div></a><a class="back" href="../staff.html">← К расписанию</a></div></header>
-<main class="wrap"><section class="hero"><div class="hero-copy"><div class="eyebrow">Школьная цифровая среда</div><h1>Итоги<br><em>триместра</em></h1><p>Больше не нужно переписывать таблицы и подсчитывать результаты вручную. Простой Excel, автоматическая проверка и готовая аналитика.</p><div class="hero-actions"><a class="cta" id="portal" href="#" aria-disabled="true">Войти в личный кабинет <span aria-hidden="true">→</span></a><span id="state" class="status" role="status">Подключаем вход в систему отчётности.</span></div></div><div class="hero-visual"><img class="hero-emblem" src="../assets/school-logo.jpg" alt="Логотип школы № 20"></div></section>
-<h2>Три шага — и отчёт сдан</h2><div class="steps"><article class="step"><span class="num">1</span><h3>Скачайте бланк</h3><p>В личном кабинете нажмите «Скачать Excel» и заполните голубые ячейки. Остальное посчитается автоматически.</p></article><article class="step"><span class="num">2</span><h3>Загрузите файл</h3><p>Система проверит заполненные показатели и позволит при необходимости исправить ошибки.</p></article><article class="step"><span class="num">3</span><h3>Отправьте завучу</h3><p>Нажмите «Сдать на проверку» и дождитесь утверждения отчёта. Статус будет виден в кабинете.</p></article></div>
-<section class="subject-entry" aria-label="Отчёт учителя-предметника"><div><span class="eyebrow">Без регистрации и пароля</span><h2>Отчёт учителя-предметника</h2><p>Укажите ФИО и триместр один раз. Добавьте все свои классы, введите проценты и проведённые часы, затем отправьте всё вместе.</p></div><a class="subject-entry__link" id="subjectPortal" href="#" aria-disabled="true">Сдать отчёты по предметам →</a></section>
-<div class="privacy"><span class="privacy-mark" aria-hidden="true">✓</span><div><strong>Персональные сведения остаются внутри школы</strong><p>В облачную систему передаются только числовые показатели класса. Excel с ФИО двоечников ведётся отдельно и сюда не загружается.</p></div></div></main>
-<footer><div class="wrap">МОУ СОШ № 20 г. Твери · Служебный раздел цифровой отчётности</div></footer>
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="../staff.html" aria-label="К сетке учителей">
+      <img class="brand__logo" src="../assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>г. Тверь · отчётность</span></span>
+    </a>
+    <div class="topbar__actions">
+      <a class="btn btn--ghost btn--sm" href="../staff.html">← К расписанию</a>
+    </div>
+  </div>
+</header>
+
+<main class="an-page">
+  <div class="container stack">
+    <section class="an-hero" aria-labelledby="an-title">
+      <div>
+        <span class="eyebrow">Школьная цифровая среда</span>
+        <h1 id="an-title">Итоги <mark>триместра</mark></h1>
+        <p>Больше не нужно переписывать таблицы и подсчитывать результаты вручную. Простой Excel, автоматическая проверка и готовая аналитика.</p>
+        <div class="an-actions">
+          <a class="an-cta" id="portal" href="#" aria-disabled="true">Войти в личный кабинет <span aria-hidden="true">→</span></a>
+          <span id="state" class="an-status" role="status">Подключаем вход в систему отчётности.</span>
+        </div>
+      </div>
+      <img class="an-emblem" src="../assets/school-logo.jpg" alt="Логотип школы № 20">
+    </section>
+
+    <h2 class="an-title">Три шага — и отчёт сдан</h2>
+    <div class="an-steps">
+      <article class="an-step"><span class="an-num">1</span><h3>Скачайте бланк</h3><p>В личном кабинете нажмите «Скачать Excel» и заполните голубые ячейки. Остальное посчитается автоматически.</p></article>
+      <article class="an-step"><span class="an-num">2</span><h3>Загрузите файл</h3><p>Система проверит заполненные показатели и позволит при необходимости исправить ошибки.</p></article>
+      <article class="an-step"><span class="an-num">3</span><h3>Отправьте завучу</h3><p>Нажмите «Сдать на проверку» и дождитесь утверждения отчёта. Статус будет виден в кабинете.</p></article>
+    </div>
+
+    <section class="an-subject" aria-label="Отчёт учителя-предметника">
+      <div><span class="eyebrow">Без регистрации и пароля</span><h2>Отчёт учителя-предметника</h2><p>Укажите ФИО и триместр один раз. Добавьте все свои классы, введите проценты и проведённые часы, затем отправьте всё вместе.</p></div>
+      <a class="btn" id="subjectPortal" href="#" aria-disabled="true">Сдать отчёты по предметам →</a>
+    </section>
+
+    <div class="an-privacy"><span class="an-privacy__mark" aria-hidden="true">✓</span><div><strong>Персональные сведения остаются внутри школы</strong><p>В облачную систему передаются только числовые показатели класса. Excel с ФИО двоечников ведётся отдельно и сюда не загружается.</p></div></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <span>МОУ СОШ № 20 г. Твери · служебный раздел цифровой отчётности</span>
+    <nav class="footer__links" aria-label="Ссылки школы"><a href="../staff.html">Сетка учителей</a><a href="../index.html">Главная</a></nav>
+  </div>
+</footer>
 <script src="app-config.js"></script>
 <script>
 (function(){

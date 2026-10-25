@@ -444,8 +444,161 @@ p{margin:0}
 .sheet__links a,.sheet__links button{display:flex;align-items:center;min-height:52px;padding:0 4px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font-size:16px;font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
 .sheet__hint{margin-top:10px;font-size:13px;color:var(--muted)}
 
+/* Стиль «Яркое бенто», палитра «Школьный» (как на главной) --------
+   Тёмная обводка и жёсткая тень у карточек и кнопок, заголовки Unbounded,
+   жёлтым — выбранное, тёмно-синим — то, что идёт сейчас. Раскладку страниц
+   этот блок не меняет. */
+@font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-cyrillic.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--ink-line:#15233F;--sun:#FDE68A;--sun-soft:#FEF7D6;--display:Unbounded,var(--font);--hard:5px 5px 0 var(--ink-line);--hard-sm:3px 3px 0 var(--ink-line);--r-card:26px}
+body{background:#F4F6FA;color:var(--ink-line)}
+
+.page-title h1,.home-hero h1{font-family:var(--display);font-weight:800;letter-spacing:-.02em}
+.section-head h2,.picker__head h2,.day-head h3,.my-class__head h2,.student-day-card__head h3,.staff-banner h2,.staff-day-title,.class-change-card__head strong,.link-card h3,.now-card__title,.sheet__head strong{font-family:var(--display);font-weight:800;letter-spacing:-.01em}
+.page-title h1{font-size:26px}
+@media (min-width:760px){.page-title h1{font-size:38px}}
+.eyebrow,.section-kicker{color:#4A5873}
+
+/* Шапка, подвал, нижнее меню */
+.topnav__link{color:var(--ink-line);font-weight:700}
+.topnav__link[aria-current="page"]{background:var(--sun);color:var(--ink-line);box-shadow:inset 0 0 0 2px var(--ink-line)}
+.live-pill{background:var(--surface);border:2px solid var(--ink-line);color:var(--ink-line)}
+.footer{border-top:0;background:var(--ink-line)}
+.footer__inner{color:#BFDBFE}
+.footer__links a{color:#fff}
+.bottom-nav{border-top:2px solid var(--ink-line)}
+.bottom-nav a,.bottom-nav button{color:var(--ink-line)}
+.bottom-nav .is-active{background:var(--sun);color:var(--ink-line);box-shadow:inset 0 0 0 2px var(--ink-line)}
+.sheet{border-top:2px solid var(--ink-line)}
+
+/* Кнопки, поля, чипы, значки */
+.btn{border:2px solid var(--ink-line);border-radius:14px;background:var(--brand);color:#fff;font-weight:800;box-shadow:var(--hard-sm);transition:transform .15s ease,background-color var(--ease)}
+.btn:hover{background:#0F2A57;border-color:var(--ink-line);color:#fff;transform:translate(-1px,-1px)}
+.btn--ghost{background:var(--surface);border-color:var(--ink-line);color:var(--ink-line)}
+.btn--ghost:hover{background:var(--sun-soft);border-color:var(--ink-line);color:var(--ink-line)}
+.btn--quiet{border-color:transparent;box-shadow:none;background:transparent;color:var(--ink-line);text-decoration:underline;text-underline-offset:3px}
+.btn--quiet:hover{background:var(--sun-soft);border-color:transparent;color:var(--ink-line);transform:none}
+.input,.select{border:2px solid var(--ink-line);border-radius:14px}
+.chip{min-width:54px;border:2px solid var(--ink-line);border-radius:14px;color:var(--ink-line);font-weight:800;box-shadow:var(--hard-sm);transition:transform .15s ease,background-color var(--ease)}
+.chip:hover{border-color:var(--ink-line);background:var(--sun-soft);transform:translate(-1px,-1px)}
+.chip.is-active,.chip[aria-pressed="true"]{background:var(--sun);border-color:var(--ink-line);color:var(--ink-line)}
+.badge{border:1.5px solid var(--ink-line);font-weight:800}
+.badge--count{border:0}
+.badge--now{background:var(--sun);color:var(--ink-line)}
+.toggle input{accent-color:var(--brand)}
+
+/* Карточки и состояния */
+.card,.bells,.student-day-card,.staff-grid-card,.staff-personal,.class-change-card,.change-context,.staff-mobile-head,.link-card{border:2px solid var(--ink-line);border-radius:var(--r-card);box-shadow:var(--hard)}
+.card,.link-card{background:var(--surface)}
+.class-change-card{border-radius:20px;box-shadow:var(--hard-sm)}
+.change-context,.staff-mobile-head{border-radius:18px;box-shadow:var(--hard-sm)}
+.student-day-card__head{border-bottom:2px solid var(--ink-line);background:var(--sun-soft)}
+.empty-state,.loading-state{border:2px dashed var(--line-2);border-radius:18px}
+.alert{border:2px solid var(--ink-line);border-radius:18px;background:var(--sun-soft);color:var(--ink-line);box-shadow:var(--hard-sm)}
+.alert a{color:var(--ink-line)}
+.alert--ok{background:var(--add-tint);color:var(--ink-line)}
+.notice{border:2px solid var(--ink-line);border-radius:18px}
+.notice--important{border-color:var(--ink-line);background:var(--change-tint)}
+.notice--urgent{border-color:var(--ink-line);background:var(--cancel-tint)}
+.notice__files a{border:2px solid var(--ink-line)}
+.staff-banner{border:2px solid var(--ink-line);border-radius:var(--r-card);background:var(--sun-soft);box-shadow:var(--hard)}
+.staff-metric{border:2px solid var(--ink-line);border-radius:14px}
+.link-card{transition:transform .18s ease}
+.link-card:hover{border-color:var(--ink-line);background:var(--sun-soft);transform:translate(-2px,-2px)}
+.link-card svg{color:var(--brand)}
+
+/* Карточка «Сейчас» — как синий блок главной */
+.now-card{border:2px solid var(--ink-line);border-radius:var(--r-card);box-shadow:6px 6px 0 var(--ink-line)}
+.now-card__pill{background:var(--sun);color:var(--ink-line)}
+.now-card__bar span{background:var(--sun)}
+
+/* Вкладки и дни */
+.tabs{padding:4px;border:2px solid var(--ink-line);border-radius:16px;background:var(--surface)}
+.tab{border-radius:11px;color:var(--ink-line);font-weight:800}
+.tab.is-active{background:var(--ink-line);color:#fff;box-shadow:none}
+.day-tab{border:2px solid var(--ink-line);border-radius:16px}
+.day-tab.is-active{background:var(--brand);border-color:var(--ink-line);color:#fff;box-shadow:var(--hard-sm)}
+.day-tab.is-today::after{background:var(--sun);box-shadow:0 0 0 1.5px var(--ink-line)}
+
+/* Уроки: строки как в «Моём дне» */
+.lesson,.student-lesson,.teacher-card{border:2px solid var(--line);border-radius:18px}
+.lesson__no b,.student-lesson__number,.teacher-card__lesson{font-family:var(--display)}
+.student-lesson__number,.teacher-card__lesson{background:#DBEAFE;color:var(--brand)}
+.lesson--now,.student-lesson.is-now{border:2px solid var(--ink-line);background:var(--brand);color:#fff;box-shadow:4px 4px 0 var(--ink-line)}
+.lesson--now .lesson__no b,.lesson--now .lesson__no span,.lesson--now .lesson__meta,.student-lesson.is-now .student-lesson__meta,.student-lesson.is-now .student-lesson__body small{color:#DBEAFE}
+.lesson--now .lesson__subject{color:#fff}
+.lesson--now .lesson__room{background:var(--sun);color:var(--ink-line)}
+.student-lesson.is-now .student-lesson__number{background:var(--sun);color:var(--ink-line)}
+.student-lesson.is-now .student-lesson__room{color:#fff}
+
+/* Неделя на компьютере */
+.week__head{border:2px solid var(--ink-line);border-radius:14px;background:var(--surface)}
+.week__head.is-today{background:var(--brand);color:#fff;box-shadow:var(--hard-sm)}
+.week__head.is-today span{color:#BFDBFE}
+.week__time b{font-family:var(--display);font-size:17px}
+.cell{border:2px solid var(--line);border-radius:14px}
+.cell--today{background:#EEF4FF;border-color:#BFDBFE}
+.cell--now{border:2px solid var(--ink-line);background:var(--brand);padding:10px 12px;box-shadow:var(--hard-sm)}
+.cell--now .cell__subject{color:#fff}
+.cell--now .cell__room,.cell--now .cell__old{color:#BFDBFE}
+
+/* Звонки */
+.bells summary{font-family:var(--display);font-weight:800}
+.bells summary::after{border-color:var(--ink-line)}
+.bell-column h3{font-family:var(--display);font-size:14px}
+.bell-row.is-now{margin:0 -8px;padding:6px 8px;border-radius:10px;border-bottom-color:transparent;background:var(--brand);color:#fff}
+.bell-row.is-now em{color:#BFDBFE}
+
+/* Сетка учителей */
+.staff-grid-toolbar{border-bottom:2px solid var(--ink-line)}
+.sg-head{background:#EEF2FA;border-bottom:2px solid var(--ink-line)}
+.sg-head.is-now{background:var(--brand);color:#fff}
+.sg-teacher{border-right:2px solid var(--ink-line)}
+.staff-grid-row:hover>.sg-teacher{background:var(--sun-soft)}
+.sg-cell.is-now{box-shadow:inset 0 0 0 2px var(--brand)}
+.staff-search-hit{background:var(--sun)!important}
+
+/* Новость (post.html) */
+.post-back{align-self:flex-start;color:var(--ink-line);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.post-back:hover{color:var(--brand)}
+.post-title .lead{margin-top:8px}
+.post-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.post-meta span{display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border:2px solid var(--ink-line);border-radius:999px;background:var(--surface);font-size:13px;font-weight:800}
+.post-meta span:first-child{background:var(--sun)}
+.post-layout{display:grid;gap:20px}
+@media (min-width:980px){.post-layout{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+.post-article{padding:20px}
+@media (min-width:760px){.post-article{padding:28px}}
+.article-cover{margin-bottom:20px;overflow:hidden;border:2px solid var(--ink-line);border-radius:18px;background:var(--surface-2)}
+.article-cover img{width:100%;max-height:460px;object-fit:cover}
+.article-body{max-width:68ch;font-size:17px;line-height:1.65}
+.article-body>*+*{margin-top:14px}
+.article-body:empty{display:none}
+.article-body:empty+.article-actions{margin-top:0}
+.article-body ul{margin-bottom:0;padding-left:22px}
+.article-body li+li{margin-top:6px}
+.article-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:20px}
+.article-gallery figure{margin:0;overflow:hidden;aspect-ratio:4/3;border:2px solid var(--ink-line);border-radius:14px}
+.article-gallery img{width:100%;height:100%;object-fit:cover}
+.article-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.post-article .button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:2px solid var(--ink-line);border-radius:14px;background:var(--brand);color:#fff;font-weight:800;text-decoration:none;box-shadow:var(--hard-sm)}
+.post-article .button:hover{background:#0F2A57;color:#fff}
+.post-article .button--secondary{background:var(--surface);color:var(--ink-line)}
+.post-article .button--secondary:hover{background:var(--sun-soft);color:var(--ink-line)}
+.post-article .empty-state .button{align-self:center;margin-top:8px}
+.post-side .section-head{margin-bottom:12px}
+.post-school h2{font-family:var(--display);font-size:18px;font-weight:800}
+.post-school p{margin-top:6px;color:var(--muted);font-size:15px}
+.post-school__links{display:flex;flex-direction:column;margin-top:10px}
+.post-school__links a{display:flex;justify-content:space-between;align-items:center;min-height:48px;border-bottom:2px solid var(--line);color:var(--ink-line);font-weight:700;text-decoration:none}
+.post-school__links a:last-child{border-bottom:0}
+.post-school__links a:hover{color:var(--brand)}
+
+@media (prefers-reduced-motion:reduce){.btn,.chip,.link-card{transition:none}.btn:hover,.chip:hover,.link-card:hover{transform:none}}
+
 /* Печать ----------------------------------------------------------- */
 @media print{
+  .card,.bells,.student-day-card,.staff-grid-card,.class-change-card,.lesson,.cell,.week__head,.now-card{box-shadow:none!important}
   .topbar,.footer,.bottom-nav,.sheet,.sheet-backdrop,.notices,.page-title__actions,.picker,.tabs,.no-print,.staff-controls,.staff-personal,.staff-legend,.staff-grid-toolbar,.staff-mobile,.staff-banner{display:none!important}
   body{background:#fff}.page{padding:0}
   .week{display:block!important}.days{display:none!important}
