@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const MAX_API=process.env.MAX_API_BASE||'https://platform-api2.max.ru';
+const MAX_API=process.env.MAX_API_BASE||'https://platform-api.max.ru';
 const BOT_TOKEN=String(process.env.BOT_TOKEN||'').trim();
 const SITE_URL=String(process.env.SCHOOL_SITE_URL||'https://sosh20tver.ru').replace(/\/$/,'');
 const SITE_CONFIG_URL=process.env.SITE_CONFIG_URL||`${SITE_URL}/config.js`;

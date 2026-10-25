@@ -56,7 +56,11 @@
 
 1. Внесите изменения, проверьте тесты: `node tests/schedule-regression.js`, `node tests/schedule-weekly-review.js`, `node tests/schedule-workspace.js`, `node tests/tv-rotation.js`.
 2. `git push` в ветку `main` — GitHub Pages обновит сайт за 1–2 минуты.
-3. Изменения в `apps-script/` отдельно вставьте в редактор Apps Script и выполните «Развернуть → Управление развертываниями → Изменить → Новая версия».
+3. Изменения в `apps-script/` отдельно перенесите в проект Apps Script «СОШ 20 — панель изменений» и выпустите новую версию рабочего развертывания (адрес панели не меняется). Вручную: вставить файлы в редактор → «Развернуть → Управление развертываниями → Изменить → Новая версия». Или через [clasp](https://github.com/google/clasp):
+   ```
+   clasp clone 1MlwQ3FlZhmsFTecQqSlP6P3vpNx8dfazEidUjlJMkDkUXDZwJ3Z_WHx1
+   ```
+   скопировать изменённые файлы под именами проекта (`Code.gs` → `Код.js`, `ScheduleModel.gs` → `SheduleModel.js`, остальные `.gs` → `.js`), затем `clasp push`, `clasp create-version "описание"` и `clasp update-deployment AKfycbwLKHUH2tnJ845I5uQ8r1_PAe1svBx462EUcwpz7ex7P93wHhX0WM2RkPpPnlrIlvsglQ -V <номер версии>`.
 
 Номер версии файлов в HTML (`?v=18`) и `CACHE` в `sw.js` увеличивайте при изменении CSS/JS, чтобы телефоны получили новую версию.
 

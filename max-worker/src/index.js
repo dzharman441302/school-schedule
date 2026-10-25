@@ -1,4 +1,4 @@
-const MAX_API = 'https://platform-api2.max.ru';
+const MAX_API = 'https://platform-api.max.ru';
 const DEFAULT_TZ = 'Europe/Moscow';
 const DAY_CODES = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
 

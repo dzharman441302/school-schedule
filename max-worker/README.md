@@ -110,7 +110,7 @@ $body = @{
   secret = $secret
 } | ConvertTo-Json
 Invoke-RestMethod -Method Post `
-  -Uri "https://platform-api2.max.ru/subscriptions" `
+  -Uri "https://platform-api.max.ru/subscriptions" `
   -Headers @{ Authorization = $token } `
   -ContentType "application/json" `
   -Body $body

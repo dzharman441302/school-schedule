@@ -1,6 +1,6 @@
 import app from './index.js';
 
-const MAX_API = 'https://platform-api2.max.ru';
+const MAX_API = 'https://platform-api.max.ru';
 
 async function maxJson(env, method, endpoint, body) {
   const response = await fetch(MAX_API + endpoint, {
