@@ -1,66 +1,245 @@
-(()=>{
-'use strict';
-const site=window.SchoolSite;if(!site)return;
-const BELLS=[['08:00','08:40'],['08:50','09:30'],['09:45','10:25'],['10:45','11:25'],['11:40','12:20'],['12:30','13:10'],['13:20','14:00'],['14:15','14:55'],['15:10','15:50'],['16:05','16:45'],['17:00','17:40'],['17:50','18:30']];
-const DAY_CODES=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
-const esc=site.escapeHtml;
-const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
-let teacherEntries=[],cards=[],cardTeachers=[],pageIndex=0,pageTimer=null,lastMomentKey='',lastPageSize=0;
-function todayIso(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Moscow'}).format(new Date())}
-function normalizeDate(v){const s=String(v||'').trim(),m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:s.slice(0,10)}
-function currentDayCode(){const p=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Moscow',weekday:'short'}).format(new Date());return({Mon:'ПН',Tue:'ВТ',Wed:'СР',Thu:'ЧТ',Fri:'ПТ',Sat:'СБ',Sun:'ВС'})[p]||DAY_CODES[new Date().getUTCDay()]}
-function pageSize(){return innerWidth<=700?1:2}
-function toMin(v){const[a,b]=String(v).split(':').map(Number);return a*60+b}
-function lessonEnd(lesson){return toMin(BELLS[Number(lesson)-1]?.[1]||'23:59')}
-function momentState(){const s=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()),[h,m]=s.split(':').map(Number),n=h*60+m;for(let i=0;i<BELLS.length;i++){const a=toMin(BELLS[i][0]),b=toMin(BELLS[i][1]);if(n>=a&&n<b)return{type:'lesson',lesson:i+1,remaining:b-n,now:n};if(n<a)return i?{type:'break',prev:i,next:i+1,remaining:a-n,now:n}:{type:'before',next:1,remaining:a-n,now:n}}return{type:'after',now:n}}
-function momentKey(s){return`${s.type}:${s.lesson||s.prev||s.next||0}`}
-function visibleByTime(x,state){if(state.type==='before')return true;if(state.type==='after')return false;return lessonEnd(x.lesson)>state.now}
-function hasRealLesson(x){if(String(x.status||'normal')==='cancelled')return false;return Boolean(String(x.cls||x.next?.cls||'').trim()||String(x.subj||x.next?.subj||'').trim()||String(x.room||x.next?.room||'').trim())}
-function updateHeader(state){const d=new Date(),t=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(d),date=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',weekday:'long',day:'numeric',month:'long'}).format(d);document.querySelector('#time').textContent=t.slice(0,5);document.querySelector('#date').textContent=date;let label='Учебный день',text='завершён';if(state.type==='lesson'){label=`Идёт ${state.lesson}-й урок`;text=`до звонка ${state.remaining} мин`}else if(state.type==='break'){label='Перемена';text=`${state.next}-й урок через ${state.remaining} мин`}else if(state.type==='before'){label='До начала занятий';text=`1-й урок через ${state.remaining} мин`}document.querySelector('#countdown-label').textContent=label;document.querySelector('#countdown').textContent=text}
-function lessonProgress(state){if(state.type!=='lesson')return 0;const a=toMin(BELLS[state.lesson-1][0]),b=toMin(BELLS[state.lesson-1][1]);return Math.max(0,Math.min(100,Math.round((state.now-a)/(b-a)*100)))}
-function applyMomentClasses(state){const progress=`${lessonProgress(state)}%`;document.querySelectorAll('.lesson').forEach(el=>{const n=Number(el.dataset.lesson),on=state.type==='lesson'&&n===state.lesson;el.classList.toggle('is-current',on);el.classList.toggle('is-past',false);if(on&&el.style)el.style.setProperty('--progress',progress)})}
-function tick(){const state=momentState();updateHeader(state);const key=momentKey(state);if(lastMomentKey&&key!==lastMomentKey&&teacherEntries.length){lastMomentKey=key;rebuildCards(state);resetRotation();return}lastMomentKey=key;applyMomentClasses(state)}
-function parseBaseCell(v){const s=String(v??'').trim();if(!s)return null;const p=s.split('|').map(x=>x.trim());if(p.length>=2)return{cls:p[0]||'',subj:fullSubject(p[1]||''),room:p.slice(2).join('|').trim()};const m=s.match(/^([^·]+?)\s*[·-]\s*([^·]+?)(?:\s*[·-]\s*(.+))?$/);return m?{cls:m[1].trim(),subj:fullSubject(m[2].trim()),room:String(m[3]||'').trim()}:{cls:'',subj:fullSubject(s),room:''}}
-function teacherBase(rows){if(!Array.isArray(rows)||!rows.length)return{order:[],map:new Map()};const headers=rows[0].map(x=>String(x||'').trim()),hasHeader=site.looksLikeHeader(rows[0],['фио','урок','пн','понедельник']),data=hasHeader?rows.slice(1):rows,hs=hasHeader?headers:['ФИО','УРОК','ПН','ВТ','СР','ЧТ','ПТ'],day=currentDayCode(),dayIndex=hs.findIndex(h=>String(h).toUpperCase()===day),teacherIndex=Math.max(0,hs.findIndex(h=>/фио|учитель/i.test(h))),lessonIndex=Math.max(1,hs.findIndex(h=>/урок/i.test(h))),order=[],map=new Map();data.forEach(r=>{const teacher=String(r[teacherIndex]||'').trim(),lesson=Number(String(r[lessonIndex]||'').match(/\d+/)?.[0]||0);if(!teacher||!lesson)return;if(!map.has(teacher)){map.set(teacher,new Map());order.push(teacher)}const cell=dayIndex>=0?parseBaseCell(r[dayIndex]):null;if(cell)map.get(teacher).set(lesson,{lesson,...cell,status:'normal'})});return{order,map}}
-function changeType(status){const s=String(status||'').toLowerCase();if(/cancel|отмен/.test(s))return'cancelled';if(/room|кабин/.test(s))return'room-change';if(/add|добав/.test(s))return'added';return'changed'}
-function overlayChanges(base,rows){const today=todayIso();if(!Array.isArray(rows)||rows.length<2)return base;const d=rows.slice(1),ix={date:0,teacher:1,lesson:2,cls:3,subj:4,room:5,status:6,oldCls:7,oldSubj:8,oldRoom:9};d.filter(r=>normalizeDate(r[ix.date])===today&&String(r[ix.status]||'normal')!=='normal').forEach(r=>{const teacher=String(r[ix.teacher]||'').trim(),lesson=Number(r[ix.lesson])||0;if(!teacher||!lesson)return;if(!base.map.has(teacher)){base.map.set(teacher,new Map());base.order.push(teacher)}const current=base.map.get(teacher).get(lesson)||null,type=changeType(r[ix.status]);const old={cls:String(r[ix.oldCls]||current?.cls||''),subj:fullSubject(String(r[ix.oldSubj]||current?.subj||'')),room:String(r[ix.oldRoom]||current?.room||'')};const next={cls:String(r[ix.cls]||current?.cls||''),subj:fullSubject(String(r[ix.subj]||current?.subj||'')),room:String(r[ix.room]||current?.room||'')};base.map.get(teacher).set(lesson,{lesson,status:type,old,next,cls:next.cls,subj:next.subj,room:next.room})});return base}
-function statusLabel(s){return({cancelled:'Отмена',changed:'Изменено','room-change':'Кабинет',added:'Добавлено'})[s]||''}
-const ICONS={now:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',cancelled:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',changed:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>','room-change':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21h16"/><path d="M6 21V4h12v17"/><path d="M14 12h.01"/></svg>',added:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'};
-function plural(n){const a=n%10,b=n%100;return b>=11&&b<=14?'изменений':a===1?'изменение':a>=2&&a<=4?'изменения':'изменений'}
-function summary(items){const c={cancelled:0,changed:0,'room-change':0,added:0};items.forEach(x=>{if(x.status!=='normal')c[x.status]=(c[x.status]||0)+1});const total=Object.values(c).reduce((a,b)=>a+b,0);if(!total)return'<div class="summary"><span class="chip">Без изменений</span></div>';return`<div class="summary"><span class="chip">${total} ${plural(total)}</span>${c.cancelled?`<span class="chip chip--cancelled">отмена ${c.cancelled}</span>`:''}${c.changed?`<span class="chip chip--changed">изменено ${c.changed}</span>`:''}${c['room-change']?`<span class="chip chip--room">кабинет ${c['room-change']}</span>`:''}${c.added?`<span class="chip chip--added">добавлено ${c.added}</span>`:''}</div>`}
-function stateCell(status){return`<span class="state"><i class="chip chip--now">${ICONS.now}Сейчас</i>${status&&status!=='normal'?`<i class="chip chip--${status}">${ICONS[status]||''}${statusLabel(status)}</i>`:''}</span>`}
-function classHtml(value){return String(value||'').split(/\s*\+\s*/).map(esc).join('<br>+ ')}
-function timeHtml(lesson){const b=BELLS[lesson-1]||['',''];return`<span class="time"><b>${esc(b[0])}</b><small>до ${esc(b[1])}</small></span>`}
-function rowHtml(x){const status=x.status||'normal',time=timeHtml(x.lesson);if(status==='normal')return`<div class="lesson" data-lesson="${x.lesson}"><span class="num">${x.lesson}</span>${time}<span class="cls">${classHtml(x.cls||'')}</span><span class="lesson-main"><strong>${esc(fullSubject(x.subj||''))}</strong></span><span class="room">${esc(x.room||'')}</span>${stateCell(status)}</div>`;if(status==='cancelled'){const o=x.old||{};return`<div class="lesson cancelled" data-lesson="${x.lesson}"><span class="num">${x.lesson}</span>${time}<span class="cls">${classHtml(o.cls||'')}</span><span class="lesson-main"><strong>${esc(fullSubject(o.subj||'')||'Урок')}</strong><small>урок снят${o.room?` · был в каб. ${esc(o.room)}`:''}</small></span><span class="room">—</span>${stateCell(status)}</div>`}if(status==='room-change'){const o=x.old||{},n=x.next||{};return`<div class="lesson room-change" data-lesson="${x.lesson}"><span class="num">${x.lesson}</span>${time}<span class="cls">${classHtml(n.cls||o.cls||'')}</span><span class="lesson-main"><strong>${esc(fullSubject(n.subj||o.subj||''))}</strong><small>кабинет ${esc(o.room||'—')} → ${esc(n.room||'—')}</small></span><span class="room">${esc(n.room||'')}</span>${stateCell(status)}</div>`}const o=x.old||{},n=x.next||{};return`<div class="lesson ${status}" data-lesson="${x.lesson}"><span class="num">${x.lesson}</span>${time}<span class="cls">${classHtml(n.cls||o.cls||'')}</span><span class="lesson-main">${o.subj||o.cls||o.room?`<span class="tv-previous">было: ${esc([o.cls,fullSubject(o.subj||''),o.room].filter(Boolean).join(' · '))}</span>`:''}<strong>${esc(fullSubject(n.subj||''))}</strong></span><span class="room">${esc(n.room||'')}</span>${stateCell(status)}</div>`}
-function cardHtml(teacher,items){const dense=items.length>8?' dense':'';return`<article class="teacher-card${dense}"><header><h2 title="${esc(teacher)}">${esc(teacher)}</h2>${summary(items)}</header><div class="lesson-columns"><span>№</span><span>Время</span><span>Класс</span><span>Предмет</span><span>Каб.</span><span>Статус</span></div><div class="teacher-lessons">${items.map(rowHtml).join('')}</div></article>`}
-function segmentsHtml(pages,index){if(pages<=1||pages>36)return'';return Array.from({length:pages},(_,i)=>`<i class="${i===index?'on':i<index?'done':''}"></i>`).join('')}
-function rebuildCards(state=momentState()){
-  // Keep our place in the teacher order when a refresh or lesson boundary rebuilds cards.
-  const remaining=cardTeachers.slice(pageIndex*(lastPageSize||pageSize()));
-  cards=[];cardTeachers=[];
-  teacherEntries.forEach(({teacher,map})=>{
-    const items=[...map.values()].sort((a,b)=>a.lesson-b.lesson).filter(x=>visibleByTime(x,state));
-    if(!items.some(hasRealLesson))return;
-    cardTeachers.push(teacher);cards.push(cardHtml(teacher,items));
-  });
-  const anchor=remaining.find(teacher=>cardTeachers.includes(teacher));
-  pageIndex=anchor===undefined?0:Math.floor(cardTeachers.indexOf(anchor)/pageSize());
-}
-function renderPage(){const el=document.querySelector('#teachers'),size=pageSize(),pages=Math.max(1,Math.ceil(cards.length/size));if(pageIndex>=pages)pageIndex=0;lastPageSize=size;const slice=cards.slice(pageIndex*size,pageIndex*size+size);el.classList.remove('page-enter');void el.offsetWidth;el.classList.add('page-enter');el.innerHTML=slice.length?slice.join(''):'<div class="empty-card">На сегодня действующих уроков больше нет.</div>';document.querySelector('#page').textContent=pages>1?`Страница ${pageIndex+1} из ${pages} · следующая через 8 сек`:'Все актуальные учителя помещаются на одном экране';document.querySelector('#segments').innerHTML=segmentsHtml(pages,pageIndex);document.querySelector('#progress').style.width=pages>1?`${((pageIndex+1)/pages)*100}%`:'100%';applyMomentClasses(momentState())}
-function resetRotation(){
-  renderPage();
-  if(cards.length<=pageSize()){
-    if(pageTimer!==null)clearInterval(pageTimer);
-    pageTimer=null;return;
+// ТВ в учительской: сетка «учитель × урок» на сегодня. На странице 12 учителей
+// по алфавиту, страницы сменяются каждые 15 секунд; справа — изменения дня.
+(() => {
+  'use strict';
+  const site = window.SchoolSite, tv = window.TvCore;
+  if (!site || !tv) return;
+
+  const ROWS = 12, MAX_COLS = 12, PERIOD = 15000, CHANGES_SHOWN = 4;
+  const SHEETS = ['Учителя', 'Учителя_сайт'];
+  const DAY_CODES = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+  const esc = site.escapeHtml;
+  const collator = new Intl.Collator('ru', { sensitivity: 'base' });
+  const fullSubject = (v) => (window.SchoolSubjects?.expandSubject ? window.SchoolSubjects.expandSubject(v) : String(v ?? ''));
+  const board = document.getElementById('board');
+
+  let baseRows = [], changeRows = [], view = null, lastKey = '';
+  const rotation = tv.createRotation({ size: ROWS, period: PERIOD, onTurn: () => show(true) });
+
+  /* Data ------------------------------------------------------------ */
+
+  function normalizeDate(v) {
+    const s = String(v || '').trim(), m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : s.slice(0, 10);
   }
-  // Data refreshes must not restart the 8-second rotation or capture a stale page count.
-  if(pageTimer!==null)return;
-  pageTimer=setInterval(()=>{
-    const pages=Math.max(1,Math.ceil(cards.length/pageSize()));
-    pageIndex=(pageIndex+1)%pages;renderPage();
-  },8000);
-}
-async function load(){try{const[baseRows,changeRows]=await Promise.all([site.loadSheet('Учителя',{force:true,optional:true}),site.loadSheet('Учителя_сайт',{force:true,optional:true})]),data=overlayChanges(teacherBase(baseRows||[]),changeRows||[]);teacherEntries=data.order.map(t=>({teacher:t,map:data.map.get(t)}));const state=momentState();lastMomentKey=momentKey(state);rebuildCards(state);resetRotation();updateHeader(state);await notices();document.querySelector('#updated').textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit'}).format(new Date())}catch(e){cards=['<div class="empty-card">Не удалось обновить расписание. Проверьте подключение к сети.</div>'];cardTeachers=[];pageIndex=0;resetRotation()}}
-async function notices(){try{const rows=await site.loadSheet('Оповещения',{optional:true,ttl:60000}),today=todayIso(),r=rows?.slice(1).reverse().find(x=>{const a=String(x[11]||'all');return String(x[12]||'true').toLowerCase()!=='false'&&['all','teachers'].includes(a)&&(!normalizeDate(x[5])||normalizeDate(x[5])<=today)&&(!normalizeDate(x[6])||normalizeDate(x[6])>=today)});document.querySelector('#notice').innerHTML=r?`<div class="notice"><strong>${esc(r[2]||'')}</strong>${r[3]?'<span>'+esc(r[3])+'</span>':''}</div>`:''}catch(_){}}
-tick();setInterval(tick,15000);load();setInterval(load,60000);addEventListener('resize',()=>{pageIndex=Math.floor(pageIndex*(lastPageSize||pageSize())/pageSize());resetRotation()});
+
+  function parseBaseCell(v) {
+    const s = String(v ?? '').trim();
+    if (!s) return null;
+    const p = s.split('|').map((x) => x.trim());
+    if (p.length >= 2) return { cls: p[0] || '', subj: fullSubject(p[1] || ''), room: p.slice(2).join('|').trim() };
+    const m = s.match(/^([^·]+?)\s*[·-]\s*([^·]+?)(?:\s*[·-]\s*(.+))?$/);
+    return m ? { cls: m[1].trim(), subj: fullSubject(m[2].trim()), room: String(m[3] || '').trim() } : { cls: '', subj: fullSubject(s), room: '' };
+  }
+
+  // «Учителя»: ФИО | УРОК | ПН … ПТ, клетка «класс|предмет|кабинет».
+  function teacherBase(rows, day) {
+    const map = new Map();
+    if (!Array.isArray(rows) || !rows.length) return map;
+    const hasHeader = site.looksLikeHeader(rows[0], ['фио', 'урок', 'пн', 'понедельник']);
+    const hs = hasHeader ? rows[0].map((x) => String(x || '').trim()) : ['ФИО', 'УРОК', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ'];
+    const data = hasHeader ? rows.slice(1) : rows;
+    const dayIndex = hs.findIndex((h) => h.toUpperCase() === day);
+    const teacherIndex = Math.max(0, hs.findIndex((h) => /фио|учитель/i.test(h)));
+    const lessonIndex = Math.max(1, hs.findIndex((h) => /урок/i.test(h)));
+    data.forEach((r) => {
+      const teacher = String(r[teacherIndex] || '').trim(), lesson = Number(String(r[lessonIndex] || '').match(/\d+/)?.[0] || 0);
+      if (!teacher || !lesson) return;
+      if (!map.has(teacher)) map.set(teacher, new Map());
+      const cell = dayIndex >= 0 ? parseBaseCell(r[dayIndex]) : null;
+      if (cell) map.get(teacher).set(lesson, { lesson, ...cell, status: 'normal' });
+    });
+    return map;
+  }
+
+  function changeType(status) {
+    const s = String(status || '').toLowerCase();
+    if (/cancel|отмен/.test(s)) return 'cancelled';
+    if (/room|кабин/.test(s)) return 'room-change';
+    if (/add|добав/.test(s)) return 'added';
+    return 'changed';
+  }
+
+  // «Учителя_сайт»: Дата | Учитель | Урок | Класс | Предмет | Кабинет | Статус | было: Класс | Предмет | Кабинет.
+  function overlayChanges(map, rows, iso) {
+    const list = [];
+    if (!Array.isArray(rows) || rows.length < 2) return list;
+    rows.slice(1).filter((r) => normalizeDate(r[0]) === iso && String(r[6] || 'normal') !== 'normal').forEach((r) => {
+      const teacher = String(r[1] || '').trim(), lesson = Number(r[2]) || 0;
+      if (!teacher || !lesson) return;
+      if (!map.has(teacher)) map.set(teacher, new Map());
+      const current = map.get(teacher).get(lesson) || null, status = changeType(r[6]);
+      const old = { cls: String(r[7] || current?.cls || ''), subj: fullSubject(String(r[8] || current?.subj || '')), room: String(r[9] || current?.room || '') };
+      const next = { cls: String(r[3] || current?.cls || ''), subj: fullSubject(String(r[4] || current?.subj || '')), room: String(r[5] || current?.room || '') };
+      map.get(teacher).set(lesson, { lesson, status, old, next, cls: next.cls, subj: next.subj, room: next.room });
+      list.push({ teacher, lesson, status, old, next });
+    });
+    return list;
+  }
+
+  function hasRealLesson(x) {
+    if (x.status === 'cancelled') return false;
+    return Boolean(String(x.cls || '').trim() || String(x.subj || '').trim() || String(x.room || '').trim());
+  }
+
+  // A cancelled lesson and a lesson added to someone else for the same class and
+  // period are one replacement: «Бакалева Г.А. — заменяет: Крымская Е.Э.».
+  function changeItems(list, visible) {
+    const same = (a, b) => site.normalizeClass(a) === site.normalizeClass(b);
+    const shown = list.filter((x) => visible(x.lesson)).sort((a, b) => a.lesson - b.lesson || collator.compare(a.next.cls || a.old.cls, b.next.cls || b.old.cls));
+    const used = new Set(), items = [];
+    shown.forEach((x) => {
+      if (used.has(x)) return;
+      if (x.status === 'cancelled') {
+        const y = shown.find((z) => !used.has(z) && z !== x && z.teacher !== x.teacher && z.lesson === x.lesson && (z.status === 'added' || z.status === 'changed') && same(z.next.cls, x.old.cls));
+        if (y) {
+          used.add(x).add(y);
+          items.push({ lesson: x.lesson, cls: y.next.cls, kind: 'changed', tag: 'замена', name: y.teacher, detail: `заменяет: ${x.teacher}${y.next.room ? ` · каб. ${y.next.room}` : ''}` });
+          return;
+        }
+      }
+      used.add(x);
+      if (x.status === 'cancelled') items.push({ lesson: x.lesson, cls: x.old.cls, kind: 'cancelled', tag: 'снят', name: x.teacher, detail: `урок снят${x.old.subj ? ` · ${x.old.subj}` : ''}` });
+      else if (x.status === 'room-change') items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'room', tag: 'кабинет', name: x.teacher, detail: `каб. ${x.old.room || '—'} → ${x.next.room || '—'}` });
+      else if (x.status === 'added') items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'added', tag: 'добавлен', name: x.teacher, detail: [x.next.subj, x.next.room ? `каб. ${x.next.room}` : ''].filter(Boolean).join(' · ') || 'добавлен урок' });
+      else items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'changed', tag: 'изменён', name: x.teacher, detail: `было: ${[x.old.cls, x.old.room ? `каб. ${x.old.room}` : ''].filter(Boolean).join(' · ') || '—'}` });
+    });
+    return items;
+  }
+
+  // Page labels by surname: «А–Д · Е–Ме · Мо–Ч» (two letters where pages meet on one letter).
+  function pageLabels(names) {
+    const pages = [];
+    for (let i = 0; i < names.length; i += ROWS) pages.push([names[i], names[Math.min(i + ROWS, names.length) - 1]]);
+    const len = pages.map(() => [1, 1]);
+    for (let i = 0; i + 1 < pages.length; i += 1) {
+      if (pages[i][1][0].toUpperCase() === pages[i + 1][0][0].toUpperCase()) { len[i][1] = 2; len[i + 1][0] = 2; }
+    }
+    return pages.map(([a, b], i) => {
+      const x = a.slice(0, len[i][0]), y = b.slice(0, len[i][1]);
+      return x === y ? x : `${x}–${y}`;
+    });
+  }
+
+  function rebuild(m = tv.moment(), s = tv.bellState(m)) {
+    const iso = m.date.toISOString().slice(0, 10);
+    const map = teacherBase(baseRows, DAY_CODES[m.date.getUTCDay()]);
+    const list = overlayChanges(map, changeRows, iso);
+    const visible = (lesson) => tv.lessonVisible(lesson, s, m);
+    const shown = [];
+    map.forEach((lessons, teacher) => {
+      const items = [...lessons.values()].filter((x) => visible(x.lesson));
+      if (items.some(hasRealLesson)) shown.push({ teacher, lessons: new Map(items.map((x) => [x.lesson, x])) });
+    });
+    shown.sort((a, b) => collator.compare(a.teacher, b.teacher));
+    const used = shown.flatMap((x) => [...x.lessons.keys()]);
+    const cols = [];
+    if (used.length) {
+      const first = s.type === 'lesson' ? s.lesson : s.type === 'break' ? s.next : Math.min(...used);
+      const last = Math.min(Math.max(first, ...used), first + MAX_COLS - 1);
+      for (let n = first; n <= last; n += 1) cols.push(n);
+    }
+    const names = shown.map((x) => x.teacher);
+    view = { m, s, cols, teachers: new Map(shown.map((x) => [x.teacher, x.lessons])), changes: changeItems(list, visible), labels: pageLabels(names) };
+    rotation.setKeys(names);
+  }
+
+  /* Markup ---------------------------------------------------------- */
+
+  function headCell(n, s) {
+    if (s.type === 'lesson' && s.lesson === n) return `<span class="tg-h is-now"><b>${n}</b><em class="tv-pill">сейчас</em></span>`;
+    if (s.type === 'break' && s.next === n) return `<span class="tg-h is-next"><b>${n}</b><em class="tv-pill">далее</em></span>`;
+    return `<span class="tg-h"><b>${n}</b><small>${esc(window.ScheduleCore.bellStart(n))}</small></span>`;
+  }
+
+  // A grid cell is ~100 px wide: «109/Мастерские» → «109», «Мастерские» → «Маст.».
+  function shortRoom(room) {
+    const r = String(room || '').trim();
+    if (r.length <= 7) return r;
+    const numbers = r.match(/\d+[А-ЯA-Zа-яa-z]?/g);
+    return numbers ? numbers.join('/') : `${r.slice(0, 4)}.`;
+  }
+
+  function lessonCell(x, n, s) {
+    const marks = `${s.type === 'lesson' && s.lesson === n ? ' is-now' : ''}${s.type === 'break' && s.next === n ? ' is-next' : ''}`;
+    if (!x) return `<span class="tg-c k-empty${marks}"></span>`;
+    const status = x.status || 'normal';
+    const cls = (v) => esc(String(v || '').split(/\s*\+\s*/).join('+'));
+    const room = (v) => esc(shortRoom(v));
+    if (status === 'cancelled') return `<span class="tg-c k-cancelled${marks}"><s data-fit="14">${cls(x.old?.cls) || '—'}</s><small>снят</small></span>`;
+    if (status === 'room-change') return `<span class="tg-c k-room-change${marks}"><b data-fit="14">${cls(x.next?.cls)}</b><small data-fit="14">→ ${room(x.next?.room) || '—'}</small></span>`;
+    if (status === 'added') return `<span class="tg-c k-added${marks}"><b data-fit="14">+${cls(x.next?.cls)}</b><small data-fit="14">${room(x.next?.room)}</small></span>`;
+    if (status === 'changed') return `<span class="tg-c k-changed${marks}"><b data-fit="14">${cls(x.next?.cls)}</b><small data-fit="14">${room(x.next?.room)}</small></span>`;
+    return `<span class="tg-c k-normal${marks}"><b data-fit="14">${cls(x.cls)}</b><small data-fit="14">${room(x.room)}</small></span>`;
+  }
+
+  function changesHtml(items) {
+    const head = `<div class="tg-changes__head"><h2 data-fit="18">Изменения сегодня</h2>${items.length ? `<span class="tg-count">${items.length}</span>` : ''}</div>`;
+    if (!items.length) return `<aside class="tg-changes">${head}<div class="tg-calm"><b>Изменений нет</b><span>Все уроки идут по расписанию</span></div></aside>`;
+    const room = CHANGES_SHOWN;
+    const list = items.slice(0, room).map((x) => `<article class="tg-item"><span class="tg-item__top"><b>${x.lesson} урок${x.cls ? ` · ${esc(x.cls)}` : ''}</b><em class="tv-pill p-${x.kind}">${esc(x.tag)}</em></span><strong data-fit="18">${esc(x.name)}</strong><span class="tg-item__detail" data-fit="16">${esc(x.detail)}</span></article>`).join('');
+    const more = items.length > room ? `<span class="tg-more">И ещё ${items.length - room} — отмечены в сетке цветом</span>` : '';
+    return `<aside class="tg-changes">${head}${list}${more}</aside>`;
+  }
+
+  function emptyHtml(m, s) {
+    const next = site.capitalize(tv.dayLabel(site.nextSchoolDay(m.date)));
+    if (s.type === 'off') return `<section class="tv-empty"><h2>Сегодня выходной</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
+    if (!baseRows.length) return '<section class="tv-empty"><h2>Расписание загружается</h2><p>Если экран не обновится, проверьте подключение к сети</p></section>';
+    return `<section class="tv-empty"><h2>Уроки на сегодня закончились</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
+  }
+
+  function show(turned) {
+    const { m, s, cols } = view;
+    const names = rotation.current();
+    if (!names.length) {
+      board.innerHTML = emptyHtml(m, s);
+    } else {
+      const rows = names.map((name) => {
+        const lessons = view.teachers.get(name);
+        return `<div class="tg-row" data-teacher="${esc(name)}"><span class="tg-name"><span data-fit="18">${esc(name)}</span></span>${cols.map((n) => lessonCell(lessons.get(n), n, s)).join('')}</div>`;
+      }).join('');
+      board.innerHTML = `<div class="tg"><section class="tv-card" style="--cols:${cols.length}"><div class="tg-head"><span class="tv-corner">Учитель</span>${cols.map((n) => headCell(n, s)).join('')}</div><div class="tg-rows">${rows}</div></section>${changesHtml(view.changes)}</div>`;
+    }
+    const pages = rotation.pages();
+    const started = rotation.sync();
+    tv.renderPager(view.labels, rotation.page(), names.length ? (pages > 1 ? `Страница ${rotation.page() + 1} из ${pages} · дальше через 15 с` : 'Все учителя на одном экране') : '');
+    if (turned || started || pages <= 1) tv.restartBar(PERIOD, pages > 1);
+    tv.fitWhenReady(board);
+  }
+
+  /* Clock and data -------------------------------------------------- */
+
+  function tick() {
+    const m = tv.moment(), s = tv.bellState(m), key = tv.stateKey(m, s);
+    tv.renderHeader(m, s);
+    tv.fit(document.querySelector('.tv-head'));
+    if (lastKey && key !== lastKey && view) {
+      lastKey = key;
+      rebuild(m, s);
+      show(false);
+      return;
+    }
+    lastKey = key;
+  }
+
+  async function load() {
+    try {
+      await site.loadCalendar?.();
+      const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { force: true, optional: true })));
+      baseRows = b || [];
+      changeRows = c || [];
+    } catch (_) {}
+    rebuild();
+    show(false);
+    tv.renderFreshness(SHEETS);
+  }
+
+  tv.initStage();
+  tick();
+  load();
+  tv.syncClock().then(tick);
+  setInterval(tick, 5000);
+  setInterval(load, 60000);
+  setInterval(tv.syncClock, 30 * 60 * 1000);
 })();

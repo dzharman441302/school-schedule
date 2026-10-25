@@ -1,86 +1,176 @@
 'use strict';
-// Exercise the actual TV renderer with a deterministic clock; no live spreadsheet writes.
-const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const vm=require('node:vm');
-const source=fs.readFileSync(process.env.TV_JS_PATH||path.join(__dirname,'../tv.js'),'utf8');
-const names=n=>Array.from({length:n},(_,i)=>`Учитель ${String(i+1).padStart(2,'0')}`);
-const rows=teachers=>[['ФИО','УРОК','ПН','ВТ','СР','ЧТ','ПТ'],...teachers.map(t=>[t,12,...Array(5).fill('5А|Русский язык|305')])];
-const settle=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
-async function harness(teachers=names(43),width=1920,epoch='2026-09-28T05:10:00Z'){
-  let now=0,id=0,base=rows(teachers),changes=[],hold=false,pending=[];
-  const timers=new Map(),events={},calls=[],elements=new Map();
-  const element=()=>({innerHTML:'',textContent:'',style:{},offsetWidth:1920,classList:{add(){},remove(){},toggle(){}}});
-  const document={querySelector(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);},querySelectorAll(){return [];}};
-  const context={console,Intl,document,innerWidth:width,
-    Date:class extends Date{constructor(...args){super(...(args.length?args:[Date.parse(epoch)+now]));}static now(){return Date.parse(epoch)+now;}},
-    setInterval(fn,period){const key=++id;timers.set(key,{fn,period,due:now+period});return key;},
-    clearInterval(key){timers.delete(key);},addEventListener(name,fn){events[name]=fn;},
-    window:{SchoolSite:{escapeHtml:v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
-      looksLikeHeader:()=>true,
-      loadSheet(name){calls.push({name,at:now});if(name!=='Учителя')return Promise.resolve(name==='Учителя_сайт'?changes:[]);const snapshot=base.map(r=>r.slice());return hold?new Promise(resolve=>pending.push(()=>resolve(snapshot))):Promise.resolve(snapshot);}
-    }}
-  };
-  vm.runInNewContext(source,context,{filename:'tv.js'});await settle();
-  return{
-    headings:()=>[...document.querySelector('#teachers').innerHTML.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map(m=>m[1]),
-    text:()=>document.querySelector('#page').textContent,
-    rotationCount:()=>[...timers.values()].filter(t=>t.period===8000).length,
-    fetchCount:()=>calls.filter(c=>c.name==='Учителя').length,
-    setTeachers(list){base=rows(list);},setRows(value){base=value;},setChanges(value){changes=value;},hold(){hold=true;},
-    async release(){hold=false;pending.splice(0).forEach(resolve=>resolve());await settle();},
-    resize(value){context.innerWidth=value;events.resize();},
-    async advance(ms){const target=now+ms;while(true){const next=[...timers.entries()].filter(([,t])=>t.due<=target).sort((a,b)=>a[1].due-b[1].due||a[0]-b[0])[0];if(!next)break;now=next[1].due;next[1].due+=next[1].period;next[1].fn();await settle();}now=target;await settle();}
+// Staff room TV (tv.js): 12 teachers per page in alphabetical order, pages turn
+// every 15 s, minute refreshes and lesson bells never restart or reorder the cycle.
+const assert = require('node:assert/strict');
+const { startScreen, runTests } = require('./tv-harness');
+
+const HEAD = ['ФИО', 'УРОК', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ'];
+const CHANGES_HEAD = ['Дата', 'Учитель', 'Урок', 'Класс', 'Предмет', 'Кабинет', 'Статус', 'Было: класс', 'Было: предмет', 'Было: кабинет'];
+const MONDAY = '2026-09-28T05:10:00Z'; // 08:10 in Moscow, the 1st lesson is on
+const names = (n) => Array.from({ length: n }, (_, i) => `Учитель ${String(i + 1).padStart(2, '0')}`);
+const rows = (teachers, lesson = 12) => [HEAD, ...teachers.map((t) => [t, lesson, ...Array(5).fill('5А|Рус|305')])];
+
+async function staff(teachers, options = {}) {
+  const sheets = { 'Учителя': options.rows || rows(teachers), 'Учителя_сайт': options.changes || [CHANGES_HEAD] };
+  const screen = await startScreen('tv.js', { sheets, epoch: options.epoch || MONDAY });
+  return {
+    ...screen,
+    names: () => [...screen.board().matchAll(/data-teacher="([^"]*)"/g)].map((m) => m[1]),
+    page: () => screen.text('next-text'),
+    setTeachers(list) { sheets['Учителя'] = rows(list); }
   };
 }
-const tests=[];
-function test(name,fn){tests.push([name,fn]);}
-test('minute refresh keeps page 8 and page 9 follows at 64 seconds',async()=>{
-  const h=await harness();await h.advance(56000);assert.match(h.text(),/^Страница 8 из 22/);
-  await h.advance(4000);assert.match(h.text(),/^Страница 8 из 22/);
-  await h.advance(4000);assert.match(h.text(),/^Страница 9 из 22/);assert.deepEqual(h.headings(),names(43).slice(16,18));
+
+const tests = [];
+const test = (name, fn) => tests.push([name, fn]);
+
+test('twelve teachers a page in alphabetical order, pages named by letters', async () => {
+  const sorted = ['Абрамова А.А.', 'Белова Б.Б.', 'Васильева В.В.', 'Громова Г.Г.', 'Дмитриева Д.Д.', 'Егорова Е.Е.', 'Жукова Ж.Ж.', 'Зайцева З.З.', 'Иванова И.И.', 'Козлова К.К.', 'Кузнецова К.К.', 'Лебедева Л.Л.',
+    'Ломова Л.Л.', 'Морозова М.М.', 'Новикова Н.Н.', 'Орлова О.О.', 'Павлова П.П.', 'Романова Р.Р.', 'Соколова С.С.', 'Тихонова Т.Т.', 'Уварова У.У.', 'Фёдорова Ф.Ф.', 'Чернова Ч.Ч.', 'Шилова Ш.Ш.',
+    'Щукина Щ.Щ.', 'Яковлева Я.Я.'];
+  const h = await staff(sorted.slice().reverse());
+  assert.deepEqual(h.names(), sorted.slice(0, 12));
+  assert.match(h.page(), /^Страница 1 из 3 · дальше через 15 с$/);
+  const chips = [...h.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]);
+  assert.deepEqual(chips, ['А–Ле', 'Ло–Ш', 'Щ–Я']);
+  await h.advance(15000);
+  assert.deepEqual(h.names(), sorted.slice(12, 24));
 });
-test('43 teachers complete two ordered 22-page cycles despite minute refreshes',async()=>{
-  const teachers=names(43),h=await harness(teachers);
-  for(let i=0;i<44;i++){assert.deepEqual(h.headings(),teachers.slice((i%22)*2,(i%22)*2+2));await h.advance(8000);}
-  assert.deepEqual(h.headings(),teachers.slice(0,2));assert(h.fetchCount()>=6);assert.equal(h.rotationCount(),1);
+
+test('43 teachers complete two ordered cycles despite minute refreshes', async () => {
+  const all = names(43), h = await staff(all);
+  for (let i = 0; i < 8; i += 1) {
+    assert.deepEqual(h.names(), all.slice((i % 4) * 12, (i % 4) * 12 + 12));
+    await h.advance(15000);
+  }
+  assert(h.fetches('Учителя') >= 3);
+  assert.equal(h.pageTimers(15000), 1);
 });
-test('mobile completes two full 25-teacher cycles in source order',async()=>{
-  const teachers=names(25).reverse(),h=await harness(teachers,600);
-  for(let i=0;i<50;i++){assert.deepEqual(h.headings(),[teachers[i%25]]);await h.advance(8000);}
-  assert.deepEqual(h.headings(),[teachers[0]]);assert.equal(h.rotationCount(),1);
+
+test('slow refresh finishing after a page turn keeps the page and the timer', async () => {
+  const h = await staff(names(30));
+  await h.advance(50000);
+  assert.match(h.page(), /^Страница 1 из 3/);
+  h.hold();
+  await h.advance(15000);
+  assert.match(h.page(), /^Страница 2 из 3/);
+  await h.release();
+  assert.match(h.page(), /^Страница 2 из 3/);
+  await h.advance(10000);
+  assert.match(h.page(), /^Страница 3 из 3/);
+  assert.equal(h.pageTimers(15000), 1);
 });
-test('slow refresh finishing after a page turn preserves current page and timer',async()=>{
-  const h=await harness();h.hold();await h.advance(70000);assert.match(h.text(),/^Страница 9 /);
-  await h.release();assert.match(h.text(),/^Страница 9 /);await h.advance(2000);assert.match(h.text(),/^Страница 10 /);
+
+test('removing earlier teachers keeps the place in the list', async () => {
+  const all = names(43), h = await staff(all);
+  await h.advance(50000);
+  assert.deepEqual(h.names(), all.slice(36));
+  h.setTeachers(all.slice(5));
+  // The refresh at 60 s finds «Учитель 37» on the 3rd page, then the page turns to the 4th.
+  await h.advance(10000);
+  assert.deepEqual(h.names(), all.slice(41));
 });
-test('removing earlier teachers keeps the current teacher anchor',async()=>{
-  const h=await harness();await h.advance(56000);h.setTeachers(names(43).slice(4));await h.advance(4000);
-  assert.deepEqual(h.headings(),names(43).slice(14,16));await h.advance(4000);assert.deepEqual(h.headings(),names(43).slice(16,18));
+
+test('removing the teachers on screen continues with the next one', async () => {
+  const all = names(43), h = await staff([]);
+  const rotation = h.tv.createRotation({ size: 12, period: 15000, onTurn() {} });
+  rotation.setKeys(all);
+  rotation.sync();
+  await h.advance(45000);
+  assert.deepEqual(rotation.current(), all.slice(36));
+  rotation.setKeys(all.filter((_, i) => i < 36 || i > 38));
+  assert.deepEqual(rotation.current(), all.slice(39));
+  rotation.setKeys(all.slice(0, 20));
+  assert.deepEqual(rotation.current(), all.slice(0, 12));
 });
-test('removing current teachers continues from next surviving teacher',async()=>{
-  const teachers=names(43),h=await harness();await h.advance(56000);h.setTeachers(teachers.filter((_,i)=>i!==14&&i!==15));await h.advance(4000);
-  assert.deepEqual(h.headings(),teachers.slice(16,18));await h.advance(4000);assert.deepEqual(h.headings(),teachers.slice(18,20));
+
+test('page timer follows the refreshed number of pages', async () => {
+  const h = await staff(names(12));
+  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.page(), 'Все учителя на одном экране');
+  h.setTeachers(names(30));
+  await h.advance(60000);
+  assert.match(h.page(), /^Страница 1 из 3/);
+  assert.equal(h.pageTimers(15000), 1);
+  await h.advance(15000);
+  assert.match(h.page(), /^Страница 2 из 3/);
+  h.setTeachers(names(12));
+  await h.advance(45000);
+  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.page(), 'Все учителя на одном экране');
 });
-test('timer uses refreshed page count instead of wrapping at old last page',async()=>{
-  const h=await harness(names(20));await h.advance(56000);h.setTeachers(names(43));await h.advance(104000);
-  assert.match(h.text(),/^Страница 21 из 22/);assert.deepEqual(h.headings(),names(43).slice(40,42));
+
+test('resizing the window keeps the page and never adds a second timer', async () => {
+  const h = await staff(names(30));
+  await h.advance(20000);
+  assert.match(h.page(), /^Страница 2 из 3/);
+  await h.resize(1280, 720);
+  await h.resize(3840, 2160);
+  assert.match(h.page(), /^Страница 2 из 3/);
+  assert.equal(h.pageTimers(15000), 1);
 });
-test('resize preserves current teacher and never duplicates the rotation timer',async()=>{
-  const h=await harness();await h.advance(64000);h.resize(600);assert.deepEqual(h.headings(),[names(43)[16]]);
-  await h.advance(8000);assert.deepEqual(h.headings(),[names(43)[17]]);h.resize(1920);assert.deepEqual(h.headings(),names(43).slice(16,18));assert.equal(h.rotationCount(),1);
+
+test('the bell rebuilds the grid without restarting the cycle', async () => {
+  const h = await staff(names(30), { epoch: '2026-09-28T05:39:00Z' });
+  assert.match(h.text('status-label'), /^Идёт 1-й урок/);
+  await h.advance(50000);
+  assert.match(h.page(), /^Страница 1 из 3/);
+  await h.advance(12000);
+  assert.match(h.text('status-label'), /^Перемена · 2-й урок в 08:50/);
+  assert.match(h.page(), /^Страница 2 из 3/);
+  assert.equal(h.pageTimers(15000), 1);
 });
-test('lesson boundary does not restart the teacher cycle',async()=>{
-  const h=await harness(names(43),1920,'2026-09-28T05:39:00Z');await h.advance(64000);
-  assert.match(h.text(),/^Страница 9 из 22/);assert.deepEqual(h.headings(),names(43).slice(16,18));
+
+test('empty, one-page and multi-page lists start and stop only the page timer', async () => {
+  const h = await staff([]);
+  assert.equal(h.pageTimers(15000), 0);
+  assert.match(h.board(), /Уроки на сегодня закончились/);
+  h.setTeachers(names(1));
+  await h.advance(60000);
+  assert.equal(h.pageTimers(15000), 0);
+  h.setTeachers(names(13));
+  await h.advance(60000);
+  assert.equal(h.pageTimers(15000), 1);
+  h.setTeachers(names(1));
+  await h.advance(60000);
+  assert.equal(h.pageTimers(15000), 0);
 });
-test('empty, one-page and multi-page lists start and stop only the page timer',async()=>{
-  const h=await harness([]);assert.equal(h.rotationCount(),0);h.setTeachers(names(1));await h.advance(60000);assert.equal(h.rotationCount(),0);
-  h.setTeachers(names(6));await h.advance(60000);assert.equal(h.rotationCount(),1);h.setTeachers(names(1));await h.advance(60000);assert.equal(h.rotationCount(),0);
+
+test('past lessons and teachers with only cancelled lessons stay hidden', async () => {
+  const data = [HEAD, ['Учитель 01', 1, '5А|Рус|305', '', '', '', ''], ['Учитель 02', 12, '6А|Лит|306', '', '', '', ''], ['Учитель 03', 3, '7А|Алг|307', '', '', '', '']];
+  const changes = [CHANGES_HEAD, ['28.09.2026', 'Учитель 02', 12, '', '', '', 'cancelled', '6А', 'Лит', '306']];
+  const h = await staff([], { rows: data, changes, epoch: '2026-09-28T06:00:00Z' });
+  assert.deepEqual(h.names(), ['Учитель 03']);
 });
-test('past lessons and teachers with only cancelled lessons remain hidden',async()=>{
-  const h=await harness(names(6),1920,'2026-09-28T06:00:00Z'),data=rows(names(6));data[1][1]=1;
-  h.setRows(data);h.setChanges([['Дата','Учитель','Урок','Класс','Предмет','Кабинет','Статус'],['28.09.2026',names(6)[1],12,'','','','cancelled']]);await h.advance(60000);assert.deepEqual(h.headings(),names(6).slice(2,4));
+
+test('columns run from the lesson on now to the last lesson left', async () => {
+  const data = [HEAD, ['Учитель 01', 3, '7А|Алг|307', '', '', '', ''], ['Учитель 01', 9, '7Б|Алг|307', '', '', '', '']];
+  const h = await staff([], { rows: data, epoch: '2026-09-28T06:00:00Z' });
+  const head = h.board().match(/<div class="tg-head">(.*?)<\/div>/)[1];
+  assert.deepEqual([...head.matchAll(/<b>(\d+)<\/b>/g)].map((m) => Number(m[1])), [2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.match(head, /tg-h is-now"><b>2<\/b><em class="tv-pill">сейчас/);
+  assert.match(h.board(), /data-fit="14">7А<\/b><small data-fit="14">307</);
 });
-(async()=>{for(const [name,fn]of tests){await fn();console.log('PASS '+name);}console.log(`${tests.length} TV rotation regression checks passed`);})().catch(error=>{console.error(error);process.exitCode=1;});
+
+test('a cancelled lesson and a lesson added for the same class become one replacement', async () => {
+  const changes = [CHANGES_HEAD,
+    ['28.09.2026', 'Учитель 02', 3, '', '', '', 'cancelled', '7А', 'Рус', '305'],
+    ['28.09.2026', 'Учитель 05', 3, '7А', 'Рус', '214', 'added', '', '', ''],
+    ['28.09.2026', 'Учитель 03', 12, '5А', 'Рус', '214', 'room', '5А', 'Рус', '305']];
+  const h = await staff(names(6), { changes });
+  const panel = h.board().match(/<aside class="tg-changes">(.*)<\/aside>/)[1];
+  assert.match(panel, /<span class="tg-count">2<\/span>/);
+  assert.match(panel, /3 урок · 7А.*замена.*Учитель 05.*заменяет: Учитель 02 · каб\. 214/);
+  assert.match(panel, /12 урок · 5А.*кабинет.*Учитель 03.*каб\. 305 → 214/);
+  assert.match(h.board(), /k-cancelled"><s data-fit="14">7А<\/s><small>снят/);
+  assert.match(h.board(), /k-added"><b data-fit="14">\+7А<\/b>/);
+});
+
+test('a day off shows the next school day instead of an empty grid', async () => {
+  const h = await staff(names(6), { epoch: '2026-10-03T08:00:00Z' });
+  assert.match(h.board(), /Сегодня выходной.*Понедельник, 5 октября/);
+  assert.equal(h.text('status-value'), 'Понедельник, 5 октября');
+  assert.equal(h.pageTimers(15000), 0);
+});
+
+runTests('staff TV checks', tests);

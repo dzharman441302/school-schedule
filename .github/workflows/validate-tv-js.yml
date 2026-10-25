@@ -6,11 +6,14 @@ on:
     paths:
       - 'tv.js'
       - 'tv-students.js'
+      - 'tv-core.js'
+      - 'schedule-core.js'
       - 'subject-names.js'
+      - 'app.js'
       - 'tv.html'
       - 'tv-students.html'
       - 'tv.css'
-      - 'tests/tv-rotation.js'
+      - 'tests/tv-*.js'
       - '.github/workflows/validate-tv-js.yml'
 
 permissions:
@@ -21,28 +24,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Check JavaScript syntax
         run: |
+          node --check tv-core.js
           node --check tv.js
           node --check tv-students.js
           node --check subject-names.js
-      - name: Check complete teacher rotation across refreshes
+      - name: Staff room grid, alphabetical pages and refresh-safe rotation
         run: node tests/tv-rotation.js
-      - name: Check active-schedule logic
-        run: |
-          grep -q "visibleByTime" tv.js
-          grep -q "hasRealLesson" tv.js
-          grep -q "rebuildCards" tv.js
-          grep -q "activeParallelSnapshots" tv-students.js
-          grep -q "Перемена · далее" tv-students.js
-      - name: Check TV notice is hidden and both screens share tv.css
-        run: |
-          grep -q "tv.css" tv.html
-          grep -q "tv.css" tv-students.html
-          grep -q '#notice{display:none!important}' tv.css
-          grep -q 'id="segments"' tv.html
-          grep -q 'id="segments"' tv-students.html
-      - name: Check full subject names and script load order
+      - name: Student parallel board, changes and lost connection
+        run: node tests/tv-students.js
+      - name: Check both screens share the stage and load scripts in order
         run: |
           node <<'JS'
           const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
@@ -52,11 +47,13 @@ jobs:
           for(const [short,full] of [['Вер','Вероятность и статистика'],['внеур','Внеурочная деятельность'],['Про','Программирование'],['ПРОФ','Профориентация'],['Ф-РА','Физическая культура']]){
             assert.equal(subjects.expandSubject(short),full);
           }
+          const order=['config.js','app.js','subject-names.js','schedule-core.js','tv-core.js'];
           for(const [html,app] of [['tv.html','tv.js'],['tv-students.html','tv-students.js']]){
             const text=fs.readFileSync(html,'utf8');
+            assert(text.includes('tv.css'),html+': tv.css');
+            assert(text.includes('id="stage"'),html+': 1920×1080 stage');
             const scripts=[...text.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>m[1].split('?')[0]);
-            const dictionary=scripts.indexOf('subject-names.js');
-            assert(dictionary>=0 && dictionary<scripts.indexOf(app),html+': dictionary must load before renderer');
+            assert.deepEqual(scripts,[...order,app],html+': script order');
           }
-          console.log('Full subject-name expansion and TV script order verified');
+          console.log('Subject names, shared stage and TV script order verified');
           JS

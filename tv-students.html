@@ -4,37 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#15366D">
   <title>Экран для учеников — СОШ №20</title>
   <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
-  <link rel="stylesheet" href="tv.css?v=18">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="tv.css?v=19">
 </head>
 <body>
-  <main class="tv">
-    <div class="head">
-      <div class="head-left">
-        <img class="logo" src="assets/icons/logo-128.jpg" alt="">
-        <div>
-          <div class="title-line"><h1 id="parallel">Параллель</h1><span class="parallel-sub" id="parallel-sub"></span></div>
-          <span class="date">МОУ СОШ № 20 · <span id="date"></span></span>
-        </div>
-      </div>
-      <div class="clock">
-        <div class="moment"><small id="countdown-label">Загрузка…</small><b id="countdown"></b></div>
-        <strong id="time">--:--</strong>
-      </div>
-    </div>
-    <div id="notice"></div>
-    <div class="classes" id="classes"></div>
-    <div class="foot">
-      <span>Показываются только текущие и предстоящие уроки</span>
-      <div class="pager"><div class="segments" id="segments" aria-hidden="true"></div><b id="page"></b></div>
-      <span>Данные обновлены: <span id="updated">—</span></span>
-    </div>
-    <div class="progress"><i id="progress"></i></div>
-  </main>
-  <script src="config.js?v=18"></script>
+  <div class="tv-stage" id="stage">
+    <header class="tv-head">
+      <div class="tv-tile tv-title"><span class="tv-kicker">Параллель</span><h1 class="tv-grade" data-fit="40"><span id="grade">5–11</span><small>классы</small></h1></div>
+      <div class="tv-tile tv-status"><span id="status-label" data-fit="16">Загрузка…</span><strong id="status-value" data-fit="30"></strong><span class="tv-bar" id="status-bar" hidden><i></i></span></div>
+      <div class="tv-tile tv-clock"><b id="time">--:--</b><span id="date"></span></div>
+    </header>
+    <main class="tv-main" id="board">
+      <section class="tv-empty"><h2>Загружаем расписание</h2><p>Получаем данные из школьной таблицы</p></section>
+    </main>
+    <footer class="tv-foot">
+      <div class="tv-pager" id="pager"></div>
+      <div class="tv-next"><span id="next-text"></span><span class="tv-bar tv-bar--next" id="next-bar" hidden><i></i></span></div>
+      <span class="tv-fresh" id="fresh"></span>
+    </footer>
+  </div>
+  <script src="config.js?v=19"></script>
   <script src="app.js?v=18"></script>
   <script src="subject-names.js?v=18"></script>
-  <script src="tv-students.js?v=18"></script>
+  <script src="schedule-core.js?v=18"></script>
+  <script src="tv-core.js?v=19"></script>
+  <script src="tv-students.js?v=19"></script>
 </body>
 </html>

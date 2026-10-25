@@ -1,150 +1,175 @@
 /* ТВ-экраны: учительская (tv.html) и экран для учеников (tv-students.html).
-   Размеры заданы в rem от ширины экрана: на 1920 px 1rem = 16 px,
-   поэтому экран одинаково выглядит на телевизорах с разным разрешением. */
+   Стиль «Яркое бенто», палитра «Школьный». Экран нарисован на сцене
+   1920×1080 и целиком масштабируется под телевизор (tv-core.js), поэтому
+   размеры здесь в пикселях сцены. Мелкий текст — не меньше 18 px, основной —
+   от 26 px: на 75″ это читается с нескольких метров. */
 
 @font-face{font-family:Onest;font-style:normal;font-weight:400 800;font-display:swap;src:url(assets/fonts/onest-cyrillic.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 @font-face{font-family:Onest;font-style:normal;font-weight:400 800;font-display:swap;src:url(assets/fonts/onest-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-cyrillic.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
 :root{
-  --brand:#15366D;--accent:#2563EB;--ink:#0F172A;--ink-2:#1E293B;--muted:#475569;--line:#E2E8F0;--line-2:#DCE3EC;--bg:#EEF2F7;
-  --cancel-ink:#B91C1C;--cancel-bg:#FEE2E2;--cancel-tint:#FEF2F2;--cancel-line:#FECACA;
-  --change-ink:#92400E;--change-bg:#FEF3C7;--change-tint:#FFFBEB;--change-line:#FDE68A;
-  --room-ink:#1D4ED8;--room-bg:#DBEAFE;--room-tint:#EFF6FF;--room-line:#BFDBFE;
-  --add-ink:#047857;--add-bg:#D1FAE5;--add-tint:#ECFDF5;--add-line:#A7F3D0;
-  font-size:clamp(9px,.8334vw,24px);
+  --ink:#15233F;--ink-2:#3B4A66;--muted:#475569;--brand:#15366D;--brand-2:#1D4580;
+  --sun:#FDE68A;--sun-soft:#FEF7D6;--bg:#F4F6FA;--head:#EEF2FA;--line:#E2E8F0;--line-2:#D7DEEA;
+  --cancel-ink:#B91C1C;--cancel-bg:#FEE2E2;--cancel-tint:#FEF2F2;
+  --change-ink:#92400E;--change-bg:#FEF3C7;--change-tint:#FFFBEB;
+  --room-ink:#1D4ED8;--room-bg:#DBEAFE;--room-tint:#EFF6FF;
+  --add-ink:#047857;--add-bg:#D1FAE5;--add-tint:#ECFDF5;
+  --display:Unbounded,Onest,system-ui,sans-serif;
+  --hard:6px 6px 0 var(--ink);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Onest,system-ui,"Segoe UI",Arial,sans-serif;line-height:1.2}
-.tv{height:100vh;display:flex;flex-direction:column}
+html,body{width:100%;height:100%;margin:0}
+body{position:relative;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Onest,system-ui,"Segoe UI",Arial,sans-serif;line-height:1.2;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+h1,h2,p{margin:0}
 
-/* Шапка */
-.head{flex-shrink:0;display:flex;align-items:center;gap:1.5rem;min-height:7rem;padding:.9rem 2.5rem;background:var(--brand);color:#fff}
-.logo{width:4rem;height:4rem;flex-shrink:0;border-radius:50%;background:#fff;border:.15rem solid #fff;object-fit:cover}
-.head-left{display:flex;align-items:center;gap:1.5rem;min-width:0;flex:1}
-.title-line{display:flex;align-items:baseline;gap:1rem;min-width:0}
-.head h1{margin:0;font-size:2.6rem;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
-.parallel-sub{font-size:1.4rem;color:#BFDBFE;white-space:nowrap}
-.school{display:block;font-size:1.35rem;font-weight:600;color:#BFDBFE}
-.date{display:block;margin-top:.15rem;font-size:1.35rem;color:#DBEAFE}
-.date::first-letter{text-transform:uppercase}
-.clock{display:flex;align-items:center;gap:1.5rem}
-.moment{display:flex;flex-direction:column;align-items:flex-end;gap:.1rem;text-align:right}
-.moment small{font-size:1.35rem;font-weight:600;color:#BFDBFE}
-.moment b{font-size:2.2rem;font-weight:800;line-height:1.05}
-.clock strong{padding-left:1.5rem;border-left:1px solid rgba(255,255,255,.22);font-size:4.75rem;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-#notice{display:none!important}
+/* Сцена 1920×1080 */
+.tv-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;display:flex;flex-direction:column;gap:24px;padding:36px 40px;overflow:hidden}
+.tv-tile{border:3px solid var(--ink);border-radius:32px;box-shadow:var(--hard)}
 
-/* Подвал */
-.foot{flex-shrink:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:1.5rem;min-height:4.5rem;padding:.6rem 2.5rem;background:#fff;border-top:1px solid var(--line-2);font-size:1.25rem;color:var(--muted)}
-.foot>span:last-child{text-align:right}
-.pager{display:flex;flex-direction:column;align-items:center;gap:.5rem}
-.pager b{font-size:1.25rem;font-weight:700;color:var(--ink)}
-.segments{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem;max-width:48rem}
-.segments i{display:block;width:1.6rem;height:.5rem;border-radius:999px;background:var(--line)}
-.segments i.done{background:#94A3B8}
-.segments i.on{background:var(--accent)}
-.segments i.label{width:auto;height:auto;min-width:2.75rem;padding:.15rem .6rem;font-style:normal;font-size:1rem;font-weight:800;text-align:center;color:var(--muted);background:#F1F5F9}
-.segments i.label.done{background:#CBD5E1;color:var(--ink-2)}
-.segments i.label.on{background:var(--accent);color:#fff}
-.progress{display:none}
+/* Шапка: название, что сейчас идёт, часы */
+.tv-head{height:156px;flex-shrink:0;display:grid;grid-template-columns:400px minmax(0,1fr) 470px;gap:24px}
+.tv-head--staff{grid-template-columns:460px minmax(0,1fr) 470px}
+.tv-title{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 30px;background:var(--sun)}
+.tv-kicker{font-size:22px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.tv-title h1{overflow:hidden;font-family:var(--display);font-size:42px;font-weight:800;line-height:1.05;white-space:nowrap}
+.tv-title h1.tv-grade{display:flex;align-items:baseline;gap:.17em;font-size:84px;line-height:1}
+.tv-grade small{font-size:.48em;font-weight:800}
+.tv-status{position:relative;min-width:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:0 36px;background:var(--brand);color:#fff}
+.tv-status::before{content:"";position:absolute;right:-60px;top:-100px;width:260px;height:260px;border-radius:50%;background:var(--brand-2)}
+.tv-status>*{position:relative}
+#status-label{overflow:hidden;font-size:24px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#BFDBFE;white-space:nowrap}
+#status-value{overflow:hidden;font-family:var(--display);font-size:52px;font-weight:800;line-height:1.05;white-space:nowrap}
+.tv-bar{display:block;height:14px;border-radius:999px;background:rgba(255,255,255,.18)}
+.tv-bar i{display:block;width:0;height:100%;border-radius:999px;background:var(--sun)}
+.tv-clock{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#fff}
+#time{font-family:var(--display);font-size:96px;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#date{font-size:26px;font-weight:600;color:var(--ink-2)}
 
-/* Значки статусов */
-.chip{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem .85rem;border-radius:999px;font-size:1.1rem;font-weight:800;font-style:normal;white-space:nowrap;background:#F1F5F9;color:#334155}
-.chip svg{width:1.25rem;height:1.25rem;flex-shrink:0}
-.chip--cancelled{background:var(--cancel-bg);color:var(--cancel-ink)}
-.chip--changed{background:var(--change-bg);color:var(--change-ink)}
-.chip--room,.chip--room-change{background:var(--room-bg);color:var(--room-ink)}
-.chip--added{background:var(--add-bg);color:var(--add-ink)}
-.chip--now{display:none;background:#fff;color:var(--accent)}
-.summary{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem;flex-shrink:0}
-.summary .chip{padding:.35rem .85rem}
+.tv-main{flex:1;min-height:0;display:flex;flex-direction:column}
+.tv-main>.tv-card{flex:1}
 
-/* Карточки и пустые состояния */
-.teachers,.classes{flex:1;min-height:0;display:grid;gap:1.5rem;padding:1.5rem 2.5rem;overflow:hidden}
-.teachers{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
-.classes{grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));align-items:start}
-.page-enter{animation:pageIn .3s ease}
-@keyframes pageIn{from{opacity:.3}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.page-enter{animation:none}}
-.empty-card,.error-card,.class-card.finished{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;min-height:100%;padding:2rem;border:1px solid var(--line-2);border-radius:1.5rem;background:#fff;text-align:center;font-size:1.75rem;color:var(--muted)}
-.class-card.finished h2,.error-card h2{margin:0;font-size:3.25rem;font-weight:800;color:var(--ink)}
-.class-card.finished p,.error-card p{margin:0;font-size:1.75rem}
+/* Подвал: страницы, «дальше через», свежесть данных */
+.tv-foot{height:64px;flex-shrink:0;display:flex;align-items:center;gap:14px}
+.tv-pager{display:flex;gap:14px}
+.tv-chip{display:grid;place-items:center;min-width:76px;height:58px;padding:0 18px;border:3px solid var(--ink);border-radius:18px;background:#fff;font-family:var(--display);font-size:24px;font-weight:800;white-space:nowrap}
+.tv-chip.is-on{background:var(--sun);box-shadow:4px 4px 0 var(--ink)}
+.tv-chip.is-done{border-color:#94A3B8;background:var(--line);color:var(--muted)}
+.tv-next{display:flex;flex-direction:column;gap:8px;margin-left:14px}
+#next-text{font-size:24px;font-weight:700;white-space:nowrap}
+.tv-bar--next{width:300px;height:10px;background:var(--line-2)}
+.tv-bar--next i{background:var(--brand)}
+.tv-fresh{display:flex;align-items:center;gap:12px;margin-left:auto;font-size:24px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.tv-fresh::before{content:"";width:14px;height:14px;border-radius:50%;background:#059669}
+.tv-fresh:empty::before{display:none}
+.tv-fresh.is-stale{padding:6px 18px;border:3px solid var(--change-ink);border-radius:999px;background:var(--change-bg);color:var(--change-ink);font-weight:800}
+.tv-fresh.is-stale::before{background:var(--change-ink)}
 
-/* ТВ учительской: карточка учителя */
-.teacher-card{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line-2);border-radius:1.5rem;background:#fff}
-.teacher-card>header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem 1.5rem}
-.teacher-card h2{min-width:0;margin:0;font-size:2.5rem;font-weight:800;line-height:1.05;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lesson-columns,.teacher-card .lesson{display:grid;grid-template-columns:3.75rem 6.5rem 5.75rem minmax(0,1fr) 6rem 11rem;gap:.9rem;align-items:center;padding:0 1.25rem}
-.lesson-columns{flex-shrink:0;padding-top:.6rem;padding-bottom:.6rem;background:#F1F5F9;border-top:1px solid var(--line);font-size:1.05rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.lesson-columns span:nth-child(1),.lesson-columns span:nth-child(5){text-align:center}
-.lesson-columns span:nth-child(6){text-align:right}
-.teacher-lessons{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.teacher-card .lesson{position:relative;flex:1 1 0;min-height:3.75rem;max-height:7rem;padding-top:.6rem;padding-bottom:.6rem;border-top:1px solid var(--line);background:#fff}
-.teacher-card .num{display:grid;place-items:center;width:3.5rem;height:3.5rem;border-radius:1rem;background:var(--line);font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
-.teacher-card .time{display:flex;flex-direction:column;gap:.1rem;font-variant-numeric:tabular-nums}
-.teacher-card .time b{font-size:1.75rem;font-weight:800;line-height:1}
-.teacher-card .time small{font-size:1.15rem;font-weight:600;color:var(--muted)}
-.teacher-card .cls{font-size:2rem;font-weight:800;line-height:1.05}
-.teacher-card .lesson-main{display:flex;flex-direction:column;gap:.25rem;min-width:0}
-.teacher-card .lesson-main strong{font-size:1.85rem;font-weight:700;line-height:1.15;overflow-wrap:normal;word-break:normal;hyphens:auto}
-.teacher-card .lesson-main small,.teacher-card .tv-previous{font-size:1.2rem;font-weight:600;color:var(--muted);overflow-wrap:anywhere}
-.teacher-card .room{font-size:2rem;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
-.teacher-card .state{flex-direction:column;align-items:flex-end;gap:.4rem}
-.teacher-card.dense .lesson{min-height:3rem;padding-top:.35rem;padding-bottom:.35rem}
-.teacher-card.dense .num{width:2.75rem;height:2.75rem;font-size:1.35rem}
-.teacher-card.dense .lesson-main strong{font-size:1.5rem}
-.teacher-card.dense .cls,.teacher-card.dense .room{font-size:1.6rem}
-.teacher-card.dense .time b{font-size:1.4rem}
-.teacher-card .lesson.cancelled{background:var(--cancel-tint)}
-.teacher-card .lesson.cancelled .cls,.teacher-card .lesson.cancelled .lesson-main strong{color:var(--muted)}
-.teacher-card .lesson.cancelled .lesson-main strong{text-decoration:line-through;text-decoration-thickness:.18rem}
-.teacher-card .lesson.cancelled .lesson-main small{color:var(--cancel-ink)}
-.teacher-card .lesson.changed{background:var(--change-tint)}
-.teacher-card .lesson.room-change{background:var(--room-tint)}
-.teacher-card .lesson.room-change .room,.teacher-card .lesson.room-change .lesson-main small{color:var(--room-ink)}
-.teacher-card .lesson.added{background:var(--add-tint)}
-.teacher-card .lesson.is-current{background:var(--accent);border-top-color:var(--accent);color:#fff}
-.teacher-card .lesson.is-current .num{background:#fff;color:var(--accent)}
-.teacher-card .lesson.is-current .time small,.teacher-card .lesson.is-current .lesson-main small,.teacher-card .lesson.is-current .tv-previous,.teacher-card .lesson.is-current .room,.teacher-card .lesson.is-current .cls,.teacher-card .lesson.is-current .lesson-main strong{color:#fff}
-.lesson.is-current .chip--now{display:inline-flex}
-.lesson.is-current::after{content:"";position:absolute;left:0;bottom:0;height:.35rem;width:var(--progress,0%);background:#fff}
-.lesson.is-current::before{content:"";position:absolute;left:0;right:0;bottom:0;height:.35rem;background:rgba(255,255,255,.25)}
+/* Пустой экран: выходной, уроки закончились, нет связи */
+.tv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px;border:3px solid var(--ink);border-radius:32px;background:#fff;box-shadow:var(--hard);text-align:center}
+.tv-empty h2{font-family:var(--display);font-size:60px;font-weight:800;line-height:1.1}
+.tv-empty p{font-size:32px;font-weight:600;color:var(--ink-2)}
 
-/* ТВ для учеников: карточка класса */
-.class-card{min-width:0;display:flex;flex-direction:column;gap:.9rem;padding:1.25rem;border:1px solid var(--line-2);border-radius:1.5rem;background:#fff}
-.class-card>header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:0 .25rem}
-.class-card h2{margin:0;font-size:3.75rem;font-weight:800;line-height:1;letter-spacing:-.02em}
-.class-card .lessons{display:flex;flex-direction:column;gap:.65rem}
-.class-card .lesson{position:relative;display:grid;grid-template-columns:7.25rem minmax(0,1fr) 8.25rem;gap:.9rem;align-items:center;padding:.9rem 1rem;border:1px solid var(--line);border-radius:1.15rem;background:#fff}
-.class-card .lesson-no{display:flex;flex-direction:column;gap:.25rem}
-.class-card .lesson-no b{font-size:2.75rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.class-card .lesson-no span{font-size:1.05rem;font-weight:600;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.class-card .lesson-main{display:flex;flex-direction:column;gap:.35rem;min-width:0}
-.class-card .lesson-main .chip{align-self:flex-start}
-.class-card .lesson-main strong{font-size:1.75rem;font-weight:700;line-height:1.12;overflow-wrap:normal;word-break:normal;hyphens:auto}
-.class-card .lesson-main small{font-size:1.2rem;color:var(--muted)}
-.class-card .tv-previous{font-size:1.25rem;font-weight:600;color:var(--muted);text-decoration:line-through;text-decoration-thickness:.12rem;overflow-wrap:anywhere}
-.room-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.1rem;min-height:5.25rem;padding:.4rem .5rem;border-radius:1rem;background:#F1F5F9;text-align:center}
-.room-box span{font-size:.95rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85}
-.room-box b{max-width:100%;font-size:2.5rem;font-weight:800;line-height:1.05;white-space:nowrap;font-variant-numeric:tabular-nums}
-.room-box b.is-long{font-size:1.15rem;white-space:normal;overflow-wrap:break-word}
-.class-card .lesson.cancelled{background:var(--cancel-tint);border:2px solid var(--cancel-line)}
-.class-card .lesson.cancelled .lesson-main strong{color:var(--cancel-ink)}
-.class-card .lesson.cancelled .room-box{background:transparent;border:2px dashed #FCA5A5;color:var(--muted)}
-.class-card .lesson.changed{background:var(--change-tint);border:2px solid var(--change-line)}
-.class-card .lesson.added{background:var(--add-tint);border:2px solid var(--add-line)}
-.class-card .lesson.room{background:var(--room-tint);border:2px solid var(--room-line)}
-.class-card .lesson.room .room-box{background:var(--room-ink);color:#fff}
-.class-card .lesson.is-current{background:var(--accent);border:1px solid var(--accent);color:#fff}
-.class-card .lesson.is-current .lesson-no span,.class-card .lesson.is-current .tv-previous,.class-card .lesson.is-current .lesson-main small,.class-card .lesson.is-current .lesson-main strong{color:#fff}
-.class-card .lesson.is-current .room-box{background:#fff;color:var(--accent)}
-.class-card .lesson.break-after{margin-top:2.6rem;border:.2rem solid var(--accent)}
-.class-card .lesson.break-after::before{content:attr(data-break-label);position:absolute;left:0;top:-2.35rem;padding:.3rem .85rem;border-radius:999px;background:var(--accent);color:#fff;font-size:1.1rem;font-weight:800;white-space:nowrap}
-.class-card .lesson.break-after:first-child{margin-top:2.6rem}
+/* Общее для таблиц */
+.tv-card{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:3px solid var(--ink);border-radius:32px;background:#fff;box-shadow:var(--hard)}
+.tv-corner{display:flex;align-items:center;padding:0 24px;border-right:3px solid var(--ink);font-size:20px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.tv-pill{padding:1px 10px;border-radius:999px;font-size:16px;font-style:normal;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 
-@media (max-width:700px){
-  body{overflow:auto}.tv{height:auto;min-height:100vh}:root{font-size:10px}
-  .teachers,.classes{grid-template-columns:1fr;overflow:visible}
-  .head{flex-wrap:wrap}.foot{grid-template-columns:1fr}.foot>span:last-child{text-align:left}
-}
+/* Учительская: сетка «учитель × урок» и изменения */
+.tg{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:24px}
+.tg-head,.tg-row{display:grid;grid-template-columns:270px repeat(var(--cols),minmax(0,1fr))}
+.tg-head{height:64px;flex-shrink:0;border-bottom:3px solid var(--ink);background:var(--head)}
+.tg-h{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:2px solid var(--line-2)}
+.tg-h b{font-family:var(--display);font-size:26px;font-weight:800;line-height:1}
+.tg-h small{font-size:18px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tg-h.is-now{border-left-color:var(--brand);background:var(--brand);color:#fff}
+.tg-h.is-now .tv-pill{background:var(--sun);color:var(--ink)}
+.tg-h.is-next{background:var(--sun)}
+.tg-h.is-next .tv-pill{background:var(--ink);color:#fff}
+.tg-rows{flex:1;min-height:0;display:grid;grid-template-rows:repeat(12,minmax(0,1fr))}
+.tg-row{min-height:0;border-bottom:2px solid var(--line)}
+.tg-name{min-width:0;display:flex;align-items:center;padding:0 22px;border-right:3px solid var(--ink);font-size:25px;font-weight:800}
+.tg-name span{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tg-c{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 4px;border-left:2px solid var(--line);text-align:center}
+.tg-c b,.tg-c s{display:block;max-width:100%;overflow:hidden;font-family:var(--display);font-size:23px;font-weight:800;line-height:1.05;white-space:nowrap}
+.tg-c small{display:block;max-width:100%;overflow:hidden;font-size:20px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.tg-c.is-now{border-left-color:var(--brand);background:var(--brand);color:#fff}
+.tg-c.is-now small{color:var(--sun)}
+.tg-c.is-now.k-empty{background:#DCE5F5;border-left-color:#DCE5F5}
+.tg-c.is-next{background:var(--sun-soft)}
+.tg-c.k-cancelled{background:var(--cancel-bg);box-shadow:inset 0 0 0 3px var(--cancel-ink);color:var(--ink)}
+.tg-c.k-cancelled s{color:var(--muted)}
+.tg-c.k-cancelled small{color:var(--cancel-ink)}
+.tg-c.k-room-change{background:var(--room-bg);box-shadow:inset 0 0 0 3px var(--room-ink);color:var(--ink)}
+.tg-c.k-room-change small{color:var(--room-ink)}
+.tg-c.k-added{background:var(--add-bg);box-shadow:inset 0 0 0 3px var(--add-ink);color:var(--ink)}
+.tg-c.k-added small{color:var(--add-ink)}
+.tg-c.k-changed{background:var(--change-bg);box-shadow:inset 0 0 0 3px var(--change-ink);color:var(--ink)}
+.tg-c.k-changed small{color:var(--change-ink)}
+
+.tg-changes{min-width:0;min-height:0;display:flex;flex-direction:column;gap:14px;padding:24px;overflow:hidden;border:3px solid var(--ink);border-radius:32px;background:var(--sun-soft);box-shadow:var(--hard)}
+.tg-changes__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tg-changes h2{min-width:0;overflow:hidden;font-family:var(--display);font-size:24px;font-weight:800;line-height:1.1;white-space:nowrap}
+.tg-count{display:grid;place-items:center;flex-shrink:0;min-width:48px;height:48px;padding:0 10px;border:3px solid var(--ink);border-radius:999px;background:var(--brand);color:#fff;font-family:var(--display);font-size:22px;font-weight:800}
+.tg-item{display:flex;flex-direction:column;gap:4px;padding:12px 18px;border:2px solid var(--ink);border-radius:20px;background:#fff}
+.tg-item__top{display:flex;align-items:center;gap:10px}
+.tg-item__top b{font-family:var(--display);font-size:22px;font-weight:800;white-space:nowrap}
+.tg-item strong,.tg-item span.tg-item__detail{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tg-item strong{font-size:26px;font-weight:800;line-height:1.15}
+.tg-item__detail{font-size:22px;font-weight:600;color:var(--ink-2)}
+.tv-pill.p-cancelled{border:2px solid var(--cancel-ink);background:var(--cancel-bg);color:var(--cancel-ink)}
+.tv-pill.p-room{border:2px solid var(--room-ink);background:var(--room-bg);color:var(--room-ink)}
+.tv-pill.p-added{border:2px solid var(--add-ink);background:var(--add-bg);color:var(--add-ink)}
+.tv-pill.p-changed{border:2px solid var(--change-ink);background:var(--change-bg);color:var(--change-ink)}
+.tg-more{font-size:22px;font-weight:700;color:var(--ink-2)}
+.tg-calm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.tg-calm b{font-family:var(--display);font-size:30px;font-weight:800}
+.tg-calm span{font-size:22px;font-weight:600;color:var(--ink-2)}
+
+/* Ученики: табло параллели «класс × урок» */
+.pb-head,.pb-row{display:grid;grid-template-columns:200px repeat(var(--cols),minmax(0,1fr))}
+.pb-head{height:80px;flex-shrink:0;border-bottom:3px solid var(--ink);background:var(--head)}
+.pb-h{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:0 18px;border-left:2px solid var(--line-2)}
+.pb-h>span{display:flex;align-items:center;gap:10px}
+.pb-h b{font-family:var(--display);font-size:32px;font-weight:800;line-height:1}
+.pb-h small{display:block;max-width:100%;overflow:hidden;font-size:20px;font-weight:600;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pb-h.is-now{border-left-color:var(--brand);background:var(--brand);color:#fff}
+.pb-h.is-now small{color:#BFDBFE}
+.pb-h.is-now .tv-pill{background:var(--sun);color:var(--ink)}
+.pb-h.is-next{background:var(--sun)}
+.pb-h.is-next small{color:var(--ink)}
+.pb-h.is-next .tv-pill{background:var(--ink);color:#fff}
+.pb-rows{flex:1;min-height:0;display:grid;grid-template-rows:repeat(var(--rows),minmax(0,1fr))}
+.pb-row{min-height:0;border-bottom:2px solid var(--line-2)}
+.pb-class{min-width:0;display:flex;align-items:center;padding:12px 18px;border-right:3px solid var(--ink)}
+.pb-class span{flex:1;height:100%;max-height:140px;display:grid;place-items:center;overflow:hidden;border:3px solid var(--ink);border-radius:24px;background:var(--room-bg);font-family:var(--display);font-size:56px;font-weight:800;line-height:1;white-space:nowrap}
+.pb-c{min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px 18px;overflow:hidden;border-left:2px solid var(--line)}
+.pb-subj{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:28px;font-weight:700;line-height:1.12;hyphens:manual}
+s.pb-subj{color:var(--muted)}
+.pb-room{display:flex;align-items:baseline;gap:8px;min-width:0}
+.pb-room small{font-size:22px;font-weight:700;color:var(--ink-2)}
+.pb-room b{min-width:0;overflow:hidden;font-family:var(--display);font-size:32px;font-weight:800;line-height:1.05;white-space:nowrap}
+.pb-room.is-word b{font-family:Onest,system-ui,sans-serif;font-size:26px}
+.pb-tag{display:flex;align-items:center;gap:10px;min-width:0}
+.pb-tag em{flex-shrink:0;padding:2px 10px;border:2px solid currentColor;border-radius:999px;font-size:20px;font-style:normal;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.pb-tag s{min-width:0;overflow:hidden;font-size:22px;font-weight:700;color:var(--muted);white-space:nowrap;text-overflow:ellipsis}
+.pb-note{font-size:22px;font-weight:700;color:var(--cancel-ink)}
+.pb-c.k-empty{background:#F8FAFC}
+.pb-c.k-room{background:var(--room-tint)}
+.pb-c.k-room .pb-tag em{background:var(--room-bg);color:var(--room-ink)}
+.pb-c.k-room .pb-room small,.pb-c.k-room .pb-room b{color:var(--room-ink)}
+.pb-c.k-changed{background:var(--change-tint)}
+.pb-c.k-changed .pb-tag em{background:var(--change-bg);color:var(--change-ink)}
+.pb-c.k-added{background:var(--add-tint)}
+.pb-c.k-added .pb-tag em{background:var(--add-bg);color:var(--add-ink)}
+.pb-c.k-cancelled{background:var(--cancel-tint)}
+.pb-c.k-cancelled .pb-tag em{background:var(--cancel-bg);color:var(--cancel-ink)}
+.pb-c.is-now.k-normal{border-left-color:var(--brand);background:var(--brand);color:#fff}
+.pb-c.is-now.k-normal .pb-room small{color:#BFDBFE}
+.pb-c.is-now.k-normal .pb-room b{color:var(--sun)}
+.pb-c.is-now.k-empty{background:#DCE5F5}
+.pb-c.is-now:not(.k-normal):not(.k-empty){box-shadow:inset 0 0 0 4px var(--brand)}
+.pb-c.is-next.k-normal{background:var(--sun-soft)}
+.pb-c.is-next:not(.k-normal):not(.k-empty){box-shadow:inset 0 0 0 4px var(--ink)}

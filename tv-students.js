@@ -1,58 +1,166 @@
-(()=>{
-'use strict';
-const site=window.SchoolSite,config=window.SCHOOL_CONFIG||{};if(!site)return;
-const esc=site.escapeHtml;
-const fullSubject=v=>window.SchoolSubjects?.expandSubject?window.SchoolSubjects.expandSubject(v):String(v??'');
-const DAY_ORDER=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
-const DAY_ALIASES={пн:'ПН',понедельник:'ПН',вт:'ВТ',вторник:'ВТ',ср:'СР',среда:'СР',чт:'ЧТ',четверг:'ЧТ',пт:'ПТ',пятница:'ПТ',сб:'СБ',суббота:'СБ'};
-const BELLS=['08:00–08:40','08:50–09:30','09:45–10:25','10:45–11:25','11:40–12:20','12:30–13:10','13:20–14:00','14:15–14:55','15:10–15:50','16:05–16:45','17:00–17:40','17:50–18:30'];
-const DEFAULT_SCHEDULE_HEADERS=['Класс','Урок','ПН','ВТ','СР','ЧТ','ПТ'];
-const DEFAULT_CHANGES_HEADERS=['Дата','Класс','Урок','Изменения','Примечание'];
-let scheduleRows=[],changesRows=[],parallels=[],parallelIndex=0,rotateTimer=null,locked=false,lockedGrade='',lastMomentKey='';
-// Layout lives in tv.css; nothing has to be injected at runtime any more.
-function ensureRuntimeStyles(){}
-function normalizeDateValue(value){const s=String(value??'').trim();if(!s)return'';let m=s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);if(m){const y=m[3].length===2?`20${m[3]}`:m[3];return`${m[1].padStart(2,'0')}.${m[2].padStart(2,'0')}.${y}`}m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[3].padStart(2,'0')}.${m[2].padStart(2,'0')}.${m[1]}`:s}
-function dateKey(d){return`${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${d.getUTCFullYear()}`}
-function lessonNumber(v){const m=String(v??'').match(/\d+/);return m?Number(m[0]):999}
-function toMin(v){const[a,b]=String(v).split(':').map(Number);return a*60+b}
-function lessonEnd(lesson){const pair=String(BELLS[Number(lesson)-1]||'').split('–');return pair[1]?toMin(pair[1]):1439}
-function momentState(){const t=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()),[h,m]=t.split(':').map(Number),n=h*60+m;for(let i=0;i<BELLS.length;i++){const[a,b]=BELLS[i].split('–').map(toMin);if(n>=a&&n<b)return{type:'lesson',lesson:i+1,remaining:b-n,now:n};if(n<a)return i?{type:'break',prev:i,next:i+1,remaining:a-n,now:n}:{type:'before',next:1,remaining:a-n,now:n}}return{type:'after',now:n}}
-function momentKey(s){return`${s.type}:${s.lesson||s.prev||s.next||0}`}
-function parseLessonPart(value){const s=String(value??'').trim();if(!s)return{subject:'',room:'',raw:''};let m=s.match(/^(.*?)\s*\(([^()]*)\)\s*$/);if(m)return{subject:fullSubject(m[1].trim()),room:m[2].trim(),raw:s};m=s.match(/^(.*?)\s*(?:·|-)?\s*каб\.?\s*([\wА-Яа-яЁё/-]+)\s*$/i);if(m)return{subject:fullSubject(m[1].trim()),room:m[2].trim(),raw:s};return{subject:fullSubject(s),room:'',raw:s}}
-function parseLessonText(value){const s=String(value??'').trim();if(!s)return{subject:'',room:'',raw:''};const parts=s.split(/\s+\/\s+/).map(x=>x.trim()).filter(Boolean);if(parts.length>1){const parsed=parts.map(parseLessonPart),subjects=[...new Set(parsed.map(x=>x.subject).filter(Boolean))],rooms=parsed.map(x=>x.room).filter(Boolean);if(subjects.length===1&&rooms.length)return{subject:subjects[0],room:rooms.join(' / '),raw:s}}return parseLessonPart(s)}
-function sameText(a,b){return site.normalize(String(a||''))===site.normalize(String(b||''))}
-function scheduleParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_SCHEDULE_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['класс','урок','пн','понедельник'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_SCHEDULE_HEADERS,data:rows}}
-function changesParts(rows){if(!Array.isArray(rows)||!rows.length)return{headers:DEFAULT_CHANGES_HEADERS,data:[]};return site.looksLikeHeader(rows[0],['дата','класс','урок','изменения'])?{headers:rows[0],data:rows.slice(1)}:{headers:DEFAULT_CHANGES_HEADERS,data:rows}}
-function scheduleCols(headers){const classIndex=site.findHeaderIndex(headers,['класс','классы'],0),lessonIndex=site.findHeaderIndex(headers,['урок','номерурока','№урока'],1),dayColumns=[];headers.forEach((h,i)=>{const code=DAY_ALIASES[site.normalize(h)];if(code&&!dayColumns.some(x=>x.code===code))dayColumns.push({code,index:i})});return{classIndex,lessonIndex,dayColumns}}
-function changeCols(headers){return{date:site.findHeaderIndex(headers,['дата'],0),className:site.findHeaderIndex(headers,['класс','классы'],1),lesson:site.findHeaderIndex(headers,['урок','номерурока','№урока'],2),change:site.findHeaderIndex(headers,['изменения','изменение','замена'],3),note:site.findHeaderIndex(headers,['примечание','комментарий'],4)}}
-function baseLessonsFor(date,className){const{headers,data}=scheduleParts(scheduleRows),{classIndex,lessonIndex,dayColumns}=scheduleCols(headers),code=DAY_ORDER[date.getUTCDay()],day=dayColumns.find(x=>x.code===code),out=new Map();if(!day)return out;data.filter(r=>site.normalizeClass(r[classIndex])===site.normalizeClass(className)).forEach(r=>{const lesson=lessonNumber(r[lessonIndex]),raw=String(r[day.index]??'').trim();if(lesson>=1&&lesson<=12&&raw)out.set(lesson,{lesson,...parseLessonText(raw)})});return out}
-function changesFor(date,className){const{headers,data}=changesParts(changesRows),c=changeCols(headers),key=dateKey(date);return data.filter(r=>r.some(x=>String(x??'').trim())&&normalizeDateValue(r[c.date])===key&&site.normalizeClass(r[c.className])===site.normalizeClass(className)).map(r=>({className:site.normalizeClass(r[c.className]),lesson:lessonNumber(r[c.lesson]),change:String(r[c.change]||'').trim(),note:String(r[c.note]||'').trim()})).filter(x=>x.lesson>=1&&x.lesson<=12&&x.change)}
-function classify(base,ch){if(/^отмена$/i.test(ch.change))return{type:'cancelled',base,newLesson:null,...ch};const next=parseLessonText(ch.change);if(!base)return{type:'added',base:null,newLesson:next,...ch};if(sameText(base.subject,next.subject||base.subject)&&next.room&&String(base.room||'')!==String(next.room||''))return{type:'room',base,newLesson:{subject:next.subject||base.subject,room:next.room},...ch};return{type:'changed',base,newLesson:next,...ch}}
-function actualDay(date,className){const base=baseLessonsFor(date,className),changes=changesFor(date,className),map=new Map(changes.map(x=>[x.lesson,x])),lessons=new Set([...base.keys(),...map.keys()]);return[...lessons].sort((a,b)=>a-b).map(lesson=>{const b=base.get(lesson),ch=map.get(lesson);return ch?classify(b,ch):{type:'normal',lesson,base:b,newLesson:b,note:''}})}
-function visibleByTime(x,state){if(state.type==='before')return true;if(state.type==='after')return false;return lessonEnd(x.lesson)>state.now}
-function isRealLesson(x){if(x.type==='cancelled')return false;const n=x.newLesson||x.base;return Boolean(String(n?.subject||'').trim()||String(n?.room||'').trim())}
-function oldText(b){return b?[b.subject,b.room?`каб. ${b.room}`:''].filter(Boolean).join(' · '):''}
-function newText(n){return n?[n.subject,n.room?`каб. ${n.room}`:''].filter(Boolean).join(' · '):''}
-function typeLabel(type){return({cancelled:'Отменено',changed:'Изменено',room:'Другой кабинет',added:'Добавлено'})[type]||''}
-function roomBox(room,label='кабинет'){const r=String(room||'').trim()||'—';return`<div class="room-box"><span>${label}</span><b${r.length>4?' class="is-long"':''}>${esc(r)}</b></div>`}
-function nowChip(lesson){const end=String(BELLS[lesson-1]||'').split('–')[1]||'';return`<i class="chip chip--now">Сейчас · до ${esc(end)}</i>`}
-function rowHtml(x){const time=BELLS[x.lesson-1]||'',no=`<div class="lesson-no"><b>${x.lesson}</b><span>${esc(time)}</span></div>`,chip=x.type!=='normal'?`<i class="chip chip--${x.type}">${typeLabel(x.type)}</i>`:'';if(x.type==='normal')return`<div class="lesson normal" data-lesson="${x.lesson}">${no}<div class="lesson-main">${nowChip(x.lesson)}<strong>${esc(x.base?.subject||'')}</strong></div>${roomBox(x.base?.room)}</div>`;if(x.type==='cancelled')return`<div class="lesson cancelled" data-lesson="${x.lesson}">${no}<div class="lesson-main">${chip}<span class="tv-previous">${esc(oldText(x.base)||'Урок')}</span><strong>Урок отменён</strong>${x.note?`<small>${esc(x.note)}</small>`:''}</div>${roomBox('—','каб.')}</div>`;if(x.type==='room')return`<div class="lesson room" data-lesson="${x.lesson}">${no}<div class="lesson-main">${nowChip(x.lesson)}${chip}<span class="tv-previous">кабинет ${esc(x.base?.room||'—')}</span><strong>${esc(x.newLesson?.subject||x.base?.subject||'')}</strong>${x.note?`<small>${esc(x.note)}</small>`:''}</div>${roomBox(x.newLesson?.room)}</div>`;return`<div class="lesson ${x.type}" data-lesson="${x.lesson}">${no}<div class="lesson-main">${nowChip(x.lesson)}${chip}${x.base?`<span class="tv-previous">было: ${esc(oldText(x.base))}</span>`:''}<strong>${esc(x.newLesson?.subject||x.change)}</strong>${x.note?`<small>${esc(x.note)}</small>`:''}</div>${roomBox(x.newLesson?.room)}</div>`}
-function plural(n){const a=n%10,b=n%100;return b>=11&&b<=14?'изменений':a===1?'изменение':a>=2&&a<=4?'изменения':'изменений'}
-function summary(rows){const c={cancelled:0,changed:0,room:0,added:0},changed=rows.filter(x=>x.type!=='normal');changed.forEach(x=>c[x.type]=(c[x.type]||0)+1);if(!changed.length)return'<span class="chip">Без изменений</span>';return`<span class="chip">${changed.length} ${plural(changed.length)}</span>${c.cancelled?`<span class="chip chip--cancelled">отмена ${c.cancelled}</span>`:''}${c.changed?`<span class="chip chip--changed">изменено ${c.changed}</span>`:''}${c.room?`<span class="chip chip--room">кабинет ${c.room}</span>`:''}${c.added?`<span class="chip chip--added">добавлено ${c.added}</span>`:''}`}
-function classInfo(date,cls,state){const all=actualDay(date,cls),rows=all.filter(x=>visibleByTime(x,state)),active=rows.some(isRealLesson);return{cls,all,rows,active}}
-function classCard(info){return`<article class="class-card"><header><h2>${esc(info.cls)}</h2><div class="summary">${summary(info.rows)}</div></header><div class="lessons">${info.rows.map(rowHtml).join('')}</div></article>`}
-function segmentsHtml(list,index){if(locked||list.length<2)return'';return list.map((p,i)=>`<i class="label ${i===index?'on':i<index?'done':''}">${esc(p.grade)}</i>`).join('')}
-function deriveParallels(){const classes=[...(Array.isArray(config.classes)?config.classes:[])].map(site.normalizeClass).filter(Boolean),map=new Map();classes.forEach(cls=>{const m=cls.match(/^(\d{1,2})/);if(!m)return;const raw=m[1],g=(raw==='10'||raw==='11')?'10-11':raw;if(!map.has(g))map.set(g,[]);map.get(g).push(cls)});const order=[...map.keys()].sort((a,b)=>Number(String(a).split('-')[0])-Number(String(b).split('-')[0]));parallels=order.map(g=>({grade:g,classes:map.get(g)}));const rawQ=new URLSearchParams(location.search).get('parallel'),q=(rawQ==='10'||rawQ==='11')?'10-11':rawQ;if(q&&map.has(q)){locked=true;lockedGrade=q}else{locked=false;lockedGrade=''}}
-function parallelSnapshot(p,date,state){const items=p.classes.map(cls=>classInfo(date,cls,state)).filter(x=>x.active);return{...p,items}}
-function activeParallelSnapshots(date,state){return parallels.map(p=>parallelSnapshot(p,date,state)).filter(p=>p.items.length)}
-function applyMomentClasses(state){document.querySelectorAll('.lesson').forEach(el=>{el.classList.toggle('is-current',state.type==='lesson'&&Number(el.dataset.lesson)===state.lesson);el.classList.remove('break-after');el.removeAttribute('data-break-label')});if(state.type==='break'){document.querySelectorAll('.class-card').forEach(card=>{const rows=[...card.querySelectorAll('.lesson')],next=rows.find(el=>!el.classList.contains('cancelled'));if(next){next.classList.add('break-after');next.dataset.breakLabel=`Перемена · далее ${next.dataset.lesson}-й урок`}})}}
-function updateHeader(state){const d=new Date(),t=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(d),date=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',weekday:'long',day:'numeric',month:'long'}).format(d);document.querySelector('#time').textContent=t.slice(0,5);document.querySelector('#date').textContent=date;let label='Учебный день',s='завершён';if(state.type==='lesson'){label=`Идёт ${state.lesson}-й урок`;s=`до звонка ${state.remaining} мин`}else if(state.type==='break'){label='Перемена';s=`${state.next}-й урок через ${state.remaining} мин`}else if(state.type==='before'){label='До начала занятий';s=`1-й урок через ${state.remaining} мин`}document.querySelector('#countdown-label').textContent=label;document.querySelector('#countdown').textContent=s}
-function tick(){const state=momentState();updateHeader(state);const key=momentKey(state);if(lastMomentKey&&key!==lastMomentKey&&scheduleRows.length){lastMomentKey=key;rotation(state);return}lastMomentKey=key;applyMomentClasses(state)}
-function finishedCard(text){return`<article class="class-card finished error-card"><h2>${esc(text)}</h2><p>На экране остаются только текущие и предстоящие занятия.</p></article>`}
-function render(state=momentState()){if(!parallels.length)return;const today=site.getSchoolToday(),el=document.querySelector('#classes');let snap,list=[];if(locked){const base=parallels.find(p=>p.grade===lockedGrade)||parallels[0];snap=parallelSnapshot(base,today,state);document.querySelector('#parallel').textContent=base.grade==='10-11'?'10–11 классы':`${base.grade} параллель`;if(!snap.items.length){el.style.setProperty('--cols','1');el.innerHTML=finishedCard(`Занятия ${base.grade==='10-11'?'10–11 классов':base.grade+'-х классов'} на сегодня завершены`);document.querySelector('#parallel-sub').textContent='Актуальных уроков больше нет';document.querySelector('#page').textContent=`Параллель ${base.grade} закреплена`;document.querySelector('#progress').style.width='100%';document.querySelector('#segments').innerHTML='';applyMomentClasses(state);return}list=[snap]}else{list=activeParallelSnapshots(today,state);if(!list.length){document.querySelector('#parallel').textContent='Учебный день завершён';document.querySelector('#parallel-sub').textContent='Актуальных уроков больше нет';el.style.setProperty('--cols','1');el.innerHTML=finishedCard('Все занятия на сегодня завершены');document.querySelector('#page').textContent='До следующего учебного дня';document.querySelector('#progress').style.width='100%';document.querySelector('#segments').innerHTML='';applyMomentClasses(state);return}if(parallelIndex>=list.length)parallelIndex=0;snap=list[parallelIndex];document.querySelector('#parallel').textContent=snap.grade==='10-11'?'10–11 классы':`${snap.grade} параллель`}
-const count=snap.items.length;document.querySelector('#parallel-sub').textContent=state.type==='before'?`${count} ${count===1?'класс':'класса'} · расписание на сегодня`:`${count} ${count===1?'класс':'класса'} · текущие и предстоящие уроки`;el.style.setProperty('--cols',String(Math.min(4,Math.max(1,count))));el.classList.remove('page-enter');void el.offsetWidth;el.classList.add('page-enter');el.innerHTML=snap.items.map(classCard).join('');const status=document.querySelector('#page');status.textContent=locked?`Параллель ${snap.grade} закреплена`:`Параллель ${parallelIndex+1} из ${list.length} · следующая через 15 сек`;document.querySelector('#progress').style.width=locked?'100%':`${((parallelIndex+1)/list.length)*100}%`;document.querySelector('#segments').innerHTML=segmentsHtml(list,parallelIndex);applyMomentClasses(state)}
-function rotation(state=momentState()){if(rotateTimer)clearInterval(rotateTimer);render(state);if(!locked){const list=activeParallelSnapshots(site.getSchoolToday(),state);if(list.length>1)rotateTimer=setInterval(()=>{const now=momentState(),current=activeParallelSnapshots(site.getSchoolToday(),now);if(!current.length){parallelIndex=0;render(now);return}parallelIndex=(parallelIndex+1)%current.length;render(now)},15000)}}
-async function notices(){try{const rows=await site.loadSheet('Оповещения',{optional:true,ttl:60000}),today=dateKey(site.getSchoolToday()),r=rows?.slice(1).reverse().find(x=>{const audience=String(x[11]||'all');const active=String(x[12]||'true').toLowerCase()!=='false';const from=normalizeDateValue(x[5]),to=normalizeDateValue(x[6]);return active&&['all','students','children'].includes(audience)&&(!from||from<=today)&&(!to||to>=today)});document.querySelector('#notice').innerHTML=r?`<div class="notice"><strong>${esc(r[2]||'')}</strong>${r[3]?`<span>${esc(r[3])}</span>`:''}</div>`:''}catch(_){}}
-async function load(){try{[scheduleRows,changesRows]=await Promise.all([site.loadSheet('Расписание',{force:true}),site.loadSheet('Изменения',{force:true,optional:true})]);deriveParallels();const state=momentState();lastMomentKey=momentKey(state);rotation(state);updateHeader(state);await notices();document.querySelector('#updated').textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit'}).format(new Date())}catch(e){document.querySelector('#classes').innerHTML='<article class="class-card error-card"><h2>Не удалось загрузить расписание</h2><p>Проверьте подключение к сети.</p></article>'}}
-ensureRuntimeStyles();deriveParallels();tick();setInterval(tick,15000);load();setInterval(load,60000);
+// ТВ для учеников: табло одной параллели — строки классы, столбцы уроки, которые
+// ещё будут сегодня. Параллели сменяются каждые 15 секунд; ?parallel=9 закрепляет
+// одну параллель за экраном (10 и 11 классы показываются вместе).
+(() => {
+  'use strict';
+  const site = window.SchoolSite, core = window.ScheduleCore, tv = window.TvCore, config = window.SCHOOL_CONFIG || {};
+  if (!site || !core || !tv) return;
+
+  const PERIOD = 15000, MAX_COLS = 10;
+  const SHEETS = ['Расписание', 'Изменения'];
+  const esc = site.escapeHtml;
+  const board = document.getElementById('board');
+  const rawLock = new URLSearchParams(location.search).get('parallel');
+  const asked = rawLock === '10' || rawLock === '11' ? '10-11' : rawLock || '';
+  let lock = '';
+
+  let scheduleRows = [], changesRows = [], loaded = false, failed = false, view = null, lastKey = '';
+  const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true) });
+
+  const gradeLabel = (key) => (key === '10-11' ? '10–11' : key);
+
+  // Parallels from the class list in config.js (or the schedule itself): 5, 6, … 10–11.
+  function parallels() {
+    const listed = Array.isArray(config.classes) && config.classes.length ? config.classes : core.deriveClasses(scheduleRows);
+    const map = new Map();
+    listed.map(site.normalizeClass).filter(Boolean).forEach((cls) => {
+      const grade = cls.match(/^(\d{1,2})/)?.[1];
+      if (!grade) return;
+      const key = grade === '10' || grade === '11' ? '10-11' : grade;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(cls);
+    });
+    return [...map.entries()]
+      .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))
+      .map(([key, classes]) => ({ key, classes: classes.sort(core.classCollator.compare) }));
+  }
+
+  function isReal(x) {
+    if (x.type === 'cancelled') return false;
+    const n = x.newLesson || x.base;
+    return Boolean(String(n?.subject || '').trim() || String(n?.room || '').trim());
+  }
+
+  // One parallel right now: the classes that still have lessons and the lesson
+  // numbers left today. The number of columns is capped, so nothing is cut off.
+  function snapshot(group, m, s) {
+    const rows = group.classes
+      .map((cls) => ({ cls, lessons: core.actualDay(scheduleRows, changesRows, m.date, cls).filter((x) => tv.lessonVisible(x.lesson, s, m)) }))
+      .filter((r) => r.lessons.some(isReal));
+    const cols = [...new Set(rows.flatMap((r) => r.lessons.map((x) => x.lesson)))].sort((a, b) => a - b).slice(0, MAX_COLS);
+    return { key: group.key, rows, cols };
+  }
+
+  function rebuild(m = tv.moment(), s = tv.bellState(m)) {
+    const all = parallels();
+    lock = all.some((g) => g.key === asked) ? asked : ''; // an unknown ?parallel= is ignored
+    const groups = all.filter((g) => !lock || g.key === lock);
+    const snaps = groups.map((g) => snapshot(g, m, s)).filter((x) => x.rows.length);
+    view = { m, s, snaps: new Map(snaps.map((x) => [x.key, x])), keys: snaps.map((x) => x.key) };
+    rotation.setKeys(view.keys);
+  }
+
+  /* Markup ---------------------------------------------------------- */
+
+  // «109/Мастерские» → «Мастерские»: a named room is what children look for.
+  function roomHtml(room) {
+    const parts = String(room || '').split('/').map((x) => x.trim()).filter(Boolean);
+    const named = parts.find((x) => /[А-Яа-яЁё]{4,}/.test(x));
+    const r = named || parts.join('/');
+    if (!r) return '';
+    if (r.length > 7) return `<span class="pb-room is-word"><b data-fit="18">${esc(r)}</b></span>`;
+    return `<span class="pb-room"><small>каб.</small><b data-fit="16">${esc(r)}</b></span>`;
+  }
+
+  function headCell(n, s, nextCol) {
+    const time = `<small data-fit="14">${esc(core.bellRange(n))}</small>`;
+    if (s.type === 'lesson' && s.lesson === n) return `<span class="pb-h is-now"><span><b>${n}</b><em class="tv-pill">сейчас</em></span>${time}</span>`;
+    if (n === nextCol) return `<span class="pb-h is-next"><span><b>${n}</b><em class="tv-pill">${s.type === 'before' ? 'первым' : 'далее'}</em></span>${time}</span>`;
+    return `<span class="pb-h"><span><b>${n}</b></span>${time}</span>`;
+  }
+
+  function cell(x, n, s, nextCol) {
+    const marks = `${s.type === 'lesson' && s.lesson === n ? ' is-now' : ''}${n === nextCol ? ' is-next' : ''}`;
+    if (!x) return `<div class="pb-c k-empty${marks}"></div>`;
+    const info = core.cellInfo(x);
+    const subject = esc(tv.shortSubject(info.subject));
+    if (info.kind === 'cancelled') return `<div class="pb-c k-cancelled${marks}"><span class="pb-tag"><em>Отменён</em></span><s class="pb-subj" data-fit="20">${subject || 'Урок'}</s><span class="pb-note">урока не будет</span></div>`;
+    let tag = '';
+    if (info.kind === 'room') tag = `<span class="pb-tag"><em>Кабинет</em>${x.base?.room ? `<s>${esc(x.base.room)}</s>` : ''}</span>`;
+    else if (info.kind === 'changed') tag = `<span class="pb-tag"><em>Замена</em>${x.base?.subject ? `<s>${esc(tv.shortSubject(x.base.subject))}</s>` : ''}</span>`;
+    else if (info.kind === 'added') tag = '<span class="pb-tag"><em>Добавлен</em></span>';
+    return `<div class="pb-c k-${info.kind}${marks}">${tag}<strong class="pb-subj" data-fit="20">${subject}</strong>${roomHtml(info.room)}</div>`;
+  }
+
+  function emptyHtml(m, s) {
+    const next = site.capitalize(tv.dayLabel(site.nextSchoolDay(m.date)));
+    if (s.type === 'off') return `<section class="tv-empty"><h2>Сегодня выходной</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
+    if (!loaded) return failed
+      ? '<section class="tv-empty"><h2>Не удалось загрузить расписание</h2><p>Проверьте подключение к сети — экран попробует снова через минуту</p></section>'
+      : '<section class="tv-empty"><h2>Загружаем расписание</h2><p>Получаем данные из школьной таблицы</p></section>';
+    const who = lock ? `${gradeLabel(lock)}-х классов ` : '';
+    return `<section class="tv-empty"><h2>Уроки ${who}на сегодня закончились</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
+  }
+
+  function show(turned) {
+    const { m, s } = view;
+    const snap = view.snaps.get(rotation.current()[0]);
+    const grade = snap ? snap.key : lock || '';
+    document.getElementById('grade').textContent = grade ? gradeLabel(grade) : '5–11';
+    if (!snap) {
+      board.innerHTML = emptyHtml(m, s);
+    } else {
+      const nextCol = s.type === 'before' ? snap.cols[0] : s.type === 'break' ? s.next : 0;
+      const rows = snap.rows.map((r) => {
+        const byLesson = new Map(r.lessons.map((x) => [x.lesson, x]));
+        return `<div class="pb-row" data-class="${esc(r.cls)}"><div class="pb-class"><span data-fit="28">${esc(r.cls)}</span></div>${snap.cols.map((n) => cell(byLesson.get(n), n, s, nextCol)).join('')}</div>`;
+      }).join('');
+      board.innerHTML = `<section class="tv-card" style="--cols:${snap.cols.length};--rows:${snap.rows.length}"><div class="pb-head"><span class="tv-corner">Класс</span>${snap.cols.map((n) => headCell(n, s, nextCol)).join('')}</div><div class="pb-rows">${rows}</div></section>`;
+    }
+    const pages = rotation.pages();
+    const started = rotation.sync();
+    const text = lock ? 'Параллель закреплена за этим экраном' : pages > 1 ? 'Следующая параллель через 15 с' : '';
+    tv.renderPager(lock ? [] : view.keys.map(gradeLabel), rotation.page(), snap ? text : '');
+    if (turned || started || pages <= 1) tv.restartBar(PERIOD, pages > 1);
+    tv.fitWhenReady(document.getElementById('stage'));
+  }
+
+  /* Clock and data -------------------------------------------------- */
+
+  function tick() {
+    const m = tv.moment(), s = tv.bellState(m), key = tv.stateKey(m, s);
+    tv.renderHeader(m, s);
+    tv.fit(document.querySelector('.tv-head'));
+    if (lastKey && key !== lastKey && view) {
+      lastKey = key;
+      rebuild(m, s);
+      show(false);
+      return;
+    }
+    lastKey = key;
+  }
+
+  async function load() {
+    try {
+      await site.loadCalendar?.();
+      const [schedule, changes] = await Promise.all([site.loadSheet(SHEETS[0], { force: true }), site.loadSheet(SHEETS[1], { force: true, optional: true })]);
+      scheduleRows = schedule || [];
+      changesRows = changes || [];
+      loaded = true;
+      failed = false;
+    } catch (_) {
+      failed = !loaded;
+    }
+    rebuild();
+    show(false);
+    tv.renderFreshness(SHEETS);
+  }
+
+  tv.initStage();
+  tick();
+  load();
+  tv.syncClock().then(tick);
+  setInterval(tick, 5000);
+  setInterval(load, 60000);
+  setInterval(tv.syncClock, 30 * 60 * 1000);
 })();
