@@ -9,7 +9,8 @@ window.SCHOOL_CONFIG = Object.freeze({
   links: {
     contactUrl: 'https://vk.me/school_20_tver',
     officialSite: 'https://school.tver.ru/school/20',
-    vkCommunity: 'https://vk.ru/school_20_tver'
+    vkCommunity: 'https://vk.ru/school_20_tver',
+    maxBot: 'https://max.ru/se14285144_bot'
   },
   googleSheets: {
     spreadsheetId: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
