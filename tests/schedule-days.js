@@ -85,6 +85,33 @@ test('a lesson added after an empty period makes a gap; filling it removes the w
   assert.deepEqual(warnings(h, [late]), []);
 });
 
+test('an announcement keeps its classes and the bot flag in two new columns', () => {
+  const h = createHarness();
+  h.put('Оповещения', [['ID', 'Опубликовано', 'Заголовок', 'Текст', 'Тип', 'Начало', 'Окончание', 'Картинка', 'Файлы JSON', 'Текст кнопки', 'Ссылка', 'Аудитория', 'Активно']]);
+  const { id } = h.call('saveNotice', h.token, { title: 'Собрание', text: 'В 18:00', audience: 'students', classes: '9а, 9Б;9а', toBot: true, start: h.date, end: h.date });
+  const sheet = h.sheets.get('Оповещения');
+  assert.deepEqual(sheet.rows[0].slice(13, 15), ['Классы', 'Рассылка в бот']);
+  assert.deepEqual(sheet.rows[1].slice(11, 15), ['students', 'true', '9А, 9Б', 'true']);
+  const listed = h.plain(h.call('listNoticesAdmin', h.token))[0];
+  assert.equal(listed.classes, '9А, 9Б');
+  assert.equal(listed.toBot, true);
+  h.call('saveNotice', h.token, { id, title: 'Собрание', text: 'В 18:30', audience: 'all', classes: '', toBot: false, start: h.date, end: h.date });
+  assert.deepEqual(sheet.rows[1].slice(11, 15), ['all', 'true', '', '']);
+  assert.equal(sheet.getLastRow(), 2);
+});
+
+test('subscriber statistics come from the bot, with the reach of a draft announcement', () => {
+  const h = createHarness(), urls = [];
+  h.context.UrlFetchApp = { fetch: (url) => { urls.push(url); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ ok: true, people: 3, reach: 2 }) }; } };
+  const s = h.plain(h.call('getBotStats', h.token, 'students', '9а 9б'));
+  assert.deepEqual(s, { ok: true, people: 3, reach: 2 });
+  assert.equal(decodeURIComponent(urls[0]), 'https://school-schedule.mark441302.workers.dev/stats?audience=students&classes=9А, 9Б');
+  h.context.UrlFetchApp = { fetch: () => ({ getResponseCode: () => 500, getContentText: () => '' }) };
+  assert.deepEqual(h.plain(h.call('getBotStats', h.token, 'all', '')), { ok: false, error: 'бот ответил 500' });
+  h.context.UrlFetchApp = { fetch: () => { throw new Error('dns'); } };
+  assert.deepEqual(h.plain(h.call('getBotStats', h.token, 'all', '')), { ok: false, error: 'бот недоступен' });
+});
+
 (async () => {
   for (const [name, fn] of tests) { await fn(); console.log('PASS ' + name); }
   console.log(`${tests.length} day settings checks passed`);

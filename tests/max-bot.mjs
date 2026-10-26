@@ -37,7 +37,7 @@ function baseSheets() {
     'Изменения': [['Дата', 'Класс', 'Урок', 'Изменения', 'Примечание']],
     'Изменения_учителей': [['Дата', 'Учитель', 'Урок', 'Тип', 'Класс', 'Предмет', 'Кабинет', 'Примечание']],
     'Статус_публикации': [['Дата', 'Опубликовано', 'Учителя', 'Ученики']],
-    'Оповещения': [['ID', 'Создано', 'Заголовок', 'Текст']]
+    'Оповещения': [['ID', 'Опубликовано', 'Заголовок', 'Текст', 'Тип', 'Начало', 'Окончание', 'Картинка', 'Файлы JSON', 'Текст кнопки', 'Ссылка', 'Аудитория', 'Активно', 'Классы', 'Рассылка в бот']]
   };
 }
 
@@ -137,6 +137,89 @@ test('v0.2 profiles keep their class or teacher after the schema update', async 
   assert.equal(db.prepare('SELECT target FROM deliveries WHERE user_id=?').get('7').target, 'c:8В');
   assert.match(b.text(await b.press(7, 'profile')), /• Класс 8В/);
   assert.match(b.text(await b.press(7, 'role:student')), /Выберите класс/);
+});
+
+// A notice row as the panel writes it; dates around today so it is active.
+const ruOf = (d) => iso(d).split('-').reverse().join('.');
+const TODAY_RU = ruOf(new Date(`${moscowToday}T12:00:00Z`)), WEEK_RU = ruOf(new Date(Date.parse(`${moscowToday}T12:00:00Z`) + 7 * 86400000));
+const notice = (id, { title = id, text = '', level = 'info', audience = 'all', classes = '', bot = 'true', url = '', files = [] } = {}) =>
+  [id, '', title, text, level, TODAY_RU, WEEK_RU, '', JSON.stringify(files), url ? 'Открыть' : '', url, audience, 'true', classes, bot];
+
+// Moscow wall clock for the cron: the worker reads new Date() when it runs.
+function at(hour, fn) {
+  const Real = Date, fixed = Date.parse(`${moscowToday}T${String(hour - 3).padStart(2, '0')}:30:00Z`);
+  globalThis.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [fixed])); } static now() { return fixed; } };
+  return Promise.resolve(fn()).finally(() => { globalThis.Date = Real; });
+}
+
+async function people(b) {
+  await b.press(11, `class:${CLASSES.indexOf('9А')}`);
+  await b.press(12, `class:${CLASSES.indexOf('7Б')}`);
+  await b.press(13, 'teacher:0');
+  await b.press(14, `class:${CLASSES.indexOf('9А')}`);
+  await b.press(14, 'notifications');
+}
+const sentTo = (b, from) => b.sent.slice(from).filter((m) => m.url.includes('/messages?user_id=')).map((m) => [m.url.match(/user_id=(\d+)/)[1], b.text(m)]);
+
+test('an announcement for 9А reaches only its subscribers, once', async () => {
+  const b = setup();
+  await people(b);
+  b.sheets['Оповещения'].push(notice('n1', { title: 'Собрание 9А', text: 'В четверг в 18:00, каб. 404', level: 'important', audience: 'students', classes: '9А' }));
+  const before = b.sent.length;
+  await at(12, () => b.cron());
+  const got = sentTo(b, before);
+  assert.deepEqual(got.map(([u]) => u), ['11'], 'user 14 has notifications off, 12 is in 7Б, 13 follows a teacher');
+  assert.match(got[0][1], /🟠 \*\*Собрание 9А\*\*\n_9А_\n\nВ четверг в 18:00, каб\. 404/);
+  await at(12, () => b.cron());
+  assert.equal(sentTo(b, before).length, 1);
+  assert.equal(b.DB.sqlite.prepare("SELECT COUNT(*) AS n FROM bot_state WHERE key='notice-done:n1'").get().n, 1);
+});
+
+test('everyone gets a notice for all; ordinary ones wait for the morning, urgent ones do not', async () => {
+  const b = setup();
+  await people(b);
+  b.sheets['Оповещения'].push(notice('n2', { title: 'Отмена занятий', level: 'urgent', url: 'https://sosh20tver.ru/' }), notice('n3', { title: 'Неделя книги' }), notice('n4', { title: 'Только на сайте', bot: '' }));
+  const before = b.sent.length;
+  await at(23, () => b.cron());
+  const night = sentTo(b, before);
+  assert.deepEqual(night.map(([u, t]) => `${u}:${t.match(/\*\*(.*?)\*\*/)[1]}`).sort(), ['11:Отмена занятий', '12:Отмена занятий', '13:Отмена занятий']);
+  const urgent = b.sent[before];
+  assert.deepEqual(urgent.body.attachments[0].payload.buttons[0], [{ type: 'link', text: 'Открыть', url: 'https://sosh20tver.ru/' }]);
+  await at(8, () => b.cron());
+  assert.deepEqual(sentTo(b, before + night.length).map(([u, t]) => `${u}:${t.match(/\*\*(.*?)\*\*/)[1]}`).sort(), ['11:Неделя книги', '12:Неделя книги', '13:Неделя книги']);
+});
+
+test('«Объявления» lists every notice for the user, five per page, and opens each in full', async () => {
+  const b = setup();
+  await b.press(21, `class:${CLASSES.indexOf('9А')}`);
+  for (let i = 1; i <= 6; i += 1) b.sheets['Оповещения'].push(notice(`a${i}`, { title: `Новость ${i}`, text: `Текст ${i}`, bot: '' }));
+  b.sheets['Оповещения'].push(notice('t1', { title: 'Для учителей', audience: 'teachers' }), notice('c7', { title: 'Для 7Б', classes: '7Б' }));
+  const page1 = await b.press(21, 'notices');
+  assert.match(b.text(page1), /^\*\*Объявления\*\* · 1 из 2\n\n🔵 \*\*Новость 6\*\*\nТекст 6/);
+  assert.doesNotMatch(b.text(page1), /Для учителей|Для 7Б/);
+  const buttons = page1.body.message.attachments[0].payload.buttons;
+  assert.deepEqual(buttons[0], [{ type: 'callback', text: 'Открыть: Новость 6', payload: 'notice:a6' }]);
+  assert.deepEqual(buttons[5], [{ type: 'callback', text: '→', payload: 'notices:1' }]);
+  assert.match(b.text(await b.press(21, 'notices:1')), /2 из 2[^]*Новость 1/);
+  assert.match(b.text(await b.press(21, 'notice:a3')), /🔵 \*\*Новость 3\*\*\n\nТекст 3/);
+  assert.match(b.text(await b.press(21, 'notice:gone')), /Объявление снято/);
+});
+
+test('/stats gives totals and reach without names', async () => {
+  const b = setup();
+  await people(b);
+  await b.press(11, `class:${CLASSES.indexOf('5А')}`);
+  const res = await worker.fetch(new Request('https://bot/stats?audience=students&classes=9%D0%90'), b.env, { waitUntil() {} });
+  const s = await res.json();
+  assert.equal(res.headers.get('access-control-allow-origin'), '*');
+  assert.equal(s.people, 4);
+  assert.equal(s.notificationsOn, 3);
+  assert.equal(s.parents, 3);
+  assert.equal(s.teachers, 1);
+  assert.equal(s.severalClasses, 1);
+  assert.deepEqual(s.classes, { '9А': 2, '7Б': 1, '5А': 1 });
+  assert.equal(s.reach, 1);
+  assert.doesNotMatch(JSON.stringify(s), /Иванова|"1[1-4]"/);
 });
 
 (async () => {
