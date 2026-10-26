@@ -75,17 +75,53 @@
     bar.firstElementChild?.style.setProperty('width', `${Math.max(0, progress)}%`);
   }
 
+  // The visible area in CSS px: the smallest of what the browser reports. A window
+  // larger than the screen (restored at an old size after the TV or Windows scaling
+  // changed) is capped at the screen; a size of 0 (window not shown yet) means «unknown».
+  function viewport() {
+    const known = (list) => { const v = Math.min(...list.filter((x) => Number(x) > 0)); return Number.isFinite(v) ? v : 0; };
+    const root = document.documentElement, vv = window.visualViewport, scr = window.screen;
+    return {
+      w: known([innerWidth, root?.clientWidth, vv?.width, scr?.width]),
+      h: known([innerHeight, root?.clientHeight, vv?.height, scr?.height])
+    };
+  }
+
+  const debug = /(?:^|[?&])debug(?:=|&|$)/.test(location.search);
+  let fitted = '';
+
   // The stage is drawn at 1920×1080 and scaled as one picture, so every TV and
   // browser (720p, 1080p, 4K, with or without browser bars) shows the same layout.
+  // Browsers on TV boxes do not always report their size or fire «resize», so the
+  // fit is checked again every few seconds; an unknown size is retried, never drawn at 100%.
+  function fitStage() {
+    const stage = $('stage'), { w, h } = viewport();
+    if (!w || !h) { setTimeout(fitStage, 300); return; }
+    const scale = Math.min(w / W, h / H);
+    const x = Math.max(0, Math.round((w - W * scale) / 2)), y = Math.max(0, Math.round((h - H * scale) / 2));
+    const value = `translate(${x}px, ${y}px) scale(${scale})`;
+    if (debug) showSizes(w, h, scale);
+    if (value === fitted) return;
+    fitted = value;
+    stage.style.webkitTransformOrigin = '0 0';
+    stage.style.webkitTransform = value;
+    stage.style.transform = value;
+  }
+
+  // tv.html?debug=1: the sizes the browser reports, to see on the TV what it thinks the screen is.
+  function showSizes(w, h, scale) {
+    let box = $('tv-debug');
+    if (!box) { box = document.createElement('div'); box.id = 'tv-debug'; document.body.appendChild(box); }
+    const vv = window.visualViewport, scr = window.screen, r = (v) => Math.round(Number(v) || 0);
+    box.textContent = `окно ${r(innerWidth)}×${r(innerHeight)} · страница ${r(document.documentElement.clientWidth)}×${r(document.documentElement.clientHeight)} · видимая ${r(vv?.width)}×${r(vv?.height)} · экран ${r(scr?.width)}×${r(scr?.height)} · плотность ${devicePixelRatio} · масштаб ${scale.toFixed(3)} (${w}×${h})`;
+  }
+
   function initStage() {
-    const stage = $('stage');
-    const apply = () => {
-      const scale = Math.min(innerWidth / W, innerHeight / H) || 1;
-      const x = Math.max(0, Math.round((innerWidth - W * scale) / 2)), y = Math.max(0, Math.round((innerHeight - H * scale) / 2));
-      stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
-    };
-    apply();
-    addEventListener('resize', apply);
+    fitStage();
+    ['resize', 'load', 'pageshow', 'orientationchange'].forEach((name) => addEventListener(name, fitStage));
+    ['visibilitychange', 'fullscreenchange', 'webkitfullscreenchange'].forEach((name) => document.addEventListener(name, fitStage));
+    window.visualViewport?.addEventListener('resize', fitStage);
+    setInterval(fitStage, 3000);
   }
 
   // TV clocks drift or are set to the wrong zone. The site's own server answers

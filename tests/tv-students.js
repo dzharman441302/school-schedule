@@ -20,7 +20,7 @@ function schedule() {
 
 async function students(options = {}) {
   const sheets = { 'Расписание': schedule(), 'Изменения': options.changes || [CHANGES_HEAD], ...(options.extra || {}) };
-  const screen = await startScreen('tv-students.js', { sheets, epoch: options.epoch || MONDAY('05:10'), search: options.search || '' });
+  const screen = await startScreen('tv-students.js', { sheets, epoch: options.epoch || MONDAY('05:10'), search: options.search || '', width: options.width ?? 1920, height: options.height ?? 1080, screen: options.screen });
   return {
     ...screen, sheets,
     grade: () => screen.text('grade'),
@@ -143,6 +143,25 @@ test('a shortened day uses its own bell times on the board and in the header', a
   assert.match(h.text('status-label'), /^Сокращённые уроки · Идёт 2-й урок · 08:40–09:10$/);
   assert.match(h.board(), /pb-h is-now"><span><b>2<\/b><em class="tv-pill">сейчас<\/em><\/span><small data-fit="14">08:40–09:10/);
   assert.equal(h.core.bellRange(1, new Date('2026-09-29T12:00:00Z')), '08:00–08:40');
+});
+
+test('the stage fits the screen even when the window is larger than it', async () => {
+  // Chrome window restored at 1920×1080 on a TV that Windows shows at 175 %: the screen is 1097×617.
+  const h = await students({ search: '?parallel=9', screen: { width: 1097, height: 617 } });
+  assert.match(h.stage(), /^translate\(0px, 0px\) scale\(0\.571/);
+  await h.resize(3840, 2160);
+  assert.match(h.stage(), /scale\(0\.571/, 'still capped by the screen');
+});
+
+test('a window without a size yet is measured again instead of drawn at 100 %', async () => {
+  const h = await students({ search: '?parallel=9', width: 0, height: 0 });
+  assert.equal(h.stage(), '');
+  h.setSize(1280, 720);
+  await h.advance(300);
+  assert.equal(h.stage(), 'translate(0px, 0px) scale(0.6666666666666666)');
+  h.setSize(1920, 1080);
+  await h.advance(3000);
+  assert.equal(h.stage(), 'translate(0px, 0px) scale(1)', 'checked again every few seconds without a resize event');
 });
 
 runTests('student TV checks', tests);

@@ -20,7 +20,7 @@ function element(id) {
   };
 }
 
-async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080 }) {
+async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080, screen }) {
   let now = 0, id = 0, gate = null, open = null;
   const timers = new Map(), elements = new Map(), events = {}, requests = [];
   const el = (key) => { if (!elements.has(key)) elements.set(key, element(key)); return elements.get(key); };
@@ -35,7 +35,7 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     Date: FakeDate,
     document: { getElementById: el, querySelector: el, querySelectorAll: () => [], addEventListener() {} },
     location: { search, pathname: `/${String(script || 'index.js').replace('.js', '.html')}` },
-    innerWidth: width, innerHeight: height,
+    innerWidth: width, innerHeight: height, screen,
     localStorage: { getItem: (k) => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) },
     addEventListener: (name, fn) => { events[name] = fn; },
     getComputedStyle: () => ({ fontSize: '16px', whiteSpace: 'normal' }),
@@ -69,6 +69,8 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     hold() { gate = new Promise((resolve) => { open = resolve; }); },
     async release() { const go = open; gate = null; open = null; go(); await settle(); },
     async resize(w, h) { context.innerWidth = w; context.innerHeight = h; events.resize?.(); await settle(); },
+    setSize(w, h) { context.innerWidth = w; context.innerHeight = h; },
+    stage: () => el('stage').style.transform || '',
     async advance(ms) {
       const target = now + ms;
       for (;;) {
