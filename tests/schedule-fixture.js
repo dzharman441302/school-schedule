@@ -32,7 +32,7 @@ function createHarness(root=path.resolve(__dirname,'..')){
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},LockService:{getScriptLock:()=>({waitLock:()=>{if(locked)throw Error('nested lock');locked=true;},releaseLock:()=>{locked=false;}})},
   ScriptApp:{getService:()=>({getUrl:()=>''}),newTrigger:()=>({timeBased:()=>({at:()=>({create:()=>{}})})})}};
  const context=vm.createContext(sandbox);
- for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
+ for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs','Bells.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
  return{context,model:context.S20Schedule,sheets,put,names,token:'fixture-token',date:'2026-09-25',call:(name,...args)=>context[name](...args),plain:v=>JSON.parse(JSON.stringify(v))};
 }
 module.exports={createHarness};

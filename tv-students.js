@@ -72,8 +72,8 @@
     return `<span class="pb-room"><small>каб.</small><b data-fit="16">${esc(r)}</b></span>`;
   }
 
-  function headCell(n, s, nextCol) {
-    const time = `<small data-fit="14">${esc(core.bellRange(n))}</small>`;
+  function headCell(n, s, nextCol, date) {
+    const time = `<small data-fit="14">${esc(core.bellRange(n, date))}</small>`;
     if (s.type === 'lesson' && s.lesson === n) return `<span class="pb-h is-now"><span><b>${n}</b><em class="tv-pill">сейчас</em></span>${time}</span>`;
     if (n === nextCol) return `<span class="pb-h is-next"><span><b>${n}</b><em class="tv-pill">${s.type === 'before' ? 'первым' : 'далее'}</em></span>${time}</span>`;
     return `<span class="pb-h"><span><b>${n}</b></span>${time}</span>`;
@@ -115,7 +115,7 @@
         const byLesson = new Map(r.lessons.map((x) => [x.lesson, x]));
         return `<div class="pb-row" data-class="${esc(r.cls)}"><div class="pb-class"><span data-fit="28">${esc(r.cls)}</span></div>${snap.cols.map((n) => cell(byLesson.get(n), n, s, nextCol)).join('')}</div>`;
       }).join('');
-      board.innerHTML = `<section class="tv-card" style="--cols:${snap.cols.length};--rows:${snap.rows.length}"><div class="pb-head"><span class="tv-corner">Класс</span>${snap.cols.map((n) => headCell(n, s, nextCol)).join('')}</div><div class="pb-rows">${rows}</div></section>`;
+      board.innerHTML = `<section class="tv-card" style="--cols:${snap.cols.length};--rows:${snap.rows.length}"><div class="pb-head"><span class="tv-corner">Класс</span>${snap.cols.map((n) => headCell(n, s, nextCol, m.date)).join('')}</div><div class="pb-rows">${rows}</div></section>`;
     }
     const pages = rotation.pages();
     const started = rotation.sync();
@@ -142,7 +142,7 @@
 
   async function load() {
     try {
-      await site.loadCalendar?.();
+      await Promise.all([site.loadCalendar?.(), core.loadBells()]);
       const [schedule, changes] = await Promise.all([site.loadSheet(SHEETS[0], { force: true }), site.loadSheet(SHEETS[1], { force: true, optional: true })]);
       scheduleRows = schedule || [];
       changesRows = changes || [];

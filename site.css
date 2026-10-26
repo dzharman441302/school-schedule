@@ -546,6 +546,12 @@ body{background:#F4F6FA;color:var(--ink-line)}
 .bells summary{font-family:var(--display);font-weight:800}
 .bells summary::after{border-color:var(--ink-line)}
 .bell-column h3{font-family:var(--display);font-size:14px}
+.bells__note{grid-column:1/-1;margin:0;padding:8px 12px;border:2px solid var(--ink-line);border-radius:12px;background:var(--sun);font-weight:800}
+
+/* «Приходить к 08:50 — к 2-му уроку», сокращённые уроки */
+.day-bounds{display:flex;flex-direction:column;gap:2px;margin:12px 0;padding:10px 14px;border:2px solid var(--ink-line);border-radius:16px;background:var(--sun-soft);color:var(--ink-line);font-size:15px;font-weight:600;line-height:1.35}
+.day-bounds b{font-family:var(--display);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.student-day-card>.day-bounds{margin:14px 16px 0}
 .bell-row.is-now{margin:0 -8px;padding:6px 8px;border-radius:10px;border-bottom-color:transparent;background:var(--brand);color:#fff}
 .bell-row.is-now em{color:#BFDBFE}
 

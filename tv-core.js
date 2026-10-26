@@ -27,9 +27,9 @@
   // School-wide bell state; a day off counts as 'off'.
   function bellState(m) {
     if (!m.schoolDay) return { type: 'off' };
-    const s = core.bellMoment(m.minutes);
+    const s = core.bellMoment(m.minutes, m.date);
     if (s.type !== 'lesson') return s;
-    const start = core.toMin(core.bellStart(s.lesson)), end = core.toMin(core.bellEnd(s.lesson));
+    const start = core.toMin(core.bellStart(s.lesson, m.date)), end = core.toMin(core.bellEnd(s.lesson, m.date));
     return { ...s, progress: Math.round(((m.minutes - start) / (end - start)) * 100) };
   }
 
@@ -39,7 +39,7 @@
   function lessonVisible(lesson, s, m) {
     if (s.type === 'before') return true;
     if (s.type === 'after' || s.type === 'off') return false;
-    return core.toMin(core.bellEnd(lesson) || '23:59') > m.minutes;
+    return core.toMin(core.bellEnd(lesson, m.date) || '23:59') > m.minutes;
   }
 
   function dayLabel(date) {
@@ -51,15 +51,15 @@
     $('date').textContent = dayLabel(m.date);
     let label = '', value = '', progress = -1;
     if (s.type === 'lesson') {
-      label = `Идёт ${s.lesson}-й урок · ${core.bellRange(s.lesson)}`;
+      label = `Идёт ${s.lesson}-й урок · ${core.bellRange(s.lesson, m.date)}`;
       value = `До звонка ${s.remaining} ${minutesWord(s.remaining)}`;
       progress = s.progress;
     } else if (s.type === 'break') {
-      label = `Перемена · ${s.next}-й урок в ${core.bellStart(s.next)}`;
+      label = `Перемена · ${s.next}-й урок в ${core.bellStart(s.next, m.date)}`;
       value = `Урок через ${s.remaining} ${minutesWord(s.remaining)}`;
     } else if (s.type === 'before') {
       label = s.remaining <= 90 ? `До начала уроков ${s.remaining} ${minutesWord(s.remaining)}` : 'Доброе утро';
-      value = `Первый урок в ${core.bellStart(1)}`;
+      value = `Первый урок в ${core.bellStart(1, m.date)}`;
     } else if (s.type === 'after') {
       label = 'Учебный день завершён';
       value = 'Уроки закончились';
@@ -67,6 +67,7 @@
       label = 'Сегодня выходной · следующий учебный день';
       value = site.capitalize(dayLabel(site.nextSchoolDay(m.date)));
     }
+    if (m.schoolDay && core.bellVariant(m.date) !== core.BELL_BASE && s.type !== 'after') label = `Сокращённые уроки · ${label}`;
     $('status-label').textContent = label;
     $('status-value').textContent = value;
     const bar = $('status-bar');

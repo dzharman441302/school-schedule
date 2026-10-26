@@ -146,10 +146,10 @@
 
   /* Markup ---------------------------------------------------------- */
 
-  function headCell(n, s) {
+  function headCell(n, s, date) {
     if (s.type === 'lesson' && s.lesson === n) return `<span class="tg-h is-now"><b>${n}</b><em class="tv-pill">сейчас</em></span>`;
     if (s.type === 'break' && s.next === n) return `<span class="tg-h is-next"><b>${n}</b><em class="tv-pill">далее</em></span>`;
-    return `<span class="tg-h"><b>${n}</b><small>${esc(window.ScheduleCore.bellStart(n))}</small></span>`;
+    return `<span class="tg-h"><b>${n}</b><small>${esc(window.ScheduleCore.bellStart(n, date))}</small></span>`;
   }
 
   // A grid cell is ~100 px wide: «109/Мастерские» → «109», «Мастерские» → «Маст.».
@@ -199,7 +199,7 @@
         const lessons = view.teachers.get(name);
         return `<div class="tg-row" data-teacher="${esc(name)}"><span class="tg-name"><span data-fit="18">${esc(name)}</span></span>${cols.map((n) => lessonCell(lessons.get(n), n, s)).join('')}</div>`;
       }).join('');
-      board.innerHTML = `<div class="tg"><section class="tv-card" style="--cols:${cols.length}"><div class="tg-head"><span class="tv-corner">Учитель</span>${cols.map((n) => headCell(n, s)).join('')}</div><div class="tg-rows">${rows}</div></section>${changesHtml(view.changes)}</div>`;
+      board.innerHTML = `<div class="tg"><section class="tv-card" style="--cols:${cols.length}"><div class="tg-head"><span class="tv-corner">Учитель</span>${cols.map((n) => headCell(n, s, m.date)).join('')}</div><div class="tg-rows">${rows}</div></section>${changesHtml(view.changes)}</div>`;
     }
     const pages = rotation.pages();
     const started = rotation.sync();
@@ -225,7 +225,7 @@
 
   async function load() {
     try {
-      await site.loadCalendar?.();
+      await Promise.all([site.loadCalendar?.(), window.ScheduleCore.loadBells()]);
       const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { force: true, optional: true })));
       baseRows = b || [];
       changeRows = c || [];

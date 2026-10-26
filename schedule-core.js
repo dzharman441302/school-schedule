@@ -17,9 +17,56 @@
   const classCollator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
 
   const toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
-  const bellStart = (n) => (BELLS[n - 1] || [''])[0];
-  const bellEnd = (n) => (BELLS[n - 1] || ['', ''])[1];
-  const bellRange = (n) => (BELLS[n - 1] ? `${BELLS[n - 1][0]}–${BELLS[n - 1][1]}` : '');
+
+  // Bells come from the sheets «Звонки» (Урок | Основное | Сокращённое, «08:00–08:40») and
+  // «Звонки_даты» (Дата | Вариант), filled in the admin panel. BELLS above is the usual
+  // timetable used until they load or when they are missing. Every bell function takes an
+  // optional date; without it the school's today is meant.
+  const BELL_BASE = 'Основное';
+  let bellVariants = { [BELL_BASE]: BELLS }, bellDates = new Map();
+  const bellVariant = (date = site.getSchoolToday()) => bellDates.get(site.dateKey(date)) || BELL_BASE;
+  const bells = (date) => bellVariants[bellVariant(date)] || BELLS;
+  const bellStart = (n, date) => (bells(date)[n - 1] || [''])[0];
+  const bellEnd = (n, date) => (bells(date)[n - 1] || ['', ''])[1];
+  const bellRange = (n, date) => { const b = bells(date)[n - 1]; return b ? `${b[0]}–${b[1]}` : ''; };
+
+  function parseBellRange(value) {
+    const m = String(value ?? '').trim().match(/^(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})$/);
+    if (!m) return null;
+    const hm = (h, mm) => `${String(h).padStart(2, '0')}:${mm}`, range = [hm(m[1], m[2]), hm(m[3], m[4])];
+    return toMin(range[1]) > toMin(range[0]) ? range : null;
+  }
+
+  // A variant other than the usual one counts only when all 12 lessons are filled in.
+  function setBells(timesRows, dateRows) {
+    const variants = { [BELL_BASE]: BELLS };
+    if (Array.isArray(timesRows) && timesRows.length > 1) {
+      timesRows[0].forEach((name, col) => {
+        const label = String(name ?? '').trim();
+        if (!col || !label) return;
+        const list = [];
+        for (let n = 1; n <= 12; n += 1) list.push(parseBellRange(timesRows.slice(1).find((r) => Number(r[0]) === n)?.[col]));
+        if (label === BELL_BASE) variants[label] = list.map((x, i) => x || BELLS[i]);
+        else if (list.every(Boolean)) variants[label] = list;
+      });
+    }
+    const dates = new Map();
+    (Array.isArray(dateRows) ? dateRows.slice(1) : []).forEach((r) => {
+      const key = normalizeDateValue(r[0]), name = String(r[1] ?? '').trim();
+      if (key && name !== BELL_BASE && variants[name]) dates.set(key, name);
+    });
+    bellVariants = variants;
+    bellDates = dates;
+  }
+
+  async function loadBells({ force = false } = {}) {
+    const names = window.SCHOOL_CONFIG?.googleSheets?.sheets || {};
+    try {
+      const [times, dates] = await Promise.all([site.loadSheet(names.bells || 'Звонки', { force, optional: true }), site.loadSheet(names.bellDates || 'Звонки_даты', { force, optional: true })]);
+      setBells(times, dates);
+    } catch (_) {}
+    return bellVariants;
+  }
   const dayCode = (date) => ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'][date.getUTCDay()];
   const fullSubject = (v) => (window.SchoolSubjects?.expandSubject ? window.SchoolSubjects.expandSubject(v) : String(v ?? ''));
   const sameText = (a, b) => site.normalize(String(a || '')) === site.normalize(String(b || ''));
@@ -123,12 +170,12 @@
   }
 
   // Where the school day of one class stands. `lessons` is actualDay() output.
-  function classMoment(lessons, minutes = nowMinutes()) {
+  function classMoment(lessons, minutes = nowMinutes(), date) {
     const real = lessons.filter((x) => x.type !== 'cancelled' && x.lesson >= 1 && x.lesson <= 12);
     if (!real.length) return { type: 'none' };
     const first = real[0], last = real[real.length - 1];
     for (let i = 0; i < real.length; i += 1) {
-      const x = real[i], start = toMin(bellStart(x.lesson)), end = toMin(bellEnd(x.lesson));
+      const x = real[i], start = toMin(bellStart(x.lesson, date)), end = toMin(bellEnd(x.lesson, date));
       if (minutes >= start && minutes < end) return { type: 'lesson', current: x, next: real[i + 1] || null, remaining: end - minutes, progress: Math.round(((minutes - start) / (end - start)) * 100) };
       if (minutes < start) return { type: i === 0 ? 'before' : 'break', next: x, until: start - minutes };
     }
@@ -136,13 +183,31 @@
   }
 
   // School-wide bell state, for the header pill.
-  function bellMoment(minutes = nowMinutes()) {
-    for (let i = 0; i < BELLS.length; i += 1) {
-      const a = toMin(BELLS[i][0]), b = toMin(BELLS[i][1]);
+  function bellMoment(minutes = nowMinutes(), date) {
+    const list = bells(date);
+    for (let i = 0; i < list.length; i += 1) {
+      const a = toMin(list[i][0]), b = toMin(list[i][1]);
       if (minutes >= a && minutes < b) return { type: 'lesson', lesson: i + 1, remaining: b - minutes };
       if (minutes < a) return { type: i ? 'break' : 'before', next: i + 1, remaining: a - minutes };
     }
     return { type: 'after' };
+  }
+
+  // When a class's day starts and ends with the changes, and how that differs from its usual day.
+  function dayBounds(lessons, date) {
+    const span = (list) => (list.length ? { first: list[0].lesson, last: list[list.length - 1].lesson, start: bellStart(list[0].lesson, date), end: bellEnd(list[list.length - 1].lesson, date) } : null);
+    const now = span(lessons.filter((x) => x.type !== 'cancelled'));
+    const usual = span(lessons.filter((x) => x.base && x.type !== 'added'));
+    return { now, usual, startChanged: Boolean(now && usual && now.first !== usual.first), endChanged: Boolean(now && usual && now.last !== usual.last), none: Boolean(!now && usual) };
+  }
+
+  // «Приходить к 08:50 — к 2-му уроку (обычно к 08:00)», only for what changed.
+  function boundsLines(b) {
+    if (b.none) return ['Уроков не будет'];
+    const out = [];
+    if (b.startChanged) out.push(`Приходить к ${b.now.start} — к ${b.now.first}-му уроку (обычно к ${b.usual.start})`);
+    if (b.endChanged) out.push(`Уроки до ${b.now.end} — последний ${b.now.last}-й (обычно до ${b.usual.end})`);
+    return out;
   }
 
   function lessonText(lesson) {
@@ -206,11 +271,14 @@
     return `<div class="now-card__top"><span class="now-card__label">${label} · далее ${m.next.lesson}-й урок</span><span class="now-card__pill">через ${esc(duration(m.until))}</span></div>${badge(m.next)}<div class="now-card__title">${esc(info.subject)}</div><div class="now-card__meta">${info.room ? `Кабинет ${esc(info.room)} · ` : ''}начало в ${esc(bellStart(m.next.lesson))}</div>`;
   }
 
+  const bellsReady = loadBells();
+
   window.ScheduleCore = Object.freeze({
-    BELLS, DAY_ORDER, DAY_NAMES, DAY_ALIASES, BADGE_CLASS, classCollator,
-    toMin, bellStart, bellEnd, bellRange, dayCode, fullSubject, sameText, sameDay, fmtDay, duration, lessonNumber, normalizeDateValue, parseLesson,
+    BELLS, BELL_BASE, DAY_ORDER, DAY_NAMES, DAY_ALIASES, BADGE_CLASS, classCollator,
+    toMin, bells, bellVariant, bellStart, bellEnd, bellRange, parseBellRange, setBells, loadBells, bellsReady,
+    dayCode, fullSubject, sameText, sameDay, fmtDay, duration, lessonNumber, normalizeDateValue, parseLesson,
     scheduleParts, changesParts, mapScheduleColumns, mapChangesColumns, deriveClasses, dayColumns,
     baseLessonsFor, changeRowsFor, classifyChange, actualDay,
-    nowMinutes, classMoment, bellMoment, lessonText, plural, cellInfo, todayFor, nowCardMarkup
+    nowMinutes, classMoment, bellMoment, dayBounds, boundsLines, lessonText, plural, cellInfo, todayFor, nowCardMarkup
   });
 })();

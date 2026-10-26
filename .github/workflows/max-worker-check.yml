@@ -1,9 +1,10 @@
-name: MAX Worker syntax check
+name: MAX Worker check
 
 on:
   push:
     paths:
       - 'max-worker/**'
+      - 'tests/max-bot.mjs'
       - '.github/workflows/max-worker-check.yml'
   workflow_dispatch:
 
@@ -16,3 +17,5 @@ jobs:
         with:
           node-version: '22'
       - run: node --check max-worker/src/index.js
+      - name: Subscriptions, notices and schema migration (SQLite in place of D1)
+        run: node tests/max-bot.mjs

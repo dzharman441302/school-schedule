@@ -2,9 +2,9 @@ name: Schedule regression checks
 on:
   push:
     branches: [main, feature/replacement-ledger-20260925]
-    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js', '.github/workflows/schedule-regression.yml']
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js', 'tests/site-*.js', 'tests/tv-harness.js', '.github/workflows/schedule-regression.yml']
   pull_request:
-    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js']
+    paths: ['apps-script/**', '*.js', '*.html', '*.css', 'tests/schedule-*.js', 'tests/site-*.js']
 permissions:
   contents: read
 jobs:
@@ -21,6 +21,10 @@ jobs:
         run: node tests/schedule-weekly-review.js
       - name: Compact workspace, draft and optimistic publication tests
         run: node tests/schedule-workspace.js
+      - name: Bell variants, shortened days and class gaps in the panel
+        run: node tests/schedule-days.js
+      - name: Site bells by date and when a class starts and ends
+        run: node tests/site-core.js
       - uses: actions/upload-artifact@v4
         with:
           name: schedule-source

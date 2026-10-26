@@ -9,7 +9,8 @@
   const SETTINGS_SHEET = config.googleSheets?.sheets?.siteSettings || 'Настройки_сайта';
   const DAY_CODES = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
   const DAY_NAMES = { ПН: 'Понедельник', ВТ: 'Вторник', СР: 'Среда', ЧТ: 'Четверг', ПТ: 'Пятница', СБ: 'Суббота', ВС: 'Воскресенье' };
-  const TIMES = ['08:00–08:40', '08:50–09:30', '09:45–10:25', '10:45–11:25', '11:40–12:20', '12:30–13:10', '13:20–14:00', '14:15–14:55', '15:10–15:50', '16:05–16:45', '17:00–17:40', '17:50–18:30'];
+  // Bell times of the shown date (shortened days included) from schedule-core.js.
+  const times = () => Array.from({ length: 12 }, (_, i) => core.bellRange(i + 1, dateOf(state.date)));
   const STORE_TEACHER = 'school20:myTeacher';
   const STORE_DEVICE = 'school20:staffDevice';
   const state = { publicRows: [], teacherRows: [], scheduleRows: [], cells: [], teachers: [], date: '', dateNote: '', search: '', onlyChanged: false, selectedTeacher: '' };
@@ -87,7 +88,7 @@
 
   function renderGrid() {
     const grid = $('[data-grid]'), rel = relationMap(state.cells), nowLesson = currentLesson();
-    let html = `<div class="sg-head teacher">Учитель</div>${TIMES.map((time, i) => `<div class="sg-head${i + 1 === nowLesson ? ' is-now' : ''}"><b>${i + 1}</b><small>${time}</small></div>`).join('')}`;
+    let html = `<div class="sg-head teacher">Учитель</div>${times().map((time, i) => `<div class="sg-head${i + 1 === nowLesson ? ' is-now' : ''}"><b>${i + 1}</b><small>${time}</small></div>`).join('')}`;
     const visible = state.teachers.filter((t) => (!state.onlyChanged || hasChange(t)) && matchingTeacher(t));
     visible.forEach((t) => {
       html += `<div class="staff-grid-row"><div class="sg-teacher ${hasChange(t) ? 'changed' : ''}">${esc(t)}</div>`;
@@ -118,7 +119,7 @@
       let body;
       if (c.status === 'cancelled') { const old = [c.oldClass, stripWindow(c.oldSubject)].filter(Boolean).map(esc).join(' · '); body = `<h3>Урок снят</h3><p>${old || 'Урок'}${c.oldRoom ? ` · кабинет ${esc(c.oldRoom)}` : ''}</p>`; }
       else if (gap) body = '<h3>Свободно</h3><p>Перерыв между уроками</p>';
-      else body = `<h3>${esc(c.className)} · ${esc(stripWindow(c.subject))}</h3><p>${c.room ? `Кабинет ${esc(c.room)}` : 'Кабинет не указан'}${c.oldClass && c.oldClass !== c.className ? ` · было ${esc(c.oldClass)}` : ''} · ${esc(TIMES[c.lesson - 1] || '')}</p>`;
+      else body = `<h3>${esc(c.className)} · ${esc(stripWindow(c.subject))}</h3><p>${c.room ? `Кабинет ${esc(c.room)}` : 'Кабинет не указан'}${c.oldClass && c.oldClass !== c.className ? ` · было ${esc(c.oldClass)}` : ''} · ${esc(times()[c.lesson - 1] || '')}</p>`;
       return `<article class="teacher-card ${esc(c.status)}${gap ? ' is-gap' : ''}"${c.lesson === nowLesson ? ' style="border:2px solid var(--accent)"' : ''}><div class="teacher-card__lesson">${c.lesson}</div><div>${body}${r ? `<span class="tag">${esc(r)}</span>` : ''}${c.note ? `<p>${esc(c.note)}</p>` : ''}</div></article>`;
     }).join('') : '<div class="staff-empty">Для выбранного учителя уроков по этому фильтру нет.</div>';
   }
@@ -139,7 +140,8 @@
     state.teachers = orderedTeachers();
     if (!state.selectedTeacher || !state.teachers.includes(state.selectedTeacher)) state.selectedTeacher = currentTeacherFromStorage();
     const code = dateCode(state.date), holiday = site.holidayFor(dateOf(state.date));
-    $('[data-day-title]').textContent = `${DAY_NAMES[code] || code}, ${ruDate(state.date)}${holiday ? ` · ${holiday.title}` : ''}`;
+    const short = !holiday && core.bellVariant(dateOf(state.date)) !== core.BELL_BASE;
+    $('[data-day-title]').textContent = `${DAY_NAMES[code] || code}, ${ruDate(state.date)}${holiday ? ` · ${holiday.title}` : short ? ' · сокращённые уроки' : ''}`;
     $('[data-publish-note]').textContent = state.dateNote || (publicCellsForDate().length ? 'Показана опубликованная сетка изменений.' : 'Изменения на эту дату ещё не публиковались — показано основное расписание.');
     renderGrid(); renderMobile(); renderStats();
     if (new URLSearchParams(location.search).get('mine') === '1') setTimeout(showOnlyMine, 30);
@@ -148,7 +150,7 @@
   async function load(force = false) {
     setStatus('Загружаю сетку…');
     try {
-      const [pub, teachers, schedule] = await Promise.all([site.loadSheet(PUBLIC_SHEET, { force, optional: true }), site.loadSheet(BASE_TEACHERS, { force, optional: true }), site.loadSheet(SCHEDULE, { force, optional: true })]);
+      const [pub, teachers, schedule] = await Promise.all([site.loadSheet(PUBLIC_SHEET, { force, optional: true }), site.loadSheet(BASE_TEACHERS, { force, optional: true }), site.loadSheet(SCHEDULE, { force, optional: true }), core.loadBells({ force })]);
       state.publicRows = pub; state.teacherRows = teachers; state.scheduleRows = schedule;
       const published = publicCellsForDate();
       state.cells = published.length ? published : baseCells();

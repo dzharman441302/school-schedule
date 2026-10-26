@@ -87,6 +87,8 @@
 .hd-tab{flex:1;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--hd-ink);font:inherit;font-size:14px;font-weight:800;white-space:nowrap}
 .hd-tab[aria-pressed="true"]{background:var(--hd-ink);color:#fff}
 .hd-day__meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.hd-bounds{display:flex;flex-direction:column;gap:2px;margin:12px 0 2px;padding:10px 14px;border:var(--hd-border);border-radius:16px;background:var(--hd-accent-soft);color:var(--hd-ink);font-size:15px;font-weight:600;line-height:1.35}
+.hd-bounds b{font-family:var(--hd-display);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .hd-pin{min-height:40px;padding:0 12px;border:var(--hd-border);border-radius:12px;background:var(--surface);color:var(--hd-ink);font:inherit;font-size:14px;font-weight:800}
 .hd-pin[aria-pressed="true"]{background:var(--hd-accent)}
 .hd-lessons{display:flex;flex-direction:column;gap:6px;flex:1;list-style:none;margin:0;padding:0}

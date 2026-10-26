@@ -34,7 +34,7 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     console, Intl, JSON, Math, URL, URLSearchParams, AbortController,
     Date: FakeDate,
     document: { getElementById: el, querySelector: el, querySelectorAll: () => [], addEventListener() {} },
-    location: { search, pathname: `/${script.replace('.js', '.html')}` },
+    location: { search, pathname: `/${String(script || 'index.js').replace('.js', '.html')}` },
     innerWidth: width, innerHeight: height,
     localStorage: { getItem: (k) => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) },
     addEventListener: (name, fn) => { events[name] = fn; },
@@ -55,11 +55,12 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
   };
   context.window = context;
   vm.createContext(context);
-  for (const file of [...SHARED, script]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+  for (const file of [...SHARED, ...(script ? [script] : [])]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   await settle();
 
   return {
     tv: context.TvCore,
+    core: context.ScheduleCore,
     board: () => el('board').innerHTML,
     text: (key) => el(key).textContent,
     html: (key) => el(key).innerHTML,

@@ -49,7 +49,8 @@ function getInitialData(token) {
   const classes = unique_(schedule.rows.map(row => normalizeClass_(row[0])).filter(Boolean)).sort(classCompare_);
   const subjects = unique_(schedule.rows.flatMap(row => row.slice(2)).map(extractSubject_).filter(Boolean)).sort(localeCompare_);
   const teachers = getTeacherTable_().teachers;
-  return { classes, subjects, teachers, today: isoToday_(), schoolName: 'МОУ СОШ № 20 г. Твери', workspaceId: getRequiredProperty_('SPREADSHEET_ID') };
+  const today = isoToday_(), bells = readBells_();
+  return { classes, subjects, teachers, today, schoolName: 'МОУ СОШ № 20 г. Твери', workspaceId: getRequiredProperty_('SPREADSHEET_ID'), todayBells: bellsForDate_(today, bells), bellVariants: bells.order, bellsReady: bells.ready };
 }
 
 function getAdminDay(token, dateIso) {
@@ -68,6 +69,7 @@ function getAdminDay(token, dateIso) {
     edits: edits,
     studentChanges: changes,
     baseStudent: base.baseStudent,
+    bells: bellsForDate_(dateIso),
   };
 }
 
@@ -156,6 +158,16 @@ function prepareTeacherEdits_(dateIso,teacherEdits) {
 
 function buildEffectiveGrid_(dateIso,edits){const base=buildBaseDay_(dateIso);return{base,effective:S20Schedule.effective(base.cells,edits)};}
 
+// Empty periods in the middle of a class's day that its usual day does not have:
+// children would be left without a lesson between two others.
+function classGaps_(built,classes) {
+  const lessonsOf=cells=>{const m=new Map();S20Schedule.assignments(cells).forEach(c=>{if(!c.className||!classes.has(c.className))return;if(!m.has(c.className))m.set(c.className,new Set());m.get(c.className).add(c.lesson);});return m;};
+  const gapsOf=set=>{const list=Array.from(set).sort((a,b)=>a-b),out=[];for(let i=1;i<list.length;i++)for(let n=list[i-1]+1;n<list[i];n++)out.push({lesson:n,before:list[i-1],after:list[i]});return out;};
+  const before=lessonsOf(built.base.cells),after=lessonsOf(built.effective),out=[];
+  after.forEach((set,cls)=>{const usual=new Set(gapsOf(before.get(cls)||new Set()).map(g=>g.lesson));gapsOf(set).forEach(g=>{if(!usual.has(g.lesson))out.push(Object.assign({className:cls},g));});});
+  return out.sort((a,b)=>classCompare_(a.className,b.className)||a.lesson-b.lesson);
+}
+
 function validateTeacherGrid_(dateIso,edits) {
   const errors=[],warnings=[],built=buildEffectiveGrid_(dateIso,edits),classes=new Set(built.base.schedule.rows.map(r=>normalizeClass_(r[0])).filter(Boolean));
   edits.forEach(e=>{if(e.type!=='set')return;S20Schedule.classes(e.className).forEach(c=>{if(!classes.has(c)&&!/^[1-4][А-Я]$/.test(c))warnings.push(e.teacher+': класс '+c+' отсутствует в ученическом расписании');});
@@ -166,6 +178,7 @@ function validateTeacherGrid_(dateIso,edits) {
   after.forEach((teachers,k)=>{if(teachers.size>Math.max(1,before.get(k)?.size||0))errors.push(k.replace('|',', урок ')+': одновременно назначены '+Array.from(teachers).join(', '));});
   built.effective.filter(c=>c.className).forEach(c=>{const room=String(c.room||'').trim();if(!room)return;const k=room+'|'+c.lesson;if(!rooms.has(k))rooms.set(k,new Set());rooms.get(k).add(c.teacher);});
   rooms.forEach((teachers,k)=>{if(teachers.size>1)warnings.push('Кабинет '+k.replace('|',', урок ')+': одновременно '+Array.from(teachers).join(', '));});
+  classGaps_(built,classes).forEach(g=>warnings.push(g.className+': окно на '+g.lesson+' уроке — дети без урока между '+g.before+'-м и '+g.after+'-м'));
   return{ok:!errors.length,errors:unique_(errors),warnings:unique_(warnings)};
 }
 

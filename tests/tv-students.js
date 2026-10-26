@@ -19,7 +19,7 @@ function schedule() {
 }
 
 async function students(options = {}) {
-  const sheets = { 'Расписание': schedule(), 'Изменения': options.changes || [CHANGES_HEAD] };
+  const sheets = { 'Расписание': schedule(), 'Изменения': options.changes || [CHANGES_HEAD], ...(options.extra || {}) };
   const screen = await startScreen('tv-students.js', { sheets, epoch: options.epoch || MONDAY('05:10'), search: options.search || '' });
   return {
     ...screen, sheets,
@@ -130,6 +130,19 @@ test('lost connection keeps the last schedule and says how old it is', async () 
   await h.advance(60000);
   assert.deepEqual(h.classes(), ['9А', '9Б', '9В', '9Г']);
   assert.equal(h.text('fresh'), 'Нет связи · данные от 08:10');
+});
+
+test('a shortened day uses its own bell times on the board and in the header', async () => {
+  const short = ['08:00–08:30', '08:40–09:10', '09:25–09:55', '10:10–10:40', '10:50–11:20', '11:30–12:00', '12:10–12:40', '12:50–13:20', '13:30–14:00', '14:10–14:40', '14:50–15:20', '15:30–16:00'];
+  const sheets = {
+    'Звонки': [['Урок', 'Основное', 'Сокращённое'], ...short.map((x, i) => [String(i + 1), '', x])],
+    'Звонки_даты': [['Дата', 'Вариант'], ['28.09.2026', 'Сокращённое']]
+  };
+  const h = await students({ search: '?parallel=9', epoch: MONDAY('05:45'), extra: sheets });
+  await h.advance(5000); // the header is redrawn every 5 s
+  assert.match(h.text('status-label'), /^Сокращённые уроки · Идёт 2-й урок · 08:40–09:10$/);
+  assert.match(h.board(), /pb-h is-now"><span><b>2<\/b><em class="tv-pill">сейчас<\/em><\/span><small data-fit="14">08:40–09:10/);
+  assert.equal(h.core.bellRange(1, new Date('2026-09-29T12:00:00Z')), '08:00–08:40');
 });
 
 runTests('student TV checks', tests);

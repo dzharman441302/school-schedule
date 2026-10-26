@@ -86,7 +86,8 @@
     const t = today(), school = site.isSchoolDay(t), holiday = site.holidayFor(t);
     const m = school ? core.bellMoment() : { type: 'off' }, now = core.nowMinutes();
     const dateEl = $('[data-hd-date]');
-    if (dateEl) dateEl.textContent = core.fmtDay(t) + (school ? '' : holiday && ![0, 6].includes(t.getUTCDay()) ? ` · ${holiday.title}` : ' · выходной');
+    const short = school && core.bellVariant(t) !== core.BELL_BASE;
+    if (dateEl) dateEl.textContent = core.fmtDay(t) + (school ? (short ? ' · сокращённые уроки' : '') : holiday && ![0, 6].includes(t.getUTCDay()) ? ` · ${holiday.title}` : ' · выходной');
 
     let value = '—', unit = '', title = 'Звонки', sub = '', deg = 0, note = '';
     if (m.type === 'lesson') {
@@ -99,7 +100,7 @@
       deg = Math.round(360 * (now - from) / Math.max(1, to - from)); note = `${m.next}-й урок в ${core.bellStart(m.next)}`;
     } else if (m.type === 'before') {
       const hours = m.remaining >= 100;
-      value = String(hours ? Math.round(m.remaining / 60) : m.remaining); unit = hours ? 'ч' : 'мин'; title = 'До уроков'; sub = 'первый урок в 08:00'; note = 'первый урок в 08:00';
+      value = String(hours ? Math.round(m.remaining / 60) : m.remaining); unit = hours ? 'ч' : 'мин'; title = 'До уроков'; sub = `первый урок в ${core.bellStart(1)}`; note = sub;
     } else {
       const next = site.nextSchoolDay(t), days = Math.round((next - t) / 86400000);
       value = m.type === 'after' ? '0' : String(days); unit = m.type === 'after' ? 'мин' : core.plural(days, 'день', 'дня', 'дней');
@@ -115,30 +116,37 @@
     set('[data-hd-now-title]', title); set('[data-hd-now-sub]', sub); set('[data-hd-line-note]', note);
 
     const line = $('[data-hd-line]');
-    if (line) line.innerHTML = core.BELLS.map((b, i) => {
+    if (line) line.innerHTML = core.bells().map((b, i) => {
       const n = i + 1, past = school && core.toMin(b[1]) <= now, isNow = m.type === 'lesson' && m.lesson === n;
       const fill = isNow ? Math.round(100 * (now - core.toMin(b[0])) / (core.toMin(b[1]) - core.toMin(b[0]))) : 0;
       return `<span class="hd-seg${past ? ' is-past' : ''}${isNow ? ' is-now' : ''}"><span class="hd-seg__bar"><span style="width:${fill}%"></span></span><span class="hd-seg__n">${n}</span></span>`;
     }).join('');
 
     const bells = $('[data-hd-bells]');
-    if (bells) bells.innerHTML = core.BELLS.map((b, i) => {
+    if (bells) bells.innerHTML = core.bells().map((b, i) => {
       const n = i + 1, past = school && core.toMin(b[1]) <= now && !(m.type === 'lesson' && m.lesson === n), isNow = m.type === 'lesson' && m.lesson === n;
       return `<div class="hd-bell${isNow ? ' is-now' : past ? ' is-past' : ''}"><span>${n} урок</span><b>${b[0]}–${b[1]}</b></div>`;
     }).join('');
     const next = m.type === 'lesson' ? `Следующий звонок — ${core.bellEnd(m.lesson)}` : m.type === 'break' || m.type === 'before' ? `Следующий звонок — ${core.bellStart(m.next)}` : m.type === 'after' ? 'Уроки на сегодня закончились' : 'Сегодня уроков нет';
-    set('[data-hd-bells-next]', next); set('[data-hd-bells-text]', next);
+    set('[data-hd-bells-next]', short ? `Сокращённые уроки · ${next}` : next); set('[data-hd-bells-text]', short ? `Сегодня сокращённые уроки · ${next}` : next);
   }
 
   /* «Мой день» ----------------------------------------------------- */
 
-  function lessonRow(x, isToday, moment, now) {
+  function lessonRow(x, isToday, moment, now, date) {
     const info = core.cellInfo(x);
     const current = moment?.type === 'lesson' && moment.current.lesson === x.lesson;
-    const past = isToday && !current && core.toMin(core.bellEnd(x.lesson)) <= now;
+    const past = isToday && !current && core.toMin(core.bellEnd(x.lesson, date)) <= now;
     const classes = ['hd-lesson', x.type !== 'normal' ? 'is-changed' : '', x.type === 'cancelled' ? 'is-cancelled' : '', current ? 'is-now' : '', past && x.type === 'normal' ? 'is-past' : ''].filter(Boolean).join(' ');
     const badge = current ? 'Сейчас' : info.badge;
-    return `<li class="${classes}"><b class="hd-lesson__n">${x.lesson}</b><span class="hd-lesson__main"><span class="hd-lesson__subj">${esc(info.subject)}</span><span class="hd-lesson__meta">${esc(core.bellStart(x.lesson))}${info.room ? ` · каб. ${esc(info.room)}` : ''}</span>${info.old ? `<span class="hd-lesson__was">${esc(info.old)}</span>` : ''}${info.note ? `<span class="hd-lesson__meta">${esc(info.note)}</span>` : ''}</span>${badge ? `<span class="hd-badge">${esc(badge)}</span>` : ''}</li>`;
+    return `<li class="${classes}"><b class="hd-lesson__n">${x.lesson}</b><span class="hd-lesson__main"><span class="hd-lesson__subj">${esc(info.subject)}</span><span class="hd-lesson__meta">${esc(core.bellStart(x.lesson, date))}${info.room ? ` · каб. ${esc(info.room)}` : ''}</span>${info.old ? `<span class="hd-lesson__was">${esc(info.old)}</span>` : ''}${info.note ? `<span class="hd-lesson__meta">${esc(info.note)}</span>` : ''}</span>${badge ? `<span class="hd-badge">${esc(badge)}</span>` : ''}</li>`;
+  }
+
+  // «Приходить к 08:50 — к 2-му уроку (обычно к 08:00)» when the changes move the start or the end of the day.
+  function boundsHtml(lessons, date) {
+    const lines = core.boundsLines(core.dayBounds(lessons, date)), short = core.bellVariant(date) !== core.BELL_BASE;
+    if (!lines.length && !short) return '';
+    return `<div class="hd-bounds" role="note">${short ? '<b>Сокращённые уроки</b>' : ''}${lines.map((x) => `<span>${esc(x)}</span>`).join('')}</div>`;
   }
 
   function defaultDay(days, cls) {
@@ -168,7 +176,7 @@
     dayBox.innerHTML = `<div class="hd-head"><h2 class="hd-title">Мой день · ${esc(cls)}</h2>
         <div class="hd-tabs" role="group" aria-label="День">${days.map((x, i) => `<button class="hd-tab" type="button" data-hd-day-tab="${i}" aria-pressed="${String(i === ui.day)}">${esc(x.label)}</button>`).join('')}</div></div>
       <div class="hd-day__meta"><span class="hd-sub">${esc(summary)}</span><button class="hd-pin" type="button" data-hd-pin aria-pressed="${String(mine)}">${mine ? '★ Мой класс — откроется сразу' : `☆ Запомнить ${esc(cls)} как мой класс`}</button></div>
-      ${lessons.length ? `<ol class="hd-lessons">${lessons.map((x) => lessonRow(x, isToday, moment, now)).join('')}</ol>` : '<div class="hd-empty"><strong>Уроков нет</strong><span>В этот день у класса нет уроков.</span></div>'}
+      ${boundsHtml(lessons, d)}${lessons.length ? `<ol class="hd-lessons">${lessons.map((x) => lessonRow(x, isToday, moment, now, d)).join('')}</ol>` : '<div class="hd-empty"><strong>Уроков нет</strong><span>В этот день у класса нет уроков.</span></div>'}
       <a class="hd-link" href="schedule.html?class=${encodeURIComponent(cls)}">Неделя ${esc(cls)} целиком →</a>`;
   }
 
@@ -189,7 +197,7 @@
     if (!text) {
       const next = site.isSchoolDay(t) ? site.nextSchoolDay(t) : site.schoolChangeWindow(t).first;
       const first = core.actualDay(scheduleRows, changesRows, next, cls).find((x) => x.type !== 'cancelled');
-      if (first) text = `${dayLabel(next)} у ${cls} первый урок в ${core.bellStart(first.lesson)} — ${lessonPlace(core.cellInfo(first))}`;
+      if (first) text = `${dayLabel(next)} у ${cls} первый урок в ${core.bellStart(first.lesson, next)} — ${lessonPlace(core.cellInfo(first))}`;
     }
     el.textContent = text;
     el.hidden = !text;
@@ -291,7 +299,7 @@
 
   async function load() {
     classes = [...new Set((Array.isArray(config.classes) ? config.classes : []).map(site.normalizeClass).filter(Boolean))].sort(core.classCollator.compare);
-    const [sr, cr] = await Promise.allSettled([site.loadSheet(SHEET_SCHEDULE), site.loadSheet(SHEET_CHANGES, { optional: true }), site.loadCalendar()]);
+    const [sr, cr] = await Promise.allSettled([site.loadSheet(SHEET_SCHEDULE), site.loadSheet(SHEET_CHANGES, { optional: true }), site.loadCalendar(), core.loadBells()]);
     failed = sr.status === 'rejected';
     if (!failed) { scheduleRows = sr.value; const derived = core.deriveClasses(scheduleRows); if (derived.length) classes = derived; }
     if (cr.status === 'fulfilled') changesRows = cr.value;
