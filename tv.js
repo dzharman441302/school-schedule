@@ -1,11 +1,12 @@
-// ТВ в учительской: сетка «учитель × урок» на сегодня. На странице 12 учителей
-// по алфавиту, страницы сменяются каждые 15 секунд; справа — изменения дня.
+// ТВ в учительской: сетка «учитель × урок» на сегодня во всю ширину экрана.
+// На странице 10 учителей по алфавиту, страницы сменяются каждые 15 секунд;
+// снятые, добавленные уроки и смена кабинета отмечены цветом прямо в сетке.
 (() => {
   'use strict';
   const site = window.SchoolSite, tv = window.TvCore;
   if (!site || !tv) return;
 
-  const ROWS = 12, MAX_COLS = 12, PERIOD = 15000, CHANGES_SHOWN = 4;
+  const ROWS = 10, MAX_COLS = 12, PERIOD = 15000;
   const SHEETS = ['Учителя', 'Учителя_сайт'];
   const DAY_CODES = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
   const esc = site.escapeHtml;
@@ -62,8 +63,7 @@
 
   // «Учителя_сайт»: Дата | Учитель | Урок | Класс | Предмет | Кабинет | Статус | было: Класс | Предмет | Кабинет.
   function overlayChanges(map, rows, iso) {
-    const list = [];
-    if (!Array.isArray(rows) || rows.length < 2) return list;
+    if (!Array.isArray(rows) || rows.length < 2) return;
     rows.slice(1).filter((r) => normalizeDate(r[0]) === iso && String(r[6] || 'normal') !== 'normal').forEach((r) => {
       const teacher = String(r[1] || '').trim(), lesson = Number(r[2]) || 0;
       if (!teacher || !lesson) return;
@@ -72,39 +72,12 @@
       const old = { cls: String(r[7] || current?.cls || ''), subj: fullSubject(String(r[8] || current?.subj || '')), room: String(r[9] || current?.room || '') };
       const next = { cls: String(r[3] || current?.cls || ''), subj: fullSubject(String(r[4] || current?.subj || '')), room: String(r[5] || current?.room || '') };
       map.get(teacher).set(lesson, { lesson, status, old, next, cls: next.cls, subj: next.subj, room: next.room });
-      list.push({ teacher, lesson, status, old, next });
     });
-    return list;
   }
 
   function hasRealLesson(x) {
     if (x.status === 'cancelled') return false;
     return Boolean(String(x.cls || '').trim() || String(x.subj || '').trim() || String(x.room || '').trim());
-  }
-
-  // A cancelled lesson and a lesson added to someone else for the same class and
-  // period are one replacement: «Бакалева Г.А. — заменяет: Крымская Е.Э.».
-  function changeItems(list, visible) {
-    const same = (a, b) => site.normalizeClass(a) === site.normalizeClass(b);
-    const shown = list.filter((x) => visible(x.lesson)).sort((a, b) => a.lesson - b.lesson || collator.compare(a.next.cls || a.old.cls, b.next.cls || b.old.cls));
-    const used = new Set(), items = [];
-    shown.forEach((x) => {
-      if (used.has(x)) return;
-      if (x.status === 'cancelled') {
-        const y = shown.find((z) => !used.has(z) && z !== x && z.teacher !== x.teacher && z.lesson === x.lesson && (z.status === 'added' || z.status === 'changed') && same(z.next.cls, x.old.cls));
-        if (y) {
-          used.add(x).add(y);
-          items.push({ lesson: x.lesson, cls: y.next.cls, kind: 'changed', tag: 'замена', name: y.teacher, detail: `заменяет: ${x.teacher}${y.next.room ? ` · каб. ${y.next.room}` : ''}` });
-          return;
-        }
-      }
-      used.add(x);
-      if (x.status === 'cancelled') items.push({ lesson: x.lesson, cls: x.old.cls, kind: 'cancelled', tag: 'снят', name: x.teacher, detail: `урок снят${x.old.subj ? ` · ${x.old.subj}` : ''}` });
-      else if (x.status === 'room-change') items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'room', tag: 'кабинет', name: x.teacher, detail: `каб. ${x.old.room || '—'} → ${x.next.room || '—'}` });
-      else if (x.status === 'added') items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'added', tag: 'добавлен', name: x.teacher, detail: [x.next.subj, x.next.room ? `каб. ${x.next.room}` : ''].filter(Boolean).join(' · ') || 'добавлен урок' });
-      else items.push({ lesson: x.lesson, cls: x.next.cls, kind: 'changed', tag: 'изменён', name: x.teacher, detail: `было: ${[x.old.cls, x.old.room ? `каб. ${x.old.room}` : ''].filter(Boolean).join(' · ') || '—'}` });
-    });
-    return items;
   }
 
   // Page labels by surname: «А–Д · Е–Ме · Мо–Ч» (two letters where pages meet on one letter).
@@ -124,7 +97,7 @@
   function rebuild(m = tv.moment(), s = tv.bellState(m)) {
     const iso = m.date.toISOString().slice(0, 10);
     const map = teacherBase(baseRows, DAY_CODES[m.date.getUTCDay()]);
-    const list = overlayChanges(map, changeRows, iso);
+    overlayChanges(map, changeRows, iso);
     const visible = (lesson) => tv.lessonVisible(lesson, s, m);
     const shown = [];
     map.forEach((lessons, teacher) => {
@@ -140,7 +113,7 @@
       for (let n = first; n <= last; n += 1) cols.push(n);
     }
     const names = shown.map((x) => x.teacher);
-    view = { m, s, cols, teachers: new Map(shown.map((x) => [x.teacher, x.lessons])), changes: changeItems(list, visible), labels: pageLabels(names) };
+    view = { m, s, cols, teachers: new Map(shown.map((x) => [x.teacher, x.lessons])), labels: pageLabels(names) };
     rotation.setKeys(names);
   }
 
@@ -173,15 +146,6 @@
     return `<span class="tg-c k-normal${marks}"><b data-fit="14">${cls(x.cls)}</b><small data-fit="14">${room(x.room)}</small></span>`;
   }
 
-  function changesHtml(items) {
-    const head = `<div class="tg-changes__head"><h2 data-fit="18">Изменения сегодня</h2>${items.length ? `<span class="tg-count">${items.length}</span>` : ''}</div>`;
-    if (!items.length) return `<aside class="tg-changes">${head}<div class="tg-calm"><b>Изменений нет</b><span>Все уроки идут по расписанию</span></div></aside>`;
-    const room = CHANGES_SHOWN;
-    const list = items.slice(0, room).map((x) => `<article class="tg-item"><span class="tg-item__top"><b>${x.lesson} урок${x.cls ? ` · ${esc(x.cls)}` : ''}</b><em class="tv-pill p-${x.kind}">${esc(x.tag)}</em></span><strong data-fit="18">${esc(x.name)}</strong><span class="tg-item__detail" data-fit="16">${esc(x.detail)}</span></article>`).join('');
-    const more = items.length > room ? `<span class="tg-more">И ещё ${items.length - room} — отмечены в сетке цветом</span>` : '';
-    return `<aside class="tg-changes">${head}${list}${more}</aside>`;
-  }
-
   function emptyHtml(m, s) {
     const next = site.capitalize(tv.dayLabel(site.nextSchoolDay(m.date)));
     if (s.type === 'off') return `<section class="tv-empty"><h2>Сегодня выходной</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
@@ -199,7 +163,7 @@
         const lessons = view.teachers.get(name);
         return `<div class="tg-row" data-teacher="${esc(name)}"><span class="tg-name"><span data-fit="18">${esc(name)}</span></span>${cols.map((n) => lessonCell(lessons.get(n), n, s)).join('')}</div>`;
       }).join('');
-      board.innerHTML = `<div class="tg"><section class="tv-card" style="--cols:${cols.length}"><div class="tg-head"><span class="tv-corner">Учитель</span>${cols.map((n) => headCell(n, s, m.date)).join('')}</div><div class="tg-rows">${rows}</div></section>${changesHtml(view.changes)}</div>`;
+      board.innerHTML = `<section class="tv-card tg" style="--cols:${cols.length}"><div class="tg-head"><span class="tv-corner">Учитель</span>${cols.map((n) => headCell(n, s, m.date)).join('')}</div><div class="tg-rows">${rows}</div></section>`;
     }
     const pages = rotation.pages();
     const started = rotation.sync();

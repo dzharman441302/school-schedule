@@ -78,24 +78,25 @@ h1,h2,p{margin:0}
 .tv-corner{display:flex;align-items:center;padding:0 24px;border-right:3px solid var(--ink);font-size:20px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
 .tv-pill{padding:1px 10px;border-radius:999px;font-size:16px;font-style:normal;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 
-/* Учительская: сетка «учитель × урок» и изменения */
-.tg{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:24px}
-.tg-head,.tg-row{display:grid;grid-template-columns:270px repeat(var(--cols),minmax(0,1fr))}
-.tg-head{height:64px;flex-shrink:0;border-bottom:3px solid var(--ink);background:var(--head)}
-.tg-h{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:2px solid var(--line-2)}
-.tg-h b{font-family:var(--display);font-size:26px;font-weight:800;line-height:1}
-.tg-h small{font-size:18px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+/* Учительская: сетка «учитель × урок» во всю ширину */
+.tg-head,.tg-row{display:grid;grid-template-columns:340px repeat(var(--cols),minmax(0,1fr))}
+.tg-head{height:76px;flex-shrink:0;border-bottom:3px solid var(--ink);background:var(--head)}
+.tg .tv-corner{font-size:22px}
+.tg-h{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-left:2px solid var(--line-2)}
+.tg-h b{font-family:var(--display);font-size:32px;font-weight:800;line-height:1}
+.tg-h small{font-size:22px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tg-h .tv-pill{font-size:18px}
 .tg-h.is-now{border-left-color:var(--brand);background:var(--brand);color:#fff}
 .tg-h.is-now .tv-pill{background:var(--sun);color:var(--ink)}
 .tg-h.is-next{background:var(--sun)}
 .tg-h.is-next .tv-pill{background:var(--ink);color:#fff}
-.tg-rows{flex:1;min-height:0;display:grid;grid-template-rows:repeat(12,minmax(0,1fr))}
+.tg-rows{flex:1;min-height:0;display:grid;grid-template-rows:repeat(10,minmax(0,1fr))}
 .tg-row{min-height:0;border-bottom:2px solid var(--line)}
-.tg-name{min-width:0;display:flex;align-items:center;padding:0 22px;border-right:3px solid var(--ink);font-size:25px;font-weight:800}
+.tg-name{min-width:0;display:flex;align-items:center;padding:0 24px;border-right:3px solid var(--ink);font-size:30px;font-weight:800}
 .tg-name span{display:block;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tg-c{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 4px;border-left:2px solid var(--line);text-align:center}
-.tg-c b,.tg-c s{display:block;max-width:100%;overflow:hidden;font-family:var(--display);font-size:23px;font-weight:800;line-height:1.05;white-space:nowrap}
-.tg-c small{display:block;max-width:100%;overflow:hidden;font-size:20px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.tg-c{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 6px;border-left:2px solid var(--line);text-align:center}
+.tg-c b,.tg-c s{display:block;max-width:100%;overflow:hidden;font-family:var(--display);font-size:30px;font-weight:800;line-height:1.05;white-space:nowrap}
+.tg-c small{display:block;max-width:100%;overflow:hidden;font-size:24px;font-weight:700;color:var(--ink-2);white-space:nowrap}
 .tg-c.is-now{border-left-color:var(--brand);background:var(--brand);color:#fff}
 .tg-c.is-now small{color:var(--sun)}
 .tg-c.is-now.k-empty{background:#DCE5F5;border-left-color:#DCE5F5}
@@ -109,25 +110,6 @@ h1,h2,p{margin:0}
 .tg-c.k-added small{color:var(--add-ink)}
 .tg-c.k-changed{background:var(--change-bg);box-shadow:inset 0 0 0 3px var(--change-ink);color:var(--ink)}
 .tg-c.k-changed small{color:var(--change-ink)}
-
-.tg-changes{min-width:0;min-height:0;display:flex;flex-direction:column;gap:14px;padding:24px;overflow:hidden;border:3px solid var(--ink);border-radius:32px;background:var(--sun-soft);box-shadow:var(--hard)}
-.tg-changes__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.tg-changes h2{min-width:0;overflow:hidden;font-family:var(--display);font-size:24px;font-weight:800;line-height:1.1;white-space:nowrap}
-.tg-count{display:grid;place-items:center;flex-shrink:0;min-width:48px;height:48px;padding:0 10px;border:3px solid var(--ink);border-radius:999px;background:var(--brand);color:#fff;font-family:var(--display);font-size:22px;font-weight:800}
-.tg-item{display:flex;flex-direction:column;gap:4px;padding:12px 18px;border:2px solid var(--ink);border-radius:20px;background:#fff}
-.tg-item__top{display:flex;align-items:center;gap:10px}
-.tg-item__top b{font-family:var(--display);font-size:22px;font-weight:800;white-space:nowrap}
-.tg-item strong,.tg-item span.tg-item__detail{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.tg-item strong{font-size:26px;font-weight:800;line-height:1.15}
-.tg-item__detail{font-size:22px;font-weight:600;color:var(--ink-2)}
-.tv-pill.p-cancelled{border:2px solid var(--cancel-ink);background:var(--cancel-bg);color:var(--cancel-ink)}
-.tv-pill.p-room{border:2px solid var(--room-ink);background:var(--room-bg);color:var(--room-ink)}
-.tv-pill.p-added{border:2px solid var(--add-ink);background:var(--add-bg);color:var(--add-ink)}
-.tv-pill.p-changed{border:2px solid var(--change-ink);background:var(--change-bg);color:var(--change-ink)}
-.tg-more{font-size:22px;font-weight:700;color:var(--ink-2)}
-.tg-calm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
-.tg-calm b{font-family:var(--display);font-size:30px;font-weight:800}
-.tg-calm span{font-size:22px;font-weight:600;color:var(--ink-2)}
 
 /* Ученики: табло параллели «класс × урок» */
 .pb-head,.pb-row{display:grid;grid-template-columns:200px repeat(var(--cols),minmax(0,1fr))}
