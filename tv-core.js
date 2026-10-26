@@ -113,7 +113,7 @@
     let box = $('tv-debug');
     if (!box) { box = document.createElement('div'); box.id = 'tv-debug'; document.body.appendChild(box); }
     const vv = window.visualViewport, scr = window.screen, r = (v) => Math.round(Number(v) || 0);
-    box.textContent = `окно ${r(innerWidth)}×${r(innerHeight)} · страница ${r(document.documentElement.clientWidth)}×${r(document.documentElement.clientHeight)} · видимая ${r(vv?.width)}×${r(vv?.height)} · экран ${r(scr?.width)}×${r(scr?.height)} · плотность ${devicePixelRatio} · масштаб ${scale.toFixed(3)} (${w}×${h})`;
+    box.textContent = `окно ${r(innerWidth)}×${r(innerHeight)} · страница ${r(document.documentElement.clientWidth)}×${r(document.documentElement.clientHeight)} · видимая ${r(vv?.width)}×${r(vv?.height)} · экран ${r(scr?.width)}×${r(scr?.height)} · плотность ${devicePixelRatio} · масштаб ${scale.toFixed(3)} (${r(w)}×${r(h)})`;
   }
 
   function initStage() {
