@@ -47,4 +47,17 @@ test('an unfinished bells variant is ignored', async () => {
   assert.equal(c.bellRange(2, MONDAY), '08:50–09:30');
 });
 
+test('a lesson in groups that keeps part of them is «весь класс вместе», not another room', async () => {
+  const c = await core();
+  const groups = [HEAD, ['7Б', 1, 'Английский язык (304/301)', '', '', '', ''], ['7Б', 2, 'Информатика / Английский язык (308/406)', '', '', '', ''],
+    ['7Б', 3, 'Английский язык (304/301)', '', '', '', ''], ['7Б', 4, 'Химия (210)', '', '', '', ''], ['7Б', 5, 'Английский язык (304/301)', '', '', '', '']];
+  const day = plain(c.actualDay(groups, changes([1, 'Английский язык (304)'], [2, 'Английский язык (406)'], [3, 'Английский язык (305/306)'], [4, 'Химия (211)'], [5, 'Физика (310)']), MONDAY, '7Б'));
+  assert.deepEqual(day.map((x) => x.type), ['merged', 'merged', 'room', 'room', 'changed']);
+  const info = plain(c.cellInfo(day[0]));
+  assert.equal(info.badge, 'Весь класс вместе');
+  assert.equal(info.room, '304');
+  assert.equal(info.old, 'было по группам: каб. 304/301');
+  assert.equal(c.BADGE_CLASS.merged, 'badge--merged');
+});
+
 runTests('site core checks', tests);

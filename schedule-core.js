@@ -143,10 +143,23 @@
       .sort((a, b) => classCollator.compare(a.className, b.className) || a.lesson - b.lesson);
   }
 
+  // «304/301» or «304 / 305»: the rooms of a lesson split into groups.
+  function groupRooms(room) { return String(room || '').split('/').map((x) => x.trim()).filter(Boolean); }
+
+  // A lesson in groups that keeps only some of them — «Английский язык (304/301)» becomes
+  // «Английский язык (304)» when one group's teacher is away: the whole class meets together.
+  function isMerged(base, next) {
+    const before = groupRooms(base.room), after = groupRooms(next.room);
+    if (before.length < 2 || !after.length || after.length >= before.length) return false;
+    const subjects = String(base.subject || '').split(' / ');
+    return String(next.subject || base.subject).split(' / ').every((s) => subjects.some((b) => sameText(b, s)));
+  }
+
   function classifyChange(base, change) {
     if (/^отмена$/i.test(change.change)) return { type: 'cancelled', base, newLesson: null, ...change };
     const next = parseLesson(change.change);
     if (!base) return { type: 'added', base: null, newLesson: next, ...change };
+    if (isMerged(base, next)) return { type: 'merged', base, newLesson: { subject: next.subject || base.subject, room: next.room, raw: change.change }, ...change };
     if (sameText(base.subject, next.subject || base.subject) && next.room && String(base.room || '') !== String(next.room || '')) return { type: 'room', base, newLesson: { subject: next.subject || base.subject, room: next.room, raw: change.change }, ...change };
     return { type: 'changed', base, newLesson: next, ...change };
   }
@@ -230,12 +243,13 @@
     if (x.type === 'normal') { info.subject = base?.subject || ''; info.room = base?.room || ''; }
     else if (x.type === 'cancelled') { info.subject = base?.subject || 'Урок'; info.room = base?.room || ''; info.badge = 'Отменён'; }
     else if (x.type === 'room') { info.subject = next?.subject || base?.subject || ''; info.room = next?.room || ''; info.old = base?.room ? `было: каб. ${base.room}` : ''; info.badge = 'Другой кабинет'; }
+    else if (x.type === 'merged') { info.subject = next?.subject || base?.subject || ''; info.room = next?.room || ''; info.old = `было по группам: каб. ${base.room}`; info.badge = 'Весь класс вместе'; }
     else if (x.type === 'added') { info.subject = next?.subject || x.change || ''; info.room = next?.room || ''; info.badge = 'Добавлен'; }
     else { info.subject = next?.subject || x.change || ''; info.room = next?.room || ''; info.old = base ? `было: ${lessonText(base)}` : ''; info.badge = 'Замена'; }
     return info;
   }
 
-  const BADGE_CLASS = { cancelled: 'badge--cancelled', changed: 'badge--changed', room: 'badge--room', added: 'badge--added' };
+  const BADGE_CLASS = { cancelled: 'badge--cancelled', changed: 'badge--changed', room: 'badge--room', merged: 'badge--merged', added: 'badge--added' };
   const sameDay = (a, b) => site.dateKey(a) === site.dateKey(b);
   const fmtDay = (date) => site.capitalize(site.formatSchoolDate(date, { weekday: true, year: false }));
   const duration = (min) => (min < 60 ? `${min} мин` : `${Math.floor(min / 60)} ч ${min % 60 ? `${min % 60} мин` : ''}`.trim());

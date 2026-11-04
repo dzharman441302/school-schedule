@@ -98,6 +98,13 @@ test('changes show as another room, a replacement, a cancelled and an added less
   assert.equal((row.match(/k-cancelled/g) || []).length, 1);
 });
 
+test('a lesson in groups with one group cancelled shows «весь класс»', async () => {
+  const h = await students({ search: '?parallel=9', changes: [CHANGES_HEAD, ['28.09.2026', '9А', '3', 'Английский язык (304)', '']] });
+  h.sheets['Расписание'] = h.sheets['Расписание'].map((r) => (r[0] === '9А' && r[1] === 3 ? ['9А', 3, 'Английский язык (304/301)', '', '', '', ''] : r));
+  await h.advance(60000);
+  assert.match(h.row('9А'), /k-merged"><span class="pb-tag"><em>Весь класс<\/em><s>304\/301<\/s><\/span><strong class="pb-subj" data-fit="20">Английский язык<\/strong><span class="pb-room"><small>каб\.<\/small><b data-fit="16">304/);
+});
+
 test('a refresh keeps the parallel that is on the screen', async () => {
   const h = await students();
   await h.advance(50000);

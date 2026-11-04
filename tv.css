@@ -140,9 +140,9 @@ s.pb-subj{color:var(--muted)}
 .pb-tag s{min-width:0;overflow:hidden;font-size:22px;font-weight:700;color:var(--muted);white-space:nowrap;text-overflow:ellipsis}
 .pb-note{font-size:22px;font-weight:700;color:var(--cancel-ink)}
 .pb-c.k-empty{background:#F8FAFC}
-.pb-c.k-room{background:var(--room-tint)}
-.pb-c.k-room .pb-tag em{background:var(--room-bg);color:var(--room-ink)}
-.pb-c.k-room .pb-room small,.pb-c.k-room .pb-room b{color:var(--room-ink)}
+.pb-c.k-room,.pb-c.k-merged{background:var(--room-tint)}
+.pb-c.k-room .pb-tag em,.pb-c.k-merged .pb-tag em{background:var(--room-bg);color:var(--room-ink)}
+.pb-c.k-room .pb-room small,.pb-c.k-room .pb-room b,.pb-c.k-merged .pb-room small,.pb-c.k-merged .pb-room b{color:var(--room-ink)}
 .pb-c.k-changed{background:var(--change-tint)}
 .pb-c.k-changed .pb-tag em{background:var(--change-bg);color:var(--change-ink)}
 .pb-c.k-added{background:var(--add-tint)}

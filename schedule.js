@@ -166,7 +166,7 @@
     }).join('')}</div>`).join('');
     return `<div class="week card" style="--days:${days.length}">
       <div class="section-head" style="margin-bottom:14px"><h2>Неделя ${esc(range)}</h2>
-        <ul class="legend" aria-label="Обозначения"><li class="badge badge--now">Сейчас</li><li class="badge badge--changed">Замена</li><li class="badge badge--room">Другой кабинет</li><li class="badge badge--cancelled">Отменён</li><li class="badge badge--added">Добавлен</li></ul></div>
+        <ul class="legend" aria-label="Обозначения"><li class="badge badge--now">Сейчас</li><li class="badge badge--changed">Замена</li><li class="badge badge--room">Другой кабинет</li><li class="badge badge--merged">Весь класс вместе</li><li class="badge badge--cancelled">Отменён</li><li class="badge badge--added">Добавлен</li></ul></div>
       <div class="week__scroll"><div class="week__grid" role="table" aria-label="Уроки ${esc(selectedClass)} по дням">${head}${rows || `<div class="empty-state"><strong>Для ${esc(selectedClass)} уроки не найдены.</strong></div>`}</div></div>
     </div>`;
   }
@@ -250,7 +250,7 @@
 
   function lessonOldText(base) { return core.lessonText(base); }
   function lessonNewText(next) { return core.lessonText(next); }
-  function typeLabel(type) { return ({ cancelled: 'ОТМЕНЕНО', changed: 'ИЗМЕНЕНО', room: 'НОВЫЙ КАБИНЕТ', added: 'ДОБАВЛЕНО' })[type] || ''; }
+  function typeLabel(type) { return ({ cancelled: 'ОТМЕНЕНО', changed: 'ИЗМЕНЕНО', room: 'НОВЫЙ КАБИНЕТ', merged: 'ВЕСЬ КЛАСС ВМЕСТЕ', added: 'ДОБАВЛЕНО' })[type] || ''; }
 
   function lessonMarkup(x, isNow, date) {
     const time = bellRange(x.lesson, date), cancel = x.type === 'cancelled', next = x.newLesson || x.base || {}, base = x.base;
@@ -259,8 +259,9 @@
     let detail = '';
     if (cancel && base) detail = `<span class="student-lesson__previous">${esc(base.subject || '')}${base.room ? ' · каб. ' + esc(base.room) : ''}</span>`;
     else if (x.type === 'room') detail = `<span class="student-room-change">Был кабинет ${esc(base?.room || '—')}</span>`;
+    else if (x.type === 'merged') detail = `<span class="student-room-change">Без деления на группы · было каб. ${esc(base.room)}</span>`;
     else if (x.type !== 'normal' && base) detail = `<span class="student-lesson__previous">Было: ${esc(lessonOldText(base))}</span>`;
-    const label = x.type === 'room' ? 'Новый кабинет' : x.type === 'changed' ? 'Изменён' : x.type === 'added' ? 'Новый урок' : x.type === 'cancelled' ? 'Отменён' : '';
+    const label = x.type === 'room' ? 'Новый кабинет' : x.type === 'merged' ? 'Весь класс вместе' : x.type === 'changed' ? 'Изменён' : x.type === 'added' ? 'Новый урок' : x.type === 'cancelled' ? 'Отменён' : '';
     return `<div class="student-lesson ${x.type}${isNow ? ' is-now' : ''}" data-lesson="${x.lesson}"><div class="student-lesson__number">${x.lesson}</div><div class="student-lesson__body">${isNow ? '<span class="student-lesson__badge badge--now">Идёт сейчас</span>' : ''}<strong>${esc(title)}</strong><div class="student-lesson__meta">${meta}</div>${detail}${x.note ? `<small>${esc(x.note)}</small>` : ''}${label ? `<span class="student-lesson__badge">${label}</span>` : ''}</div></div>`;
   }
 
@@ -272,10 +273,10 @@
   }
 
   function summaryMarkup(rows) {
-    const changed = rows.filter((x) => x.type !== 'normal'), counts = { cancelled: 0, changed: 0, room: 0, added: 0 };
+    const changed = rows.filter((x) => x.type !== 'normal'), counts = { cancelled: 0, changed: 0, room: 0, merged: 0, added: 0 };
     changed.forEach((x) => { counts[x.type] = (counts[x.type] || 0) + 1; });
     if (!changed.length) return '<span class="student-change-pill is-ok">Без изменений</span>';
-    return `<span class="student-change-pill">${changeCountLabel(changed.length)}</span>${counts.cancelled ? `<span class="student-change-pill cancelled">отмен ${counts.cancelled}</span>` : ''}${counts.changed ? `<span class="student-change-pill changed">замен ${counts.changed}</span>` : ''}${counts.room ? `<span class="student-change-pill room">кабинетов ${counts.room}</span>` : ''}${counts.added ? `<span class="student-change-pill added">добавлено ${counts.added}</span>` : ''}`;
+    return `<span class="student-change-pill">${changeCountLabel(changed.length)}</span>${counts.cancelled ? `<span class="student-change-pill cancelled">отмен ${counts.cancelled}</span>` : ''}${counts.changed ? `<span class="student-change-pill changed">замен ${counts.changed}</span>` : ''}${counts.room ? `<span class="student-change-pill room">кабинетов ${counts.room}</span>` : ''}${counts.merged ? `<span class="student-change-pill merged">вместе ${counts.merged}</span>` : ''}${counts.added ? `<span class="student-change-pill added">добавлено ${counts.added}</span>` : ''}`;
   }
 
   function renderSelectedClassDay(label, date, state) {
@@ -291,7 +292,7 @@
     rows.forEach((r) => { if (!grouped.has(r.className)) grouped.set(r.className, []); grouped.get(r.className).push(r); });
     return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)}</span><h3>${esc(title)}</h3></div><span class="status">${changeCountLabel(rows.length)}</span></header><div class="all-change-groups">${[...grouped].map(([cls, list]) => `<article class="class-change-card"><div class="class-change-card__head"><strong>${esc(cls)}</strong><span class="student-change-pill">${changeCountLabel(list.length)}</span></div><div class="class-change-list">${list.map((ch) => {
       const b = core.baseLessonsFor(scheduleRows, date, cls).get(ch.lesson), x = core.classifyChange(b, ch);
-      return `<div class="class-change-row"><span class="class-change-row__lesson">${x.lesson} урок</span><div>${x.type === 'cancelled' ? `<b>Урок отменён</b><span class="student-lesson__previous">${esc(lessonOldText(b) || 'Урок')}</span>` : x.type === 'room' ? `<b>${esc(x.newLesson?.subject || b?.subject || '')}</b><span class="student-room-change">каб. ${esc(b?.room || '—')} → ${esc(x.newLesson?.room || '—')}</span>` : `${b ? `<span class="student-lesson__previous">Было: ${esc(lessonOldText(b))}</span>` : ''}<b>${esc(lessonNewText(x.newLesson) || ch.change)}</b>`}${ch.note ? `<small>${esc(ch.note)}</small>` : ''}</div><span class="student-lesson__badge ${x.type}">${typeLabel(x.type)}</span></div>`;
+      return `<div class="class-change-row"><span class="class-change-row__lesson">${x.lesson} урок</span><div>${x.type === 'cancelled' ? `<b>Урок отменён</b><span class="student-lesson__previous">${esc(lessonOldText(b) || 'Урок')}</span>` : x.type === 'room' ? `<b>${esc(x.newLesson?.subject || b?.subject || '')}</b><span class="student-room-change">каб. ${esc(b?.room || '—')} → ${esc(x.newLesson?.room || '—')}</span>` : x.type === 'merged' ? `<b>${esc(x.newLesson.subject)}</b><span class="student-room-change">весь класс вместе в каб. ${esc(x.newLesson.room)} · было по группам: ${esc(b.room)}</span>` : `${b ? `<span class="student-lesson__previous">Было: ${esc(lessonOldText(b))}</span>` : ''}<b>${esc(lessonNewText(x.newLesson) || ch.change)}</b>`}${ch.note ? `<small>${esc(ch.note)}</small>` : ''}</div><span class="student-lesson__badge ${x.type}">${typeLabel(x.type)}</span></div>`;
     }).join('')}</div></article>`).join('')}</div></section>`;
   }
 

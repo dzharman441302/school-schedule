@@ -91,7 +91,7 @@ p{margin:0}
 .badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1;white-space:nowrap;background:var(--surface-2);color:var(--ink-2)}
 .badge--cancelled{background:var(--cancel-bg);color:var(--cancel-ink)}
 .badge--changed{background:var(--change-bg);color:var(--change-ink)}
-.badge--room{background:var(--room-bg);color:var(--room-ink)}
+.badge--room,.badge--merged{background:var(--room-bg);color:var(--room-ink)}
 .badge--added{background:var(--add-bg);color:var(--add-ink)}
 .badge--ok{background:var(--add-bg);color:var(--add-ink)}
 .badge--now{background:var(--accent);color:#fff}
@@ -208,7 +208,7 @@ p{margin:0}
 .cell--cancelled{background:var(--cancel-tint);border-color:var(--cancel-line)}
 .cell--cancelled .cell__subject{color:var(--muted);text-decoration:line-through}
 .cell--changed{background:var(--change-tint);border-color:var(--change-line)}
-.cell--room{border-color:#93C5FD}
+.cell--room,.cell--merged{border-color:#93C5FD}
 .cell--added{background:var(--add-tint);border-color:var(--add-line)}
 .cell--holiday{background:var(--surface-2);border-style:dashed}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
@@ -243,8 +243,8 @@ p{margin:0}
 .lesson--cancelled .lesson__subject{color:var(--muted);text-decoration:line-through}
 .lesson--cancelled .lesson__room{background:var(--surface);color:var(--muted);text-decoration:line-through}
 .lesson--changed{background:var(--change-tint);border-color:var(--change-line)}
-.lesson--room{border-color:var(--room-line)}
-.lesson--room .lesson__room{background:var(--room-ink);color:#fff}
+.lesson--room,.lesson--merged{border-color:var(--room-line)}
+.lesson--room .lesson__room,.lesson--merged .lesson__room{background:var(--room-ink);color:#fff}
 .lesson--added{background:var(--add-tint);border-color:var(--add-line)}
 @media (min-width:980px){.week{display:block}.days{display:none}}
 
@@ -274,7 +274,7 @@ p{margin:0}
 .student-change-pill{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:12px;font-weight:700;white-space:nowrap}
 .student-change-pill.cancelled{background:var(--cancel-bg);color:var(--cancel-ink)}
 .student-change-pill.changed{background:var(--change-bg);color:var(--change-ink)}
-.student-change-pill.room{background:var(--room-bg);color:var(--room-ink)}
+.student-change-pill.room,.student-change-pill.merged{background:var(--room-bg);color:var(--room-ink)}
 .student-change-pill.added{background:var(--add-bg);color:var(--add-ink)}
 .student-change-pill.is-ok{background:var(--add-bg);color:var(--add-ink)}
 .student-day-lessons{display:flex;flex-direction:column;gap:8px;padding:12px}
@@ -294,9 +294,9 @@ p{margin:0}
 .student-lesson.cancelled .student-lesson__badge{background:var(--cancel-bg);color:var(--cancel-ink)}
 .student-lesson.changed{background:var(--change-tint);border-color:var(--change-line)}
 .student-lesson.changed .student-lesson__badge{background:var(--change-bg);color:var(--change-ink)}
-.student-lesson.room{border-color:var(--room-line)}
-.student-lesson.room .student-lesson__badge{background:var(--room-bg);color:var(--room-ink)}
-.student-lesson.room .student-room-change{color:var(--room-ink);font-weight:600}
+.student-lesson.room,.student-lesson.merged{border-color:var(--room-line)}
+.student-lesson.room .student-lesson__badge,.student-lesson.merged .student-lesson__badge{background:var(--room-bg);color:var(--room-ink)}
+.student-lesson.room .student-room-change,.student-lesson.merged .student-room-change{color:var(--room-ink);font-weight:600}
 .student-lesson.added{background:var(--add-tint);border-color:var(--add-line)}
 .student-lesson.added .student-lesson__badge{background:var(--add-bg);color:var(--add-ink)}
 .all-change-groups{display:flex;flex-direction:column;gap:10px;padding:12px}
@@ -312,7 +312,7 @@ p{margin:0}
 .class-change-row .student-lesson__badge{margin:0}
 .class-change-row .student-lesson__badge.cancelled{background:var(--cancel-bg);color:var(--cancel-ink)}
 .class-change-row .student-lesson__badge.changed{background:var(--change-bg);color:var(--change-ink)}
-.class-change-row .student-lesson__badge.room{background:var(--room-bg);color:var(--room-ink)}
+.class-change-row .student-lesson__badge.room,.class-change-row .student-lesson__badge.merged{background:var(--room-bg);color:var(--room-ink)}
 .class-change-row .student-lesson__badge.added{background:var(--add-bg);color:var(--add-ink)}
 .status{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;background:var(--surface-2);font-size:13px;font-weight:700;color:var(--ink-2)}
 .status--ok{background:var(--add-bg);color:var(--add-ink)}

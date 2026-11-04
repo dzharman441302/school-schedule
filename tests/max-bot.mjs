@@ -101,6 +101,22 @@ test('each subscribed class gets its own notice, with when to come', async () =>
   assert.equal(b.sent.length, before + 2, 'the same publication is not sent twice');
 });
 
+test('a lesson in groups that keeps one group says «весь класс вместе»', async () => {
+  const b = setup();
+  b.sheets['Расписание'].push(lesson('9А', 6, 'Английский язык (304/301)'), lesson('9А', 7, 'Труд (109/Мастерские)'));
+  await b.press(1, `class:${CLASSES.indexOf('9А')}`);
+  b.sheets['Изменения'].push([RU, '9А', '6', 'Английский язык (304)', ''], [RU, '9А', '7', 'Труд (210)', 'принести фартук'], [RU, '9А', '3', 'Предмет 3 (210)', '']);
+  b.sheets['Статус_публикации'].push([RU, 46000.5, 0, 1]);
+  const before = b.sent.length;
+  await b.cron();
+  const note = b.text(b.sent[before]);
+  assert.match(note, /\*\*6 урок\*\* — Английский язык · каб\. 304 _весь класс вместе_/);
+  assert.match(note, /\*\*7 урок\*\* — Труд · каб\. 210 _весь класс вместе · принести фартук_/);
+  assert.match(note, /\*\*3 урок\*\* — Предмет 3 · каб\. 210\n/, 'an ordinary room change stays as it was');
+  const day = b.text(await b.press(1, `day:${DATE}`));
+  assert.match(day, /\*\*6\.\*\* Английский язык · каб\. 304 _весь класс вместе_/);
+});
+
 test('a shortened day uses its own bell times in the notice', async () => {
   const b = setup();
   await b.press(1, `class:${CLASSES.indexOf('7Б')}`);

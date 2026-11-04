@@ -87,6 +87,7 @@
     if (info.kind === 'cancelled') return `<div class="pb-c k-cancelled${marks}"><span class="pb-tag"><em>Отменён</em></span><s class="pb-subj" data-fit="20">${subject || 'Урок'}</s><span class="pb-note">урока не будет</span></div>`;
     let tag = '';
     if (info.kind === 'room') tag = `<span class="pb-tag"><em>Кабинет</em>${x.base?.room ? `<s>${esc(x.base.room)}</s>` : ''}</span>`;
+    else if (info.kind === 'merged') tag = `<span class="pb-tag"><em>Весь класс</em><s>${esc(x.base.room)}</s></span>`;
     else if (info.kind === 'changed') tag = `<span class="pb-tag"><em>Замена</em>${x.base?.subject ? `<s>${esc(tv.shortSubject(x.base.subject))}</s>` : ''}</span>`;
     else if (info.kind === 'added') tag = '<span class="pb-tag"><em>Добавлен</em></span>';
     return `<div class="pb-c k-${info.kind}${marks}">${tag}<strong class="pb-subj" data-fit="20">${subject}</strong>${roomHtml(info.room)}</div>`;
