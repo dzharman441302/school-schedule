@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#15366D">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Опоздания">
+  <title>Опоздания — дежурный · СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    @font-face{font-family:Onest;font-style:normal;font-weight:400 800;font-display:swap;src:url(assets/fonts/onest-cyrillic.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+    @font-face{font-family:Onest;font-style:normal;font-weight:400 800;font-display:swap;src:url(assets/fonts/onest-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+    @font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-cyrillic.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+    @font-face{font-family:Unbounded;font-style:normal;font-weight:600 800;font-display:swap;src:url(assets/fonts/unbounded-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+    :root{--ink:#15233F;--ink-2:#3B4A66;--muted:#64748B;--brand:#15366D;--sun:#FDE68A;--sun-soft:#FEF7D6;--bg:#F4F6FA;--line:#E2E8F0;--ok:#047857;--ok-bg:#D1FAE5;--bad:#B91C1C;--bad-bg:#FEE2E2;--warn:#92400E;--warn-bg:#FEF3C7;--display:Unbounded,Onest,system-ui,sans-serif;--hard:4px 4px 0 var(--ink)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Onest,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.25}
+    [hidden]{display:none!important}
+    button,input{font:inherit;color:inherit}
+    .wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(130px + env(safe-area-inset-bottom))}
+    .head{display:flex;align-items:center;gap:12px;padding:14px 16px;border:3px solid var(--ink);border-radius:22px;background:var(--sun);box-shadow:var(--hard)}
+    .head h1{margin:0;font-family:var(--display);font-size:22px;font-weight:800;line-height:1.1}
+    .head p{margin:2px 0 0;font-size:15px;font-weight:600;color:var(--ink-2)}
+    .head .who{margin-left:auto;max-width:52%;padding:7px 28px 7px 12px;border:2px solid var(--ink);border-radius:999px;background:#fff url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 fill=%27none%27 stroke=%27%2315233F%27 stroke-width=%272%27/%3E%3C/svg%3E") no-repeat right 10px center;font-size:14px;font-weight:700;cursor:pointer;text-overflow:ellipsis;-webkit-appearance:none;appearance:none}
+    .duty{margin:10px 4px 0;font-size:14px;font-weight:600;color:var(--ink-2)}
+    .sync{display:flex;align-items:center;gap:8px;margin:12px 4px 0;font-size:14px;font-weight:600;color:var(--muted)}
+    .sync::before{content:"";width:10px;height:10px;border-radius:50%;background:#059669;flex-shrink:0}
+    .sync.is-wait::before{background:#D97706}
+    .sync.is-bad{color:var(--bad)}.sync.is-bad::before{background:var(--bad)}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+    .tab{padding:12px;border:3px solid var(--ink);border-radius:16px;background:#fff;font-family:var(--display);font-size:16px;font-weight:800;cursor:pointer}
+    .tab small{display:block;margin-top:2px;font-family:Onest,system-ui,sans-serif;font-size:13px;font-weight:600;color:var(--muted)}
+    .tab.is-on{background:var(--brand);color:#fff;box-shadow:var(--hard)}
+    .tab.is-on small{color:#BFDBFE}
+    .grade{margin:16px 0 0}
+    .grade h2{margin:0 0 8px 4px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .cls{position:relative;height:74px;border:3px solid var(--ink);border-radius:18px;background:#fff;box-shadow:var(--hard);font-family:var(--display);font-size:24px;font-weight:800;cursor:pointer;touch-action:manipulation;user-select:none;transition:transform 80ms ease,box-shadow 80ms ease}
+    .cls:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+    .cls b{position:absolute;top:-10px;right:-8px;min-width:30px;height:30px;padding:0 8px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:999px;background:#E07A5F;color:#fff;font-family:Onest,system-ui,sans-serif;font-size:16px;font-weight:800}
+    .cls.is-flash{background:var(--sun)}
+    .closed{margin:18px 0 0;padding:12px 16px;border:2px solid var(--ok);border-radius:16px;background:var(--ok-bg);color:var(--ok);font-weight:700}
+    .bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(244,246,250,.96);border-top:2px solid var(--line)}
+    .bar-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+    .btn{min-height:56px;padding:10px 14px;border:3px solid var(--ink);border-radius:16px;background:#fff;font-size:16px;font-weight:800;cursor:pointer}
+    .btn:disabled{opacity:.45;cursor:default}
+    .btn--main{background:var(--brand);color:#fff;box-shadow:var(--hard)}
+    .btn--ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+    .card{margin-top:24px;padding:22px 20px;border:3px solid var(--ink);border-radius:22px;background:#fff;box-shadow:var(--hard)}
+    .card h2{margin:0 0 6px;font-family:var(--display);font-size:22px}
+    .card p{margin:0 0 16px;color:var(--ink-2)}
+    .card label{display:block;margin:14px 0 6px;font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+    .card input{width:100%;padding:14px 16px;border:3px solid var(--ink);border-radius:14px;background:#fff;font-size:20px}
+    .card .btn{width:100%;margin-top:18px}
+    .error{margin-top:12px;color:var(--bad);font-weight:700}
+    .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:var(--ink);color:#fff;font-size:15px;font-weight:700;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 150ms ease}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div><h1>Опоздания</h1><p id="day">—</p></div>
+    <select class="who" id="who" aria-label="Кто дежурит" hidden></select>
+  </header>
+
+  <section class="card" id="login" hidden>
+    <h2>Вход для дежурного</h2>
+    <p>ПИН-код один для всех дежурных администраторов. Его выдаёт завуч. Вводить нужно один раз на этом телефоне — дальше страница сама подставит дежурного по графику.</p>
+    <label for="pin">ПИН-код</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8">
+    <button class="btn btn--main" id="login-button" type="button">Войти</button>
+    <div class="error" id="login-error" role="alert"></div>
+  </section>
+
+  <main id="app" hidden>
+    <div class="sync" id="sync">Загрузка…</div>
+    <p class="duty" id="duty"></p>
+    <nav class="tabs" aria-label="Смена">
+      <button class="tab" type="button" data-shift="1">1 смена<small id="tab1">5, 6, 9, 10, 11</small></button>
+      <button class="tab" type="button" data-shift="2">2 смена<small id="tab2">7, 8</small></button>
+    </nav>
+    <div id="classes"></div>
+    <div class="closed" id="closed" hidden></div>
+  </main>
+
+  <section class="card" id="broken" hidden>
+    <h2>Страница не подключена</h2>
+    <p id="broken-text">Не удалось найти адрес панели замен. Сообщите завучу.</p>
+  </section>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="bar-in">
+    <button class="btn" id="undo" type="button" disabled>↶ Отменить</button>
+    <button class="btn btn--main" id="close" type="button">✓ Дежурство завершено</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js?v=21"></script>
+<script src="app.js?v=18"></script>
+<script src="subject-names.js?v=18"></script>
+<script src="schedule-core.js?v=20"></script>
+<script src="lateness-core.js?v=1"></script>
+<script src="late.js?v=2"></script>
+</body>
+</html>

@@ -38,5 +38,15 @@ window.SCHOOL_CONFIG = Object.freeze({
     '9А', '9Б', '9В', '9Г',
     '10А', '11А'
   ],
+  // Опоздания: classes of these grades study in the second shift; the rest in the first.
+  // duty: the duty administrator of each shift, Monday to Friday (график дежурства администрации);
+  // late.html signs the marks with the name of today's duty administrator of the shift.
+  lateness: {
+    secondShiftGrades: ['7', '8'],
+    duty: {
+      1: ['Козлова В. И.', 'Чуркина Т. Н.', 'Дятлов В. С.', 'Воронков М. Е.', 'Нагаева Е. С.'],
+      2: ['Науменко Е. В.', 'Цветкова Н. Н.', 'Фатьянова Е. А.', 'Федотова И. А.', 'Новик Е. А.']
+    }
+  },
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
 });

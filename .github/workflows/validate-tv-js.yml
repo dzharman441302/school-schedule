@@ -8,12 +8,15 @@ on:
       - 'tv-students.js'
       - 'tv-core.js'
       - 'schedule-core.js'
+      - 'lateness-core.js'
+      - 'config.js'
       - 'subject-names.js'
       - 'app.js'
       - 'tv.html'
       - 'tv-students.html'
       - 'tv.css'
       - 'tests/tv-*.js'
+      - 'tests/lateness-*.js'
       - '.github/workflows/validate-tv-js.yml'
 
 permissions:
@@ -32,11 +35,14 @@ jobs:
           node --check tv-core.js
           node --check tv.js
           node --check tv-students.js
+          node --check lateness-core.js
           node --check subject-names.js
       - name: Staff room grid, alphabetical pages and refresh-safe rotation
         run: node tests/tv-rotation.js
-      - name: Student parallel board, changes and lost connection
+      - name: Student parallel board, changes, lost connection and the punctuality slide
         run: node tests/tv-students.js
+      - name: Lateness marks, counted shifts, streaks and the weekly rating
+        run: node tests/lateness-core.js
       - name: Check both screens share the stage and load scripts in order
         run: |
           node <<'JS'
@@ -48,12 +54,13 @@ jobs:
             assert.equal(subjects.expandSubject(short),full);
           }
           const order=['config.js','app.js','subject-names.js','schedule-core.js','tv-core.js'];
-          for(const [html,app] of [['tv.html','tv.js'],['tv-students.html','tv-students.js']]){
+          for(const [html,app,extra] of [['tv.html','tv.js',[]],['tv-students.html','tv-students.js',['lateness-core.js']]]){
             const text=fs.readFileSync(html,'utf8');
             assert(text.includes('tv.css'),html+': tv.css');
             assert(text.includes('id="stage"'),html+': 1920×1080 stage');
             const scripts=[...text.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>m[1].split('?')[0]);
-            assert.deepEqual(scripts,[...order,app],html+': script order');
+            const want=[...order];want.splice(4,0,...extra);
+            assert.deepEqual(scripts,[...want,app],html+': script order');
           }
           console.log('Subject names, shared stage and TV script order verified');
           JS

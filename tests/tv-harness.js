@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
-const SHARED = ['config.js', 'app.js', 'subject-names.js', 'schedule-core.js', 'tv-core.js'];
+const SHARED = ['config.js', 'app.js', 'subject-names.js', 'schedule-core.js', 'lateness-core.js', 'tv-core.js'];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const settle = async () => { for (let i = 0; i < 20; i += 1) await flush(); };
 
@@ -61,6 +61,8 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
   return {
     tv: context.TvCore,
     core: context.ScheduleCore,
+    late: context.LatenessCore,
+    site: context.SchoolSite,
     board: () => el('board').innerHTML,
     text: (key) => el(key).textContent,
     html: (key) => el(key).innerHTML,

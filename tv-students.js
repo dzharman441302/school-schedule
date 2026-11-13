@@ -1,9 +1,10 @@
 // ТВ для учеников: табло одной параллели — строки классы, столбцы уроки, которые
 // ещё будут сегодня. Параллели сменяются каждые 15 секунд; ?parallel=9 закрепляет
-// одну параллель за экраном (10 и 11 классы показываются вместе).
+// одну параллель за экраном (10 и 11 классы показываются вместе). После параллелей —
+// слайд «Пунктуальность»: рейтинг классов по опозданиям (lateness-core.js).
 (() => {
   'use strict';
-  const site = window.SchoolSite, core = window.ScheduleCore, tv = window.TvCore, config = window.SCHOOL_CONFIG || {};
+  const site = window.SchoolSite, core = window.ScheduleCore, tv = window.TvCore, late = window.LatenessCore, config = window.SCHOOL_CONFIG || {};
   if (!site || !core || !tv) return;
 
   const PERIOD = 15000, MAX_COLS = 10;
@@ -14,10 +15,11 @@
   const asked = rawLock === '10' || rawLock === '11' ? '10-11' : rawLock || '';
   let lock = '';
 
-  let scheduleRows = [], changesRows = [], loaded = false, failed = false, view = null, lastKey = '';
+  const LATE_KEY = 'late';
+  let scheduleRows = [], changesRows = [], markRows = [], shiftRows = [], loaded = false, failed = false, view = null, lastKey = '';
   const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true) });
 
-  const gradeLabel = (key) => (key === '10-11' ? '10–11' : key);
+  const gradeLabel = (key) => (key === '10-11' ? '10–11' : key === LATE_KEY ? 'Рейтинг' : key);
 
   // Parallels from the class list in config.js (or the schedule itself): 5, 6, … 10–11.
   function parallels() {
@@ -56,8 +58,25 @@
     lock = all.some((g) => g.key === asked) ? asked : ''; // an unknown ?parallel= is ignored
     const groups = all.filter((g) => !lock || g.key === lock);
     const snaps = groups.map((g) => snapshot(g, m, s)).filter((x) => x.rows.length);
-    view = { m, s, snaps: new Map(snaps.map((x) => [x.key, x])), keys: snaps.map((x) => x.key) };
+    const rating = lock ? null : lateBoard(all.flatMap((g) => g.classes), m);
+    view = { m, s, rating, snaps: new Map(snaps.map((x) => [x.key, x])), keys: snaps.map((x) => x.key).concat(rating ? [LATE_KEY] : []) };
     rotation.setKeys(view.keys);
+  }
+
+  // The punctuality rating of now, or null (no marks yet, a screen locked to a parallel).
+  function lateBoard(classes, m) {
+    if (!late || !markRows.length) return null;
+    try {
+      const closeAfter = {};
+      [1, 2].forEach((shift) => {
+        const n = late.firstLesson(scheduleRows, changesRows, m.date, classes, shift);
+        const end = n && core.bellEnd(n, m.date);
+        if (end) closeAfter[shift] = core.toMin(end);
+      });
+      return late.board(late.parse(markRows, shiftRows), classes, { today: m.date, minutes: m.minutes, closeAfter });
+    } catch (_) {
+      return null;
+    }
   }
 
   /* Markup ---------------------------------------------------------- */
@@ -93,6 +112,35 @@
     return `<div class="pb-c k-${info.kind}${marks}">${tag}<strong class="pb-subj" data-fit="20">${subject}</strong>${roomHtml(info.room)}</div>`;
   }
 
+  const dayMonth = (d) => site.formatSchoolDate(d, { year: false });
+  function weekLabel(r) {
+    if (r.from.getTime() === r.to.getTime()) return dayMonth(r.from);
+    const a = dayMonth(r.from).split(' '), b = dayMonth(r.to).split(' ');
+    return a[1] === b[1] ? `${a[0]}–${b[0]} ${b[1]}` : `${dayMonth(r.from)} – ${dayMonth(r.to)}`;
+  }
+  const lateWord = (n) => core.plural(n, 'опоздание', 'опоздания', 'опозданий');
+  const dayWord = (n) => core.plural(n, 'день', 'дня', 'дней');
+
+  // Two columns of classes, fewest late first; the right column: the week's total and its heroes.
+  function ratingHtml(r) {
+    const half = Math.ceil(r.rows.length / 2);
+    const row = (x) => {
+      const width = r.max ? Math.max(x.count ? 4 : 0, Math.round((x.count / r.max) * 100)) : 0;
+      const hot = x.count >= 3 && x.count >= r.max * 0.6;
+      const streak = x.streak >= 3 ? `<span class="lr-streak">${x.streak} ${dayWord(x.streak)}</span>` : '<span></span>';
+      return `<div class="lr-row${x.count ? '' : ' is-zero'}${hot ? ' is-hot' : ''}" data-class="${esc(x.cls)}"><span class="lr-place">${x.place}</span><span class="lr-class">${esc(x.cls)}</span><span class="lr-bar"><i style="width:${width}%"></i></span><b class="lr-count">${x.count}</b>${streak}</div>`;
+    };
+    const cols = [r.rows.slice(0, half), r.rows.slice(half)].map((list) => `<div class="lr-col" style="--rows:${half}">${list.map(row).join('')}</div>`).join('');
+    const title = r.mode === 'results' ? 'Итоги недели' : 'Неделя на сегодня';
+    const hero = r.perfect.length
+      ? `<section class="lr-hero is-win"><strong data-fit="36">${esc(r.perfect.join(', '))} — 0</strong><span>Неделя без опозданий!</span><small>Пример организованности и пунктуальности</small></section>`
+      : `<section class="lr-hero"><span>${r.mode === 'results' ? 'За неделю' : 'С понедельника'}</span><strong>${r.total}</strong><small>${lateWord(r.total)} в 5–11 классах</small></section>`;
+    const side = r.streaks.length
+      ? `<section class="lr-side"><h3>Без опозданий подряд</h3>${r.streaks.map((x) => `<p><b>${esc(x.cls)}</b><span>${x.streak} ${dayWord(x.streak)}</span></p>`).join('')}</section>`
+      : '<section class="lr-side lr-motto"><h3>Пунктуальность —</h3><p>признак ответственности!</p></section>';
+    return `<section class="lr"><div class="tv-card lr-card"><div class="lr-head"><b>${title}</b><span>${esc(weekLabel(r))}</span><em>меньше — лучше</em></div><div class="lr-cols">${cols}</div></div><aside class="lr-aside">${hero}${side}</aside></section>`;
+  }
+
   function emptyHtml(m, s) {
     const next = site.capitalize(tv.dayLabel(site.nextSchoolDay(m.date)));
     if (s.type === 'off') return `<section class="tv-empty"><h2>Сегодня выходной</h2><p>Следующий учебный день — ${esc(next)}</p></section>`;
@@ -105,10 +153,16 @@
 
   function show(turned) {
     const { m, s } = view;
-    const snap = view.snaps.get(rotation.current()[0]);
+    const key = rotation.current()[0];
+    const rating = key === LATE_KEY ? view.rating : null;
+    const snap = rating ? null : view.snaps.get(key);
     const grade = snap ? snap.key : lock || '';
-    document.getElementById('grade').textContent = grade ? gradeLabel(grade) : '5–11';
-    if (!snap) {
+    document.getElementById('kicker').textContent = rating ? 'Опоздания' : 'Параллель';
+    document.getElementById('grade').textContent = rating ? 'Рейтинг' : grade ? gradeLabel(grade) : '5–11';
+    document.getElementById('grade-note').textContent = rating ? '' : 'классы';
+    if (rating) {
+      board.innerHTML = ratingHtml(rating);
+    } else if (!snap) {
       board.innerHTML = emptyHtml(m, s);
     } else {
       const nextCol = s.type === 'before' ? snap.cols[0] : s.type === 'break' ? s.next : 0;
@@ -120,8 +174,9 @@
     }
     const pages = rotation.pages();
     const started = rotation.sync();
-    const text = lock ? 'Параллель закреплена за этим экраном' : pages > 1 ? 'Следующая параллель через 15 с' : '';
-    tv.renderPager(lock ? [] : view.keys.map(gradeLabel), rotation.page(), snap ? text : '');
+    const last = rotation.current()[0] === view.keys[view.keys.length - 1];
+    const text = lock ? 'Параллель закреплена за этим экраном' : pages > 1 ? (last && view.rating ? 'Снова расписание через 15 с' : 'Следующая параллель через 15 с') : '';
+    tv.renderPager(lock ? [] : view.keys.map(gradeLabel), rotation.page(), snap || rating ? text : '');
     if (turned || started || pages <= 1) tv.restartBar(PERIOD, pages > 1);
     tv.fitWhenReady(document.getElementById('stage'));
   }
@@ -147,6 +202,14 @@
       const [schedule, changes] = await Promise.all([site.loadSheet(SHEETS[0], { force: true }), site.loadSheet(SHEETS[1], { force: true, optional: true })]);
       scheduleRows = schedule || [];
       changesRows = changes || [];
+      if (late && !asked) { // a screen pinned to a parallel never shows the rating
+        // The rating is extra: a missing sheet or a failed request never stops the schedule.
+        try {
+          const [marks, shifts] = await Promise.all([site.loadSheet(late.SHEETS.marks, { force: true, optional: true }), site.loadSheet(late.SHEETS.shifts, { force: true, optional: true })]);
+          markRows = marks || [];
+          shiftRows = shifts || [];
+        } catch (_) {}
+      }
       loaded = true;
       failed = false;
     } catch (_) {

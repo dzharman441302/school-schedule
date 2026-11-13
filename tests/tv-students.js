@@ -171,4 +171,36 @@ test('a window without a size yet is measured again instead of drawn at 100 %', 
   assert.equal(h.stage(), 'translate(0px, 0px) scale(1)', 'checked again every few seconds without a resize event');
 });
 
+// Marks of the week before MONDAY (21–25.09): 8Б late twice, 9А once, the first shift closed every day.
+const LATE_SHEETS = () => ({
+  'Опоздания': [['ID', 'Дата', 'Время', 'Класс', 'Изменение', 'Дежурный'], ['a1aaaa', '21.09.2026', '08:03', '8Б', 1, 'И'], ['a2aaaa', '22.09.2026', '08:04', '8Б', 1, 'И'], ['a3aaaa', '23.09.2026', '08:02', '9А', 1, 'И']],
+  'Опоздания_смены': [['Дата', 'Смена', 'Закрыто', 'Дежурный'], ...['21', '22', '23', '24', '25'].map((d) => [`${d}.09.2026`, 1, '08:30', 'И'])]
+});
+
+test('after the parallels comes the punctuality rating, last week on a Monday', async () => {
+  const h = await students({ extra: LATE_SHEETS() });
+  const chips = [...h.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]);
+  assert.deepEqual(chips, ['5', '6', '7', '8', '9', '10–11', 'Рейтинг']);
+  await h.advance(6 * 15000);
+  assert.equal(h.grade(), 'Рейтинг');
+  const board = h.board();
+  assert.match(board, /Итоги недели/);
+  assert.match(board, /21–25 сентября/);
+  const order = [...board.matchAll(/class="lr-row[^"]*" data-class="([^"]*)"/g)].map((m) => m[1]);
+  assert.equal(order.length, 21);
+  assert.deepEqual(order.slice(-2), ['9А', '8Б'], 'the most late classes come last');
+  assert.match(board, /5А, 5Б, 5В/, 'first-shift classes with a zero over a watched week');
+  assert.doesNotMatch(board, /lr-hero is-win"><strong[^>]*>[^<]*7А/, 'the second shift was never watched');
+  await h.advance(15000);
+  assert.equal(h.grade(), '5', 'then the schedule again');
+});
+
+test('no rating without marks, and none on a screen locked to a parallel', async () => {
+  const plain = await students();
+  assert.doesNotMatch(plain.html('pager'), /Рейтинг/);
+  const locked = await students({ extra: LATE_SHEETS(), search: '?parallel=9' });
+  assert.equal(locked.fetches('Опоздания'), 0);
+  assert.doesNotMatch(locked.board(), /lr-row/);
+});
+
 runTests('student TV checks', tests);
