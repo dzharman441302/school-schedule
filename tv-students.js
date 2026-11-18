@@ -25,7 +25,7 @@
   const todaySlide = window.TvToday && !asked ? window.TvToday.create({ audience: 'students' }) : null;
   const isToday = (key) => String(key || '').startsWith(TODAY_KEY);
   let scheduleRows = [], changesRows = [], markRows = [], shiftRows = [], loaded = false, failed = false, view = null, lastKey = '';
-  const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD) });
+  const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD), sameAs: (key) => (isToday(key) ? TODAY_KEY : key) });
 
   const gradeLabel = (key) => (key === '10-11' ? '10–11' : key === LATE_KEY ? 'Рейтинг' : isToday(key) ? 'Сегодня' : key);
 
@@ -258,7 +258,6 @@
           shiftRows = shifts || [];
         } catch (_) {}
       }
-      if (todaySlide) await todaySlide.load({ force: true }).catch(() => {});
       loaded = true;
       failed = false;
     } catch (_) {
@@ -267,6 +266,22 @@
     rebuild();
     show(false);
     tv.renderFreshness(SHEETS);
+    loadToday();
+  }
+
+  // The «Сегодня» slide is extra: its sources (weather, menu, sheets) load in the background with
+  // time limits, and the boards are already on the screen. One load at a time.
+  let todayLoading = false;
+  function loadToday() {
+    if (!todaySlide || todayLoading) return;
+    todayLoading = true;
+    todaySlide.load({ force: true }).catch(() => {}).then(() => {
+      todayLoading = false;
+      if (!view) return;
+      const before = view.keys.join('|');
+      rebuild();
+      if (view.keys.join('|') !== before || view.keys.some(isToday)) show(false);
+    });
   }
 
   tv.initStage();

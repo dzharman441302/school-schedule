@@ -50,7 +50,8 @@
     let cycle = force ? null : storedCycle();
     if (!cycle) {
       try {
-        const res = await fetch(FILE, { cache: force ? 'no-cache' : 'default' });
+        const soon = window.TodayCore?.fetchSoon, init = { cache: force ? 'no-cache' : 'default' };
+        const res = await (soon ? soon(FILE, 8000, init) : fetch(FILE, init));
         if (res.ok) {
           cycle = await res.json();
           try { site.storageSet(CACHE_KEY, JSON.stringify({ at: Date.now(), cycle })); } catch (_) {}

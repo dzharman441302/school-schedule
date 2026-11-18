@@ -32,7 +32,11 @@
     const lateCore = window.LatenessCore;
 
     async function load({ force = false } = {}) {
-      const safe = (p, fallback) => Promise.resolve(p).catch(() => fallback);
+      // Every source on its own: a slow one gives its old value after 12 s, never blocks the others.
+      const safe = (p, fallback) => new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(fallback), 12000);
+        Promise.resolve(p).catch(() => fallback).then((v) => { clearTimeout(timer); resolve(v); });
+      });
       const [holidays, weather, duty, events, task, ticker, days, phrases, menuState] = await Promise.all([
         safe(site.loadCalendar ? site.loadCalendar({ force }) : [], []),
         safe(today.loadWeather({ force: false }), null),

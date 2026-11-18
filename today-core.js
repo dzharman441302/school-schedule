@@ -23,6 +23,13 @@
     m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
     return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : '';
   }
+  // fetch with a time limit: a site blocked by the school network answers nothing at all.
+  function fetchSoon(url, ms = 8000, options = {}) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), ms);
+      fetch(url, options).then((r) => { clearTimeout(timer); resolve(r); }, (e) => { clearTimeout(timer); reject(e); });
+    });
+  }
   const headerIndex = (row, names, fallback) => { const n = (v) => String(v ?? '').trim().toLowerCase().replace(/ё/g, 'е').replace(/[\s_]+/g, ''); const i = (row || []).map(n).findIndex((h) => names.map(n).includes(h)); return i >= 0 ? i : fallback; };
 
   /* Погода (Open-Meteo, без ключа) ------------------------------------------- */
@@ -84,7 +91,7 @@
     const lat = TODAY.latitude ?? 56.86, lon = TODAY.longitude ?? 35.9;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&hourly=temperature_2m,weather_code,precipitation_probability&timezone=Europe%2FMoscow&forecast_days=1&wind_speed_unit=ms`;
     try {
-      const res = await fetch(url);
+      const res = await fetchSoon(url);
       if (!res.ok) throw new Error(String(res.status));
       const json = await res.json();
       if (!parseWeather(json)) throw new Error('empty');
@@ -290,7 +297,7 @@
   let phrasesMemory = null;
   async function loadPhrases() {
     if (phrasesMemory) return phrasesMemory;
-    try { const res = await fetch('data/menu-phrases.json?v=1'); if (res.ok) phrasesMemory = await res.json(); } catch (_) {}
+    try { const res = await fetchSoon('data/menu-phrases.json?v=1'); if (res.ok) phrasesMemory = await res.json(); } catch (_) {}
     return phrasesMemory;
   }
 
@@ -307,7 +314,7 @@
   async function loadDays() {
     if (daysMemory) return daysMemory;
     try {
-      const res = await fetch('data/days.json?v=1');
+      const res = await fetchSoon('data/days.json?v=1');
       if (res.ok) daysMemory = (await res.json()).days || {};
     } catch (_) {}
     return daysMemory || {};
@@ -320,5 +327,5 @@
     try { return await site.loadSheet(sheets.notices || 'Оповещения', { optional: true, force, ttl: 5 * 60 * 1000 }); } catch (_) { return []; }
   }
 
-  window.TodayCore = Object.freeze({ weatherText, parseWeather, weatherAdvice, loadWeather, holidayCountdown, dutyFor, punctualClass, tickerItems, eventsFor, taskFor, taskResultBefore, menuMode, mainDish, phraseFor, loadPhrases, dutyAdmins, changesSummary, dayNote, loadDays, loadDuty, loadTickerRows, loadEvents, loadTask, plural });
+  window.TodayCore = Object.freeze({ fetchSoon, weatherText, parseWeather, weatherAdvice, loadWeather, holidayCountdown, dutyFor, punctualClass, tickerItems, eventsFor, taskFor, taskResultBefore, menuMode, mainDish, phraseFor, loadPhrases, dutyAdmins, changesSummary, dayNote, loadDays, loadDuty, loadTickerRows, loadEvents, loadTask, plural });
 })();

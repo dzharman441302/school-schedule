@@ -186,14 +186,21 @@
   // keeps the page that is on screen and never restarts the timer; the timer only
   // runs while there is more than one page.
   // periodOf(keys of the page) → ms: pages of different length (the «Сегодня» slide is longer).
-  function createRotation({ size, period, onTurn, periodOf }) {
+  // sameAs(key) → a name shared by keys that mean the same page (all «today:N» keys are «today»).
+  function createRotation({ size, period, onTurn, periodOf, sameAs }) {
     let keys = [], page = 0, timer = null;
     const pages = () => Math.max(1, Math.ceil(keys.length / size));
     function setKeys(next) {
-      const remaining = keys.slice(page * size);
+      const remaining = keys.slice(page * size), oldIndex = page * size;
       keys = next.slice();
-      const anchor = remaining.find((key) => keys.includes(key));
-      page = anchor === undefined ? 0 : Math.floor(keys.indexOf(anchor) / size);
+      const anchor = remaining.find((key) => keys.includes(key) || (sameAs && keys.some((k) => sameAs(k) === sameAs(key))));
+      let index = anchor === undefined ? -1 : keys.indexOf(anchor);
+      if (anchor !== undefined && index < 0) {
+        // The same kind of page under another key: the nearest one to where the screen was.
+        const like = keys.map((k, i) => (sameAs(k) === sameAs(anchor) ? i : -1)).filter((i) => i >= 0);
+        index = like.reduce((best, i) => (Math.abs(i - oldIndex) < Math.abs(best - oldIndex) ? i : best), like[0]);
+      }
+      page = index < 0 ? 0 : Math.floor(index / size);
       if (page >= pages()) page = 0;
     }
     function sync() {

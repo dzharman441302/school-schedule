@@ -14,9 +14,9 @@ function schedule(lessons = 6) {
   CLASSES.forEach((cls) => { for (let n = 1; n <= lessons; n += 1) out.push([cls, n, `Предмет ${n} (30${n})`, `Предмет ${n} (30${n})`, `Предмет ${n} (30${n})`, `Предмет ${n} (30${n})`, `Предмет ${n} (30${n})`]); });
   return out;
 }
-async function tvAt(time, { search = '', date, lessons, extra = {} } = {}) {
+async function tvAt(time, { search = '', date, lessons, extra = {}, fetchMore } = {}) {
   const sheets = { 'Расписание': schedule(lessons), 'Изменения': [['Дата', 'Класс', 'Урок', 'Изменения', 'Примечание']], 'Календарь': CALENDAR, 'Дежурство': [['Неделя с', 'Неделя по', 'Смена', 'Классы'], ['16.11.2026', '20.11.2026', '1', '6К, 4Б'], ['16.11.2026', '20.11.2026', '2', '8Г, 3Г']], ...extra };
-  const h = await startScreen('tv-students.js', { sheets, epoch: at(time, date), search, before: ['qr.js', 'tv-today.js'] });
+  const h = await startScreen('tv-students.js', { sheets, epoch: at(time, date), search, before: ['qr.js', 'tv-today.js'], fetchMore });
   return { ...h, sheets, grade: () => h.text('grade'), today: () => /data-slide="today"/.test(h.board()), chips: () => [...h.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]) };
 }
 
@@ -111,6 +111,27 @@ test('no lessons left — only «Сегодня»; a locked parallel never shows
   const locked = await tvAt('08:10', { search: '?parallel=9' });
   for (let i = 0; i < 4; i += 1) { assert.ok(!locked.today()); await locked.advance(15000); }
   assert.equal(locked.grade(), '9');
+});
+
+test('a weather site that never answers does not hold the boards (the TVs hung on «Загружаем расписание»)', async () => {
+  const never = (url) => (/open-meteo/.test(url) ? new Promise(() => {}) : null);
+  const h = await tvAt('08:10', { fetchMore: never });
+  assert.equal(h.grade(), '5', 'the parallel board is on the screen at once');
+  assert.doesNotMatch(h.board(), /Загружаем расписание/);
+  await h.advance(16000); // the weather gives up after 8 s, the slide comes without it
+  assert.ok(h.today());
+  assert.doesNotMatch(h.board(), /td-weather/);
+  assert.match(h.board(), /Сегодня на завтрак/);
+});
+
+test('a bell that changes the order keeps «Сегодня» on the screen instead of jumping to a parallel', async () => {
+  const h = await tvAt('08:39'); // the end of the 1st lesson: «Сегодня» after every parallel
+  await h.advance(15000 + 20000 + 15000); // 5 → «Сегодня» → 6 → «Сегодня» from 08:39:50
+  assert.ok(h.today(), 'on «Сегодня» after the 6th grade');
+  await h.advance(12000); // 08:40:02 — the bell: on a break «Сегодня» moves to the end of the round
+  assert.ok(h.today(), 'still «Сегодня», not a jump to the 7th grade');
+  await h.advance(10000);
+  assert.equal(h.grade(), '5', 'then the round of the break starts');
 });
 
 runTests('«Сегодня» slide checks', tests);

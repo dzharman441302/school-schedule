@@ -26,7 +26,7 @@
   // a page of its own: «today:N» and nine «pad:» keys; the last grid page is padded the same way.
   const PAD = 'pad:';
   const isPad = (key) => String(key || '').startsWith(PAD);
-  const rotation = tv.createRotation({ size: ROWS, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD) });
+  const rotation = tv.createRotation({ size: ROWS, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD), sameAs: (key) => (isToday(key) ? TODAY_KEY : key) });
 
   // Where the slide goes: after a full round of grid pages; every other page when there is only
   // one page, before 08:00 and after the lessons; alone when there is no grid.
@@ -253,11 +253,26 @@
       const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { force: true, optional: true })));
       baseRows = b || [];
       changeRows = c || [];
-      if (todaySlide) await todaySlide.load({ force: true }).catch(() => {});
     } catch (_) {}
     rebuild();
     show(false);
     tv.renderFreshness(SHEETS);
+    loadToday();
+  }
+
+  // The «Сегодня» slide is extra: its sources load in the background with time limits, the grid
+  // is already on the screen. One load at a time.
+  let todayLoading = false;
+  function loadToday() {
+    if (!todaySlide || todayLoading) return;
+    todayLoading = true;
+    todaySlide.load({ force: true }).catch(() => {}).then(() => {
+      todayLoading = false;
+      if (!view) return;
+      const before = view.keys.join('|');
+      rebuild();
+      if (view.keys.join('|') !== before || view.keys.some(isToday)) show(false);
+    });
   }
 
   tv.initStage();
