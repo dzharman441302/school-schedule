@@ -12,6 +12,8 @@ window.SCHOOL_CONFIG = Object.freeze({
     vkCommunity: 'https://vk.ru/school_20_tver',
     maxBot: 'https://max.ru/se14285144_bot'
   },
+  // Слайд «Сегодня» на ТВ: координаты для погоды (Тверь).
+  today: { latitude: 56.86, longitude: 35.9 },
   googleSheets: {
     spreadsheetId: '1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4',
     apiKey: 'AIzaSyDGhaQXvcEv-QvHRDHP_8Q9gVEvzd6fuFI',
@@ -23,6 +25,11 @@ window.SCHOOL_CONFIG = Object.freeze({
       notices: 'Оповещения',
       siteSettings: 'Настройки_сайта',
       calendar: 'Календарь',
+      menuReplacements: 'Меню_замены',
+      duty: 'Дежурство',
+      dayEvents: 'События_сайт',
+      dailyTask: 'Задача_дня',
+      dailyTaskResults: 'Задача_дня_итоги',
       news: 'Новости',
       announcements: 'Объявления',
       important: 'Важное',

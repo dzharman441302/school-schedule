@@ -172,4 +172,73 @@ test('a day off shows the next school day instead of an empty grid', async () =>
   assert.equal(h.pageTimers(15000), 0);
 });
 
+/* The «Сегодня» slide on the staff TV (tv-today.js, audience «teachers») ------------------- */
+
+// Wednesday 18.11.2026 (cycle day 8 of the menu). Times are Moscow.
+const at = (hhmm, date = '2026-11-18') => { const [h, m] = hhmm.split(':').map(Number); const [y, mo, d] = date.split('-').map(Number); return new Date(Date.UTC(y, mo - 1, d, h - 3, m)).toISOString(); };
+async function staffToday(teachers, time, options = {}) {
+  const sheets = { 'Учителя': options.rows || rows(teachers), 'Учителя_сайт': options.changes || [CHANGES_HEAD], 'Дежурство': [['Неделя с', 'Неделя по', 'Смена', 'Классы'], ['16.11.2026', '20.11.2026', '1', '6К, 4Б'], ['16.11.2026', '20.11.2026', '2', '8Г, 3Г']], ...(options.extra || {}) };
+  const screen = await startScreen('tv.js', { sheets, epoch: at(time, options.date), search: options.search || '', before: ['tv-today.js'] });
+  const today = () => /data-slide="today"/.test(screen.board());
+  return { ...screen, sheets, today, names: () => [...screen.board().matchAll(/data-teacher="([^"]*)"/g)].map((m) => m[1]), chips: () => [...screen.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]), seen: () => (today() ? 'Сегодня' : [...screen.board().matchAll(/data-teacher="([^"]*)"/g)][0]?.[1]) };
+}
+
+test('the slide comes once after a full round of grid pages, for 20 s; a dot of its own', async () => {
+  const h = await staffToday(names(25), '10:00');
+  assert.equal(h.chips().length, 4, 'three grid pages and «Сегодня»');
+  assert.equal(h.chips()[3], 'Сегодня');
+  const seen = [];
+  for (let i = 0; i < 5; i += 1) { seen.push(h.seen()); await h.advance(h.today() ? 20000 : 15000); }
+  assert.deepEqual(seen, ['Учитель 01', 'Учитель 11', 'Учитель 21', 'Сегодня', 'Учитель 01']);
+  await h.advance(45000);
+  assert.ok(h.today());
+  assert.match(h.html('pager'), /tv-chip is-on">Сегодня</, 'the «Сегодня» dot is lit');
+  assert.equal(h.text('next-text'), 'Дальше сетка учителей через 20 с');
+});
+
+test('one grid page, before 08:00 and after the lessons: the slide every other time; no grid — only it', async () => {
+  const one = await staffToday(names(6), '10:00');
+  const seq = [];
+  for (let i = 0; i < 4; i += 1) { seq.push(one.today() ? 'Сегодня' : 'сетка'); await one.advance(one.today() ? 20000 : 15000); }
+  assert.deepEqual(seq, ['сетка', 'Сегодня', 'сетка', 'Сегодня']);
+  const early = await staffToday(names(25), '07:45');
+  const seq2 = [];
+  for (let i = 0; i < 4; i += 1) { seq2.push(early.seen()); await early.advance(early.today() ? 20000 : 15000); }
+  assert.deepEqual(seq2, ['Учитель 01', 'Сегодня', 'Учитель 11', 'Сегодня']);
+  const evening = await staffToday(names(25), '19:00');
+  assert.ok(evening.today(), 'all lessons over: only the slide');
+  assert.equal(evening.pageTimers(15000) + evening.pageTimers(20000), 0);
+});
+
+test('the teachers’ variant: today’s changes instead of the task, duty administrators, teacher-only events', async () => {
+  const changes = [CHANGES_HEAD,
+    ['18.11.2026', 'Учитель 01', 3, '', '', '', 'cancelled', '7А', 'Рус', '305'], ['18.11.2026', 'Учитель 02', 3, '7А', 'Рус', '214', 'changed', '', '', ''],
+    ['18.11.2026', 'Учитель 02', 4, '7А', 'Рус', '214', 'room', '7А', 'Рус', '305'], ['18.11.2026', 'Учитель 03', 5, '5А', 'Рус', '305', 'normal', '', '', ''],
+    ['19.11.2026', 'Учитель 04', 2, '', '', '', 'cancelled', '5А', 'Рус', '305']];
+  const events = [['Дата', 'Время', 'Что', 'Где', 'Для', 'Опубликовано'], ['18.11.2026', '14:00', 'Педсовет', 'Каб. 211', 'Учителям', ''], ['18.11.2026', '15:00', 'Концерт', 'Актовый зал', 'Всем', '']];
+  const task = [['Дата', 'Задача', 'Пояснение', 'Параллели'], ['18.11.2026', 'Задача для учеников', '', '']];
+  const noon = await staffToday(names(6), '11:30', { search: '?slide=today', changes, extra: { 'События_сайт': events, 'Задача_дня': task } });
+  const board = noon.board();
+  assert.match(board, /Сегодня по расписанию[\s\S]*td-sched__num">3<[\s\S]*изменения сегодня[\s\S]*отмен 1 · замен 1 · смен кабинета 1 · затронуто учителей: 2/);
+  assert.doesNotMatch(board, /td-task|Задача для учеников/, 'no task strip for teachers');
+  assert.doesNotMatch(board, /td-sched__next/, 'tomorrow only after 15:00');
+  assert.match(board, /Педсовет[\s\S]*Концерт/, 'teachers see teacher-only events');
+  assert.match(board, /1 смена[\s\S]*6К, 4Б[\s\S]*администратор: Дятлов В\. С\.[\s\S]*2 смена[\s\S]*8Г, 3Г[\s\S]*администратор: Фатьянова Е\. А\./, 'Wednesday duty administrators of config.js');
+  assert.match(board, /Сегодня на обед/, 'the menu is the same as for pupils');
+  const late = await staffToday(names(6), '15:30', { search: '?slide=today', changes });
+  assert.match(late.board(), /На завтра уже опубликовано: 1 изменение/);
+  const none = await staffToday(names(6), '15:30', { search: '?slide=today' });
+  assert.match(none.board(), /Сегодня изменений нет[\s\S]*На завтра изменения ещё не опубликованы/);
+});
+
+test('duty administrators by weekday and shift; the changes summary', async () => {
+  const h = await startScreen(null, { sheets: {}, epoch: at('09:00') });
+  const duty = { 1: ['А', 'Б', 'В', 'Г', 'Д'], 2: ['Е', 'Ж', '', 'И', 'К'] };
+  const plain = (v) => JSON.parse(JSON.stringify(v));
+  assert.deepEqual(plain(h.today.dutyAdmins(duty, '2026-11-16')), [{ shift: 1, name: 'А' }, { shift: 2, name: 'Е' }], 'Monday');
+  assert.deepEqual(plain(h.today.dutyAdmins(duty, '2026-11-18')), [{ shift: 1, name: 'В' }], 'Wednesday, nobody in the 2nd shift');
+  assert.deepEqual(plain(h.today.dutyAdmins(duty, '2026-11-21')), [], 'Saturday');
+  assert.deepEqual(plain(h.today.changesSummary([CHANGES_HEAD, ['18.11.2026', 'X', 1, '', '', '', 'added', '', '', '']], '2026-11-18')), { published: true, total: 1, cancelled: 0, changed: 1, room: 0, teachers: 1 }, 'an added lesson counts as a replacement');
+});
+
 runTests('staff TV checks', tests);

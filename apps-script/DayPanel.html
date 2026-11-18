@@ -1,0 +1,140 @@
+<style>
+.dp-dialog[hidden]{display:none!important}
+.dp-dialog{position:fixed;inset:0;z-index:110;background:rgba(14,30,58,.45);padding:18px;display:grid;place-items:center}
+.dp-window{width:min(980px,100%);max-height:94vh;overflow:auto;background:#f5f7fb;border:1px solid #d2dced;border-radius:18px;box-shadow:0 20px 75px #112a5c40}
+.dp-head{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;background:#fff;border-bottom:1px solid #dce3ef}
+.dp-head h2{margin:0;font-size:21px;color:#18345f}.dp-head p{margin:3px 0 0;font-size:12px;color:#526783}
+.dp-body{display:grid;gap:14px;padding:14px 18px}
+.dp-card{background:#fff;border:1px solid #d6dfed;border-radius:14px;padding:14px 16px;display:grid;gap:10px}
+.dp-card h3{margin:0;font-size:17px;color:#18345f}.dp-card .dp-help{margin:0;font-size:12px;color:#526783;line-height:1.4}
+.dp-date{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.dp-date label,.dp-field{display:grid;gap:3px;font-size:12px;color:#526783}
+.dp-date input,.dp-field input,.dp-field textarea,.dp-row input{font:inherit;font-size:14px;padding:7px 9px;border:1px solid #cbd6e7;border-radius:8px;min-height:36px;background:#fff}
+.dp-field textarea{min-height:70px;resize:vertical}
+.dp-rows{display:grid;gap:6px}
+.dp-row{display:grid;grid-template-columns:86px minmax(0,1.6fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+.dp-row label{display:flex;align-items:center;gap:5px;font-size:12px;color:#526783;white-space:nowrap}
+.dp-head-row{font-size:11px;color:#526783;font-weight:700}
+.dp-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dp-state{font-size:13px;color:#526783}.dp-state b{color:#18345f}
+.dp-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;background:#edf2fa;color:#344e76;margin:2px 4px 2px 0;cursor:pointer;border:0;font-family:inherit}
+.dp-pill.pub{background:#dcfce7;color:#166534}
+.dp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:120;display:flex;gap:10px;align-items:center;background:#15233f;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700}
+.dp-toast[hidden]{display:none}.dp-toast button{border:0;border-radius:8px;padding:6px 10px;background:#fde68a;color:#15233f;font-weight:800;cursor:pointer}
+@media(max-width:700px){.dp-head-row{display:none}.dp-dialog{padding:0}.dp-window{max-height:100dvh;height:100dvh;border-radius:0}.dp-row{grid-template-columns:72px 1fr;}.dp-row input:nth-child(3){grid-column:1/-1}.dp-grid2{grid-template-columns:1fr}}
+@media print{.dp-dialog,.dp-toast{display:none!important}}
+</style>
+<section class="dp-dialog" id="day-panel" hidden aria-labelledby="dp-title">
+  <div class="dp-window" role="dialog" aria-modal="true">
+    <div class="dp-head"><div><h2 id="dp-title">Сегодня на ТВ</h2><p>События дня и задача дня для слайда «Сегодня» на экранах. На экраны попадает только опубликованное.</p></div><button class="btn quiet small" id="dp-close">Закрыть</button></div>
+    <div class="dp-body">
+      <div class="dp-date"><label>Дата<input type="date" id="dp-date"></label><button class="btn quiet small" data-dp-shift="0">Сегодня</button><button class="btn quiet small" data-dp-shift="1">Завтра</button><span class="dp-state" id="dp-upcoming"></span></div>
+
+      <div class="dp-card">
+        <h3>«Сегодня в школе»</h3>
+        <p class="dp-help">До 5 событий: время, что и где. Ученики видят на экране до трёх ближайших, прошедшие исчезают сами. «Только для учителей» — педсовет, совещание, МО: такое событие покажет только ТВ в учительской.</p>
+        <div class="dp-row dp-head-row"><span>Время</span><span>Что</span><span>Где</span><span></span></div>
+        <div class="dp-rows" id="dp-events"></div>
+        <div class="dp-state" id="dp-events-state"></div>
+        <div class="dp-actions"><button class="btn quiet" id="dp-draft">Сохранить черновик</button><button class="btn success" id="dp-publish">Опубликовать</button><button class="btn quiet" id="dp-unpublish">Снять с публикации</button></div>
+      </div>
+
+      <div class="dp-card">
+        <h3>Задача дня</h3>
+        <p class="dp-help">Задача появляется на экране с QR-кодом; ученики отвечают на странице task.html, без фамилий — только класс. Правильный ответ виден только здесь; на экран он выходит на следующий день вместе с итогами. Несколько верных вариантов — через «;», например «12; двенадцать».</p>
+        <label class="dp-field">Задача<textarea id="dp-task" maxlength="600" placeholder="Например: Сколько будет 2 + 2 × 2?"></textarea></label>
+        <label class="dp-field">Пояснение (необязательно)<input id="dp-explain" maxlength="600" placeholder="Например: подсказка — порядок действий"></label>
+        <div class="dp-grid2"><label class="dp-field">Параллели (пусто — все)<input id="dp-parallels" placeholder="например, 5, 6, 7"></label><label class="dp-field">Правильный ответ<input id="dp-answer" maxlength="100" autocomplete="off"></label></div>
+        <div class="dp-state" id="dp-task-state"></div>
+        <div class="dp-actions"><button class="btn success" id="dp-task-save">Сохранить задачу</button><button class="btn quiet" id="dp-task-delete">Убрать задачу этого дня</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="dp-toast" id="dp-toast" role="status" hidden><span id="dp-toast-text"></span><button type="button" id="dp-toast-undo" hidden>Вернуть</button></div>
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const token = () => sessionStorage.getItem('school20:adminSession') || '';
+  const run = (name, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler((e) => rej(new Error(e && e.message ? e.message : String(e))))[name](token(), ...args));
+  const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Moscow' }).format(new Date());
+  const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const ru = (iso) => iso.split('-').reverse().join('.');
+  const ROWS = 5;
+  let current = null, undoFn = null, toastTimer = 0;
+
+  function toast(text, undo) {
+    $('#dp-toast-text').textContent = text; undoFn = undo || null; $('#dp-toast-undo').hidden = !undo; $('#dp-toast').hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $('#dp-toast').hidden = true; undoFn = null; }, undo ? 9000 : 3500);
+  }
+  function busy(on) { ['#dp-draft', '#dp-publish', '#dp-unpublish', '#dp-task-save', '#dp-task-delete'].forEach((s) => { $(s).disabled = on; }); }
+
+  function renderEvents(list) {
+    const rows = [];
+    for (let i = 0; i < ROWS; i += 1) {
+      const e = list[i] || {};
+      rows.push(`<div class="dp-row"><input aria-label="Время, событие ${i + 1}" data-f="time" value="${esc(e.time)}" placeholder="13:30" inputmode="numeric" maxlength="5"><input aria-label="Что, событие ${i + 1}" data-f="what" value="${esc(e.what)}" maxlength="120" placeholder="${i ? '' : 'Например: Концерт ко Дню матери'}"><input aria-label="Где, событие ${i + 1}" data-f="where" value="${esc(e.where)}" maxlength="120" placeholder="${i ? '' : 'Актовый зал'}"><label><input type="checkbox" data-f="teachers"${e.teachers ? ' checked' : ''}> только учителям</label></div>`);
+    }
+    $('#dp-events').innerHTML = rows.join('');
+  }
+  const readEvents = () => [...document.querySelectorAll('#dp-events .dp-row')].map((r) => ({ time: r.querySelector('[data-f=time]').value.trim(), what: r.querySelector('[data-f=what]').value.trim(), where: r.querySelector('[data-f=where]').value.trim(), teachers: r.querySelector('[data-f=teachers]').checked })).filter((e) => e.time || e.what || e.where);
+
+  function renderState() {
+    const d = current;
+    $('#dp-events-state').innerHTML = d.publishedAt ? `<b>Опубликовано ${esc(d.publishedAt)}</b> · событий на экране: ${d.published.length}` : d.draftAt ? `Черновик сохранён ${esc(d.draftAt)} · на экраны ещё не опубликован` : 'На эту дату событий нет.';
+    $('#dp-unpublish').disabled = !d.published.length;
+    $('#dp-upcoming').innerHTML = (d.upcoming || []).length ? 'Дни с событиями: ' + d.upcoming.map((u) => `<button type="button" class="dp-pill${u.published ? ' pub' : ''}" data-dp-go="${esc(u.date)}" title="${u.published ? 'опубликовано' : 'черновик'}">${esc(ru(u.date).slice(0, 5))}</button>`).join('') : '';
+  }
+
+  async function load(date) {
+    $('#dp-date').value = date;
+    busy(true);
+    try {
+      const [events, task] = await Promise.all([run('getDayEvents', date), run('getDailyTask', date)]);
+      current = events;
+      renderEvents(events.draft || []);
+      renderState();
+      $('#dp-task').value = task.task || ''; $('#dp-explain').value = task.explain || ''; $('#dp-parallels').value = task.parallels || ''; $('#dp-answer').value = task.answer || '';
+      $('#dp-task-state').textContent = task.task ? `Задача на ${ru(date)} сохранена${task.answers ? ` · ответов: ${task.answers}, верных: ${task.correct}` : ''}.` : 'На эту дату задачи нет.';
+    } catch (err) { toast(err.message); } finally { busy(false); }
+  }
+
+  async function act(fn, message, undo) {
+    busy(true);
+    try { const r = await fn(); await load($('#dp-date').value); toast(message, undo); return r; } catch (err) { toast(err.message); } finally { busy(false); }
+  }
+
+  function open() { $('#day-panel').hidden = false; document.querySelector('#workspace-more')?.removeAttribute('open'); load($('#dp-date').value || today()); }
+
+  $('#day-panel-button')?.addEventListener('click', open);
+  $('#dp-close').addEventListener('click', () => { $('#day-panel').hidden = true; });
+  $('#dp-date').addEventListener('change', () => load($('#dp-date').value));
+  document.querySelectorAll('[data-dp-shift]').forEach((b) => b.addEventListener('click', () => load(addDays(today(), Number(b.dataset.dpShift)))));
+  $('#dp-upcoming').addEventListener('click', (e) => { const b = e.target.closest('[data-dp-go]'); if (b) load(b.dataset.dpGo); });
+  $('#dp-draft').addEventListener('click', () => { const date = $('#dp-date').value; act(() => run('saveDayEventsDraft', date, readEvents()), 'Черновик сохранён — на экраны не попал'); });
+  $('#dp-publish').addEventListener('click', () => {
+    const date = $('#dp-date').value, before = (current?.published || []).slice();
+    act(() => run('publishDayEvents', date, readEvents()), `События на ${ru(date)} опубликованы`, async () => {
+      if (before.length) await act(() => run('publishDayEvents', date, before), 'Прежние события возвращены');
+      else await act(() => run('unpublishDayEvents', date), 'Публикация снята');
+    });
+  });
+  $('#dp-unpublish').addEventListener('click', () => {
+    const date = $('#dp-date').value, before = (current?.published || []).slice();
+    act(() => run('unpublishDayEvents', date), `События на ${ru(date)} сняты с экранов`, before.length ? () => act(() => run('publishDayEvents', date, before), 'События снова на экранах') : null);
+  });
+  $('#dp-task-save').addEventListener('click', () => {
+    const date = $('#dp-date').value;
+    act(() => run('saveDailyTask', date, { task: $('#dp-task').value, explain: $('#dp-explain').value, parallels: $('#dp-parallels').value, answer: $('#dp-answer').value }), `Задача на ${ru(date)} сохранена`);
+  });
+  $('#dp-task-delete').addEventListener('click', () => {
+    const date = $('#dp-date').value, before = { task: $('#dp-task').value, explain: $('#dp-explain').value, parallels: $('#dp-parallels').value, answer: $('#dp-answer').value };
+    if (!before.task) return;
+    act(() => run('deleteDailyTask', date), `Задача на ${ru(date)} убрана`, () => act(() => run('saveDailyTask', date, before), 'Задача возвращена'));
+  });
+  $('#dp-toast-undo').addEventListener('click', () => { const fn = undoFn; $('#dp-toast').hidden = true; undoFn = null; if (fn) fn(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#day-panel').hidden) $('#day-panel').hidden = true; });
+})();
+</script>

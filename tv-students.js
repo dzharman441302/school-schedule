@@ -2,6 +2,10 @@
 // ещё будут сегодня. Параллели сменяются каждые 15 секунд; ?parallel=9 закрепляет
 // одну параллель за экраном (10 и 11 классы показываются вместе). После параллелей —
 // слайд «Пунктуальность»: рейтинг классов по опозданиям (lateness-core.js).
+// Слайд «Сегодня» (tv-today.js, 20 с): на переменах — один раз за круг, в остальное время
+// (уроки, до 1-го урока, после 14:00) — через раз; когда уроков нет — он один. На экране,
+// закреплённом за параллелью (?parallel=N), его нет. ?slide=today — только он
+// (с &time=11:30 и &date=2026-11-23 — превью любого момента).
 (() => {
   'use strict';
   const site = window.SchoolSite, core = window.ScheduleCore, tv = window.TvCore, late = window.LatenessCore, config = window.SCHOOL_CONFIG || {};
@@ -16,10 +20,23 @@
   let lock = '';
 
   const LATE_KEY = 'late';
+  const TODAY_KEY = 'today';
+  const onlyToday = new URLSearchParams(location.search).get('slide') === 'today';
+  const todaySlide = window.TvToday && !asked ? window.TvToday.create({ audience: 'students' }) : null;
+  const isToday = (key) => String(key || '').startsWith(TODAY_KEY);
   let scheduleRows = [], changesRows = [], markRows = [], shiftRows = [], loaded = false, failed = false, view = null, lastKey = '';
-  const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true) });
+  const rotation = tv.createRotation({ size: 1, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD) });
 
-  const gradeLabel = (key) => (key === '10-11' ? '10–11' : key === LATE_KEY ? 'Рейтинг' : key);
+  const gradeLabel = (key) => (key === '10-11' ? '10–11' : key === LATE_KEY ? 'Рейтинг' : isToday(key) ? 'Сегодня' : key);
+
+  // Where the «Сегодня» slide goes among the boards: once per round on a break, otherwise
+  // after every board; alone when there is no board. Keys stay unique for the rotation.
+  function withToday(base, s, m) {
+    if (!todaySlide || !todaySlide.available(m)) return base;
+    if (onlyToday || !base.length) return [`${TODAY_KEY}:0`];
+    if (s.type === 'break') return [...base, `${TODAY_KEY}:0`];
+    return base.flatMap((key, i) => [key, `${TODAY_KEY}:${i}`]);
+  }
 
   // Parallels from the class list in config.js (or the schedule itself): 5, 6, … 10–11.
   function parallels() {
@@ -59,7 +76,8 @@
     const groups = all.filter((g) => !lock || g.key === lock);
     const snaps = groups.map((g) => snapshot(g, m, s)).filter((x) => x.rows.length);
     const rating = lock ? null : lateBoard(all.flatMap((g) => g.classes), m);
-    view = { m, s, rating, snaps: new Map(snaps.map((x) => [x.key, x])), keys: snaps.map((x) => x.key).concat(rating ? [LATE_KEY] : []) };
+    const base = snaps.map((x) => x.key).concat(rating ? [LATE_KEY] : []);
+    view = { m, s, rating, base, snaps: new Map(snaps.map((x) => [x.key, x])), keys: withToday(base, s, m) };
     rotation.setKeys(view.keys);
   }
 
@@ -154,6 +172,9 @@
   function show(turned) {
     const { m, s } = view;
     const key = rotation.current()[0];
+    const stage = document.getElementById('stage');
+    stage.classList.toggle('is-today', isToday(key));
+    if (isToday(key)) return showToday(turned, m, s);
     const rating = key === LATE_KEY ? view.rating : null;
     const snap = rating ? null : view.snaps.get(key);
     const grade = snap ? snap.key : lock || '';
@@ -174,11 +195,38 @@
     }
     const pages = rotation.pages();
     const started = rotation.sync();
-    const last = rotation.current()[0] === view.keys[view.keys.length - 1];
-    const text = lock ? 'Параллель закреплена за этим экраном' : pages > 1 ? (last && view.rating ? 'Снова расписание через 15 с' : 'Следующая параллель через 15 с') : '';
-    tv.renderPager(lock ? [] : view.keys.map(gradeLabel), rotation.page(), snap || rating ? text : '');
-    if (turned || started || pages <= 1) tv.restartBar(PERIOD, pages > 1);
-    tv.fitWhenReady(document.getElementById('stage'));
+    const nextKey = view.keys[(rotation.page() + 1) % view.keys.length];
+    const last = rotation.current()[0] === view.base[view.base.length - 1];
+    const text = lock ? 'Параллель закреплена за этим экраном' : pages <= 1 ? '' : isToday(nextKey) ? 'Дальше «Сегодня» через 15 с' : last && view.rating ? 'Снова расписание через 15 с' : 'Следующая параллель через 15 с';
+    renderPager(key);
+    document.getElementById('next-text').textContent = snap || rating ? text : '';
+    if (turned || started || pages <= 1) tv.restartBar(rotation.currentPeriod(), pages > 1);
+    tv.fitWhenReady(stage);
+  }
+
+  // The boards as chips, and one «Сегодня» chip lit while the slide is on.
+  function renderPager(key) {
+    if (lock || onlyToday) return tv.renderPager([], 0, '');
+    const labels = view.base.map(gradeLabel).concat(view.keys.some(isToday) && view.base.length ? ['Сегодня'] : []);
+    const index = isToday(key) ? labels.length - 1 : view.base.indexOf(key);
+    tv.renderPager(labels, Math.max(0, index), '');
+  }
+
+  function showToday(turned, m, s) {
+    const { head, html } = todaySlide.render(m, s, { rating: view.rating });
+    document.getElementById('kicker').textContent = head.kicker;
+    document.getElementById('grade').textContent = head.title;
+    document.getElementById('grade-note').textContent = '';
+    document.querySelector('.tv-title')?.setAttribute('data-tone', head.tone);
+    board.innerHTML = html;
+    const pages = rotation.pages();
+    const started = rotation.sync();
+    renderPager(rotation.current()[0]);
+    document.getElementById('next-text').textContent = pages > 1 ? 'Дальше расписание через 20 с' : '';
+    if (turned || started || pages <= 1) tv.restartBar(rotation.currentPeriod(), pages > 1);
+    const stage = document.getElementById('stage');
+    tv.fitWhenReady(stage);
+    todaySlide.afterRender(board);
   }
 
   /* Clock and data -------------------------------------------------- */
@@ -210,6 +258,7 @@
           shiftRows = shifts || [];
         } catch (_) {}
       }
+      if (todaySlide) await todaySlide.load({ force: true }).catch(() => {});
       loaded = true;
       failed = false;
     } catch (_) {

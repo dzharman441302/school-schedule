@@ -1,6 +1,9 @@
 // ТВ в учительской: сетка «учитель × урок» на сегодня во всю ширину экрана.
 // На странице 10 учителей по алфавиту, страницы сменяются каждые 15 секунд;
 // снятые, добавленные уроки и смена кабинета отмечены цветом прямо в сетке.
+// Слайд «Сегодня» в учительском варианте (tv-today.js, 20 с): после каждого полного круга
+// страниц сетки; если страница одна, до 08:00 и после уроков 2-й смены — через раз; когда
+// сетки нет — только он. ?slide=today — только он (&time=, &date= — превью любого момента).
 (() => {
   'use strict';
   const site = window.SchoolSite, tv = window.TvCore;
@@ -15,7 +18,28 @@
   const board = document.getElementById('board');
 
   let baseRows = [], changeRows = [], view = null, lastKey = '';
-  const rotation = tv.createRotation({ size: ROWS, period: PERIOD, onTurn: () => show(true) });
+  const TODAY_KEY = 'today';
+  const isToday = (key) => String(key || '').startsWith(TODAY_KEY);
+  const onlyToday = new URLSearchParams(location.search).get('slide') === 'today';
+  const todaySlide = window.TvToday ? window.TvToday.create({ audience: 'teachers' }) : null;
+  // Keys are teacher names, ten to a page, so a refresh keeps the place in the list. The slide is
+  // a page of its own: «today:N» and nine «pad:» keys; the last grid page is padded the same way.
+  const PAD = 'pad:';
+  const isPad = (key) => String(key || '').startsWith(PAD);
+  const rotation = tv.createRotation({ size: ROWS, period: PERIOD, onTurn: () => show(true), periodOf: (keys) => (isToday(keys[0]) ? todaySlide.period : PERIOD) });
+
+  // Where the slide goes: after a full round of grid pages; every other page when there is only
+  // one page, before 08:00 and after the lessons; alone when there is no grid.
+  function withToday(names, s, m) {
+    if (!todaySlide || !todaySlide.available(m)) return names;
+    const chunks = [];
+    for (let i = 0; i < names.length; i += ROWS) chunks.push(names.slice(i, i + ROWS));
+    const slide = (n) => [`${TODAY_KEY}:${n}`, ...Array.from({ length: ROWS - 1 }, (_, j) => `${PAD}${n}:${j}`)];
+    const page = (chunk, n) => chunk.concat(Array.from({ length: ROWS - chunk.length }, (_, j) => `${PAD}g${n}:${j}`));
+    if (onlyToday || !chunks.length) return slide(0);
+    if (chunks.length === 1 || s.type === 'before' || s.type === 'after') return chunks.flatMap((chunk, i) => [...page(chunk, i), ...slide(i)]);
+    return [...chunks.flatMap(page), ...slide(0)];
+  }
 
   /* Data ------------------------------------------------------------ */
 
@@ -113,8 +137,8 @@
       for (let n = first; n <= last; n += 1) cols.push(n);
     }
     const names = shown.map((x) => x.teacher);
-    view = { m, s, cols, teachers: new Map(shown.map((x) => [x.teacher, x.lessons])), labels: pageLabels(names) };
-    rotation.setKeys(names);
+    view = { m, s, cols, names, gridPages: Math.ceil(names.length / ROWS), teachers: new Map(shown.map((x) => [x.teacher, x.lessons])), labels: pageLabels(names), keys: withToday(names, s, m) };
+    rotation.setKeys(view.keys);
   }
 
   /* Markup ---------------------------------------------------------- */
@@ -155,7 +179,13 @@
 
   function show(turned) {
     const { m, s, cols } = view;
-    const names = rotation.current();
+    const key = rotation.current()[0];
+    const stage = document.getElementById('stage');
+    stage.classList.toggle('is-today', isToday(key));
+    if (isToday(key)) return showToday(turned, m, s);
+    setTitle('МОУ СОШ № 20', 'Учительская', '');
+    const names = rotation.current().filter((x) => !isPad(x));
+    const page = names.length ? Math.floor(view.names.indexOf(names[0]) / ROWS) : 0;
     if (!names.length) {
       board.innerHTML = emptyHtml(m, s);
     } else {
@@ -167,9 +197,39 @@
     }
     const pages = rotation.pages();
     const started = rotation.sync();
-    tv.renderPager(view.labels, rotation.page(), names.length ? (pages > 1 ? `Страница ${rotation.page() + 1} из ${pages} · дальше через 15 с` : 'Все учителя на одном экране') : '');
-    if (turned || started || pages <= 1) tv.restartBar(PERIOD, pages > 1);
+    const gridPages = view.gridPages;
+    const nextKey = view.keys[((rotation.page() + 1) % pages) * ROWS];
+    const text = !names.length ? '' : pages <= 1 ? 'Все учителя на одном экране' : isToday(nextKey) ? `Страница ${page + 1} из ${gridPages} · дальше «Сегодня» через 15 с` : gridPages > 1 ? `Страница ${page + 1} из ${gridPages} · дальше через 15 с` : 'Все учителя на одном экране';
+    renderPager(key, text);
+    if (turned || started || pages <= 1) tv.restartBar(rotation.currentPeriod(), pages > 1);
     tv.fitWhenReady(board);
+  }
+
+  // Grid pages by surname and one «Сегодня» dot for the slide.
+  function renderPager(key, text) {
+    if (onlyToday) return tv.renderPager([], 0, '');
+    const labels = view.labels.concat(view.keys.some(isToday) && view.gridPages ? ['Сегодня'] : []);
+    const index = isToday(key) ? labels.length - 1 : Math.floor(view.names.indexOf(key) / ROWS);
+    tv.renderPager(labels.length > 1 ? labels : [], Math.max(0, index), text);
+  }
+
+  function setTitle(kicker, title, tone) {
+    document.getElementById('kicker').textContent = kicker;
+    document.getElementById('grade').textContent = title;
+    const tile = document.querySelector('.tv-title');
+    if (tone) tile?.setAttribute('data-tone', tone); else tile?.removeAttribute?.('data-tone');
+  }
+
+  function showToday(turned, m, s) {
+    const { head, html } = todaySlide.render(m, s, { changeRows });
+    setTitle(head.kicker, head.title, head.tone);
+    board.innerHTML = html;
+    const pages = rotation.pages();
+    const started = rotation.sync();
+    renderPager(rotation.current()[0], pages > 1 ? 'Дальше сетка учителей через 20 с' : '');
+    if (turned || started || pages <= 1) tv.restartBar(rotation.currentPeriod(), pages > 1);
+    tv.fitWhenReady(document.getElementById('stage'));
+    todaySlide.afterRender(board);
   }
 
   /* Clock and data -------------------------------------------------- */
@@ -193,6 +253,7 @@
       const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { force: true, optional: true })));
       baseRows = b || [];
       changeRows = c || [];
+      if (todaySlide) await todaySlide.load({ force: true }).catch(() => {});
     } catch (_) {}
     rebuild();
     show(false);

@@ -6,21 +6,22 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
-const SHARED = ['config.js', 'app.js', 'subject-names.js', 'schedule-core.js', 'lateness-core.js', 'tv-core.js'];
+const SHARED = ['config.js', 'app.js', 'subject-names.js', 'schedule-core.js', 'lateness-core.js', 'menu-core.js', 'today-core.js', 'tv-core.js'];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const settle = async () => { for (let i = 0; i < 20; i += 1) await flush(); };
 
 function element(id) {
   const style = { setProperty(name, value) { this[name] = value; } };
   return {
-    id, innerHTML: '', textContent: '', hidden: false, style, dataset: {}, offsetWidth: 0,
+    id, innerHTML: '', textContent: '', hidden: false, style, dataset: {}, offsetWidth: 0, attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); },
     classList: { toggle() {}, add() {}, remove() {} },
     firstElementChild: { style: { setProperty() {} }, offsetWidth: 0 },
     querySelectorAll: () => []
   };
 }
 
-async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080, screen }) {
+async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080, screen, before = [], fetchMore }) {
   let now = 0, id = 0, gate = null, open = null;
   const timers = new Map(), elements = new Map(), events = {}, requests = [];
   const el = (key) => { if (!elements.has(key)) elements.set(key, element(key)); return elements.get(key); };
@@ -31,7 +32,7 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     static now() { return base + now; }
   }
   const context = {
-    console, Intl, JSON, Math, URL, URLSearchParams, AbortController,
+    console, Intl, JSON, Math, URL, URLSearchParams, AbortController, TextEncoder,
     Date: FakeDate,
     document: { getElementById: el, querySelector: el, querySelectorAll: () => [], addEventListener() {} },
     location: { search, pathname: `/${String(script || 'index.js').replace('.js', '.html')}` },
@@ -41,10 +42,16 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     getComputedStyle: () => ({ fontSize: '16px', whiteSpace: 'normal' }),
     setInterval: (fn, period) => { const key = ++id; timers.set(key, { fn, period, due: now + period }); return key; },
     clearInterval: (key) => { timers.delete(key); },
-    setTimeout: (fn, delay = 0) => { const key = ++id; timers.set(key, { fn, period: 0, due: now + delay, once: true }); return key; },
+    setTimeout: (fn, delay = 0) => { const key = ++id; timers.set(key, { fn, period: 0, delay, due: now + delay, once: true }); return key; },
     clearTimeout: (key) => { timers.delete(key); },
     fetch: async (url, options = {}) => {
       if (options.method === 'HEAD') return { headers: { get: () => null } };
+      if (fetchMore) { const extra = fetchMore(String(url), options); if (extra) return extra; }
+      if (/data\/[\w-]+\.json/.test(String(url))) { // site data files (menu cycle…), served from the repository
+        const file = path.join(root, String(url).match(/data\/[\w-]+\.json/)[0]);
+        requests.push({ name: path.basename(file), at: now });
+        return fs.existsSync(file) ? { ok: true, status: 200, json: async () => JSON.parse(fs.readFileSync(file, 'utf8')) } : { ok: false, status: 404, json: async () => ({}) };
+      }
       const name = decodeURIComponent(String(url).match(/\/values\/([^?]+)/)[1]);
       requests.push({ name, at: now });
       if (gate) await gate;
@@ -55,18 +62,22 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
   };
   context.window = context;
   vm.createContext(context);
-  for (const file of [...SHARED, ...(script ? [script] : [])]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+  for (const file of [...SHARED, ...before, ...(script ? [script] : [])]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   await settle();
 
   return {
     tv: context.TvCore,
     core: context.ScheduleCore,
     late: context.LatenessCore,
+    menu: context.MenuCore,
+    today: context.TodayCore,
+    slide: context.TvToday,
+    context,
     site: context.SchoolSite,
     board: () => el('board').innerHTML,
     text: (key) => el(key).textContent,
     html: (key) => el(key).innerHTML,
-    pageTimers: (period) => [...timers.values()].filter((t) => t.period === period).length,
+    pageTimers: (period) => [...timers.values()].filter((t) => t.period === period || (t.once && t.delay === period)).length,
     fetches: (name) => requests.filter((r) => r.name === name).length,
     hold() { gate = new Promise((resolve) => { open = resolve; }); },
     async release() { const go = open; gate = null; open = null; go(); await settle(); },

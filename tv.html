@@ -9,12 +9,12 @@
   <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
   <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="tv.css?v=22">
+  <link rel="stylesheet" href="tv.css?v=24">
 </head>
 <body>
   <div class="tv-stage" id="stage">
     <header class="tv-head tv-head--staff">
-      <div class="tv-tile tv-title"><span class="tv-kicker">МОУ СОШ № 20</span><h1 data-fit="28">Учительская</h1></div>
+      <div class="tv-tile tv-title"><span class="tv-kicker" id="kicker">МОУ СОШ № 20</span><h1 data-fit="28"><span id="grade">Учительская</span></h1></div>
       <div class="tv-tile tv-status"><span id="status-label" data-fit="16">Загрузка…</span><strong id="status-value" data-fit="30"></strong><span class="tv-bar" id="status-bar" hidden><i></i></span></div>
       <div class="tv-tile tv-clock"><b id="time">--:--</b><span id="date"></span></div>
     </header>
@@ -27,11 +27,15 @@
       <span class="tv-fresh" id="fresh"></span>
     </footer>
   </div>
-  <script src="config.js?v=19"></script>
+  <script src="config.js?v=22"></script>
   <script src="app.js?v=18"></script>
   <script src="subject-names.js?v=18"></script>
   <script src="schedule-core.js?v=21"></script>
-  <script src="tv-core.js?v=22"></script>
-  <script src="tv.js?v=21"></script>
+  <script src="lateness-core.js?v=1"></script>
+  <script src="menu-core.js?v=1"></script>
+  <script src="today-core.js?v=1"></script>
+  <script src="tv-core.js?v=23"></script>
+  <script src="tv-today.js?v=1"></script>
+  <script src="tv.js?v=22"></script>
 </body>
 </html>

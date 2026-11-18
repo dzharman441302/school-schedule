@@ -15,13 +15,28 @@
 
   const now = () => Date.now() + offset;
 
+  // Preview of any moment: ?time=11:30 and/or ?date=2026-11-23 freeze the clock of the screen
+  // (for checking the slides; a real screen never has them).
+  const params = new URLSearchParams(location.search);
+  const previewTime = (params.get('time') || '').match(/^(\d{1,2}):(\d{2})$/);
+  const previewDate = (params.get('date') || '').match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || '';
+
   // Moscow wall time for a moment: the school date (UTC noon, as SchoolSite uses) and minutes since midnight.
   function moment(ms = now()) {
+    if (previewTime || previewDate) return previewMoment(ms);
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
       .formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
     const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), 12));
     const minutes = Number(parts.hour) * 60 + Number(parts.minute);
     return { date, minutes, time: `${parts.hour}:${parts.minute}`, schoolDay: site.isSchoolDay(date) };
+  }
+
+  function previewMoment(ms) {
+    const real = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
+    const iso = previewDate || `${real.year}-${real.month}-${real.day}`;
+    const date = new Date(`${iso}T12:00:00Z`);
+    const h = previewTime ? Number(previewTime[1]) : Number(real.hour), mi = previewTime ? Number(previewTime[2]) : Number(real.minute);
+    return { date, minutes: h * 60 + mi, time: `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`, schoolDay: site.isSchoolDay(date), preview: true };
   }
 
   // School-wide bell state; a day off counts as 'off'.
@@ -170,7 +185,8 @@
   // Pages of keys (teachers or parallels) that turn on a timer. A data refresh
   // keeps the page that is on screen and never restarts the timer; the timer only
   // runs while there is more than one page.
-  function createRotation({ size, period, onTurn }) {
+  // periodOf(keys of the page) → ms: pages of different length (the «Сегодня» slide is longer).
+  function createRotation({ size, period, onTurn, periodOf }) {
     let keys = [], page = 0, timer = null;
     const pages = () => Math.max(1, Math.ceil(keys.length / size));
     function setKeys(next) {
@@ -182,16 +198,23 @@
     }
     function sync() {
       if (pages() <= 1) {
-        if (timer !== null) clearInterval(timer);
+        if (timer !== null) (periodOf ? clearTimeout : clearInterval)(timer);
         timer = null;
         return false;
       }
       if (timer !== null) return false;
-      timer = setInterval(() => { page = (page + 1) % pages(); onTurn(); }, period);
+      if (periodOf) {
+        const next = () => { timer = setTimeout(() => { page = (page + 1) % pages(); onTurn(); if (timer !== null) next(); }, periodOf(keys.slice(page * size, page * size + size)) || period); };
+        next();
+      } else {
+        timer = setInterval(() => { page = (page + 1) % pages(); onTurn(); }, period);
+      }
       return true;
     }
+    // The length of the page that is on the screen now (for the bar under «дальше»).
+    const currentPeriod = () => (periodOf ? periodOf(keys.slice(page * size, page * size + size)) || period : period);
     return {
-      setKeys, sync, pages,
+      setKeys, sync, pages, currentPeriod,
       page: () => page,
       current: () => keys.slice(page * size, page * size + size),
       keys: () => keys.slice()

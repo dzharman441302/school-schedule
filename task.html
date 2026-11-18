@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Задача дня МОУ СОШ № 20: реши и проверь ответ.">
+  <meta name="theme-color" content="#15366D">
+  <title>Задача дня — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest?v=18">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=23">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>г. Тверь</span></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a class="topnav__link" href="schedule.html">Расписание</a>
+      <a class="topnav__link" href="schedule.html#changes">Изменения</a>
+      <a class="topnav__link" href="staff.html">Учителям</a>
+    </nav>
+    <div class="topbar__actions"><span class="live-pill" data-live-pill hidden></span></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack task-page">
+    <div class="page-title"><div><span class="eyebrow" data-task-date>Задача дня</span><h1>Задача дня</h1></div></div>
+
+    <section class="task-card" data-task hidden aria-labelledby="task-text">
+      <p class="task-card__text" id="task-text" data-task-text></p>
+      <p class="task-card__explain" data-task-explain hidden></p>
+      <form class="task-form" data-form novalidate>
+        <div class="field"><label for="task-class">Твой класс</label><select class="select" id="task-class"><option value="">Выбери класс</option></select></div>
+        <div class="field"><label for="task-answer">Ответ</label><input class="input" id="task-answer" maxlength="100" autocomplete="off" enterkeyhint="send" placeholder="Например, 42"></div>
+        <div class="help-error" data-error role="alert" hidden></div>
+        <button class="btn help-send" type="submit" data-send>Проверить</button>
+        <p class="help-note">Фамилия не нужна — засчитывается только класс. Один ответ с телефона в день. Правильный ответ и класс, который решил первым, появятся завтра на экране в холле.</p>
+      </form>
+      <div class="task-result" data-result hidden tabindex="-1" aria-live="polite"></div>
+    </section>
+
+    <section class="task-card task-card--empty" data-none hidden><p>Сегодня задачи нет. Загляни завтра!</p></section>
+    <p class="task-yesterday" data-yesterday hidden></p>
+  </div>
+</main>
+
+<footer class="footer"><div class="container footer__inner"><span>© <span data-current-year></span> МОУ СОШ № 20 · задача дня</span></div></footer>
+
+<script src="config.js?v=22"></script>
+<script src="app.js?v=18"></script>
+<script src="subject-names.js?v=18"></script>
+<script src="schedule-core.js?v=21"></script>
+<script src="site-shell.js?v=19"></script>
+<script src="ict-core.js?v=2"></script>
+<script src="today-core.js?v=1"></script>
+<script src="task.js?v=1"></script>
+</body>
+</html>
