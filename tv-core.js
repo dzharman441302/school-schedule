@@ -128,7 +128,9 @@
     let box = $('tv-debug');
     if (!box) { box = document.createElement('div'); box.id = 'tv-debug'; document.body.appendChild(box); }
     const vv = window.visualViewport, scr = window.screen, r = (v) => Math.round(Number(v) || 0);
-    box.textContent = `окно ${r(innerWidth)}×${r(innerHeight)} · страница ${r(document.documentElement.clientWidth)}×${r(document.documentElement.clientHeight)} · видимая ${r(vv?.width)}×${r(vv?.height)} · экран ${r(scr?.width)}×${r(scr?.height)} · плотность ${devicePixelRatio} · масштаб ${scale.toFixed(3)} (${r(w)}×${r(h)})`;
+    const ws = window.TodayCore?.weatherStatus;
+    const weather = !ws ? '' : ws.at ? ` · погода: ${ws.source}, ${new Date(ws.at).toTimeString().slice(0, 5)}${ws.error ? ` (${ws.error})` : ''}` : ws.error ? ` · погода: нет (${ws.error})` : ' · погода: ещё не загружалась';
+    box.textContent = `окно ${r(innerWidth)}×${r(innerHeight)} · страница ${r(document.documentElement.clientWidth)}×${r(document.documentElement.clientHeight)} · видимая ${r(vv?.width)}×${r(vv?.height)} · экран ${r(scr?.width)}×${r(scr?.height)} · плотность ${devicePixelRatio} · масштаб ${scale.toFixed(3)} (${r(w)}×${r(h)}) · часы устройства ${new Date().toLocaleString('ru-RU')}${weather}`;
   }
 
   function initStage() {

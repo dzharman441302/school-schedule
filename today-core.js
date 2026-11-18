@@ -83,6 +83,23 @@
 
   const WEATHER_KEY = 'school20:weather';
   let weatherMemory = null;
+  // What happened to the weather last time — shown on a screen opened with ?debug=1.
+  const weatherStatus = { source: '', at: 0, error: '' };
+  const errorText = (e) => String(e?.message || e || 'ошибка').slice(0, 80);
+
+  // The school's Apps Script (address in «Настройки_сайта») fetches the same forecast on Google's
+  // side: for a screen whose browser cannot reach Open-Meteo (a wrong clock, a blocker, an old browser).
+  async function weatherViaSchool() {
+    const rows = await site.loadSheet(sheets.siteSettings || 'Настройки_сайта', { optional: true, ttl: 60 * 60 * 1000 });
+    const url = String(rows?.slice(1).find((r) => String(r[0] || '') === 'appsScriptUrl')?.[1] || '');
+    if (!/^https:\/\/script\.google\.com\//.test(url)) throw new Error('нет адреса скрипта');
+    const res = await fetchSoon(url, 15000, { method: 'POST', body: JSON.stringify({ action: 'weather' }) });
+    if (!res.ok) throw new Error(`скрипт ${res.status}`);
+    const answer = await res.json();
+    if (!answer?.ok) throw new Error(answer?.error || 'скрипт без погоды');
+    return answer.weather;
+  }
+
   // Тверь по умолчанию; координаты можно поменять в config.js → today.
   async function loadWeather({ force = false } = {}) {
     const now = Date.now();
@@ -90,16 +107,30 @@
     if (!force && weatherMemory && now - weatherMemory.at < WEATHER_MS) return parseWeather(weatherMemory.json);
     const lat = TODAY.latitude ?? 56.86, lon = TODAY.longitude ?? 35.9;
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&hourly=temperature_2m,weather_code,precipitation_probability&timezone=Europe%2FMoscow&forecast_days=1&wind_speed_unit=ms`;
+    let json = null, direct = '';
     try {
       const res = await fetchSoon(url);
-      if (!res.ok) throw new Error(String(res.status));
-      const json = await res.json();
-      if (!parseWeather(json)) throw new Error('empty');
+      if (!res.ok) throw new Error(`open-meteo ${res.status}`);
+      json = await res.json();
+      if (!parseWeather(json)) throw new Error('open-meteo: пустой ответ');
+      Object.assign(weatherStatus, { source: 'open-meteo', at: now, error: '' });
+    } catch (e) {
+      direct = errorText(e);
+      try {
+        json = await weatherViaSchool();
+        if (!parseWeather(json)) throw new Error('пустой ответ');
+        Object.assign(weatherStatus, { source: 'через скрипт школы', at: now, error: `напрямую: ${direct}` });
+      } catch (e2) {
+        json = null;
+        Object.assign(weatherStatus, { error: `напрямую: ${direct}; через скрипт: ${errorText(e2)}` });
+      }
+    }
+    if (json) {
       weatherMemory = { at: now, json };
       try { site.storageSet(WEATHER_KEY, JSON.stringify(weatherMemory)); } catch (_) {}
-    } catch (_) {
+    } else if (!weatherMemory || now - weatherMemory.at > 3 * 60 * 60 * 1000) {
       // Нет связи: старые данные годятся до трёх часов, дальше блок скрывается.
-      if (!weatherMemory || now - weatherMemory.at > 3 * 60 * 60 * 1000) return null;
+      return null;
     }
     return parseWeather(weatherMemory.json);
   }
@@ -327,5 +358,5 @@
     try { return await site.loadSheet(sheets.notices || 'Оповещения', { optional: true, force, ttl: 5 * 60 * 1000 }); } catch (_) { return []; }
   }
 
-  window.TodayCore = Object.freeze({ fetchSoon, weatherText, parseWeather, weatherAdvice, loadWeather, holidayCountdown, dutyFor, punctualClass, tickerItems, eventsFor, taskFor, taskResultBefore, menuMode, mainDish, phraseFor, loadPhrases, dutyAdmins, changesSummary, dayNote, loadDays, loadDuty, loadTickerRows, loadEvents, loadTask, plural });
+  window.TodayCore = Object.freeze({ fetchSoon, weatherStatus, weatherText, parseWeather, weatherAdvice, loadWeather, holidayCountdown, dutyFor, punctualClass, tickerItems, eventsFor, taskFor, taskResultBefore, menuMode, mainDish, phraseFor, loadPhrases, dutyAdmins, changesSummary, dayNote, loadDays, loadDuty, loadTickerRows, loadEvents, loadTask, plural });
 })();

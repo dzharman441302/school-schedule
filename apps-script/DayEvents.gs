@@ -30,6 +30,29 @@ const DAY = Object.freeze({
   perMinute: 120,
 });
 
+/* Погода для экранов -------------------------------------------------------------- */
+
+// Экраны берут прогноз у Open-Meteo сами; если браузер устройства туда не достаёт, они просят его
+// у скрипта: {action:'weather'}. Ответ хранится 30 минут, так что Open-Meteo видит один запрос
+// на всю школу. Координаты — Тверь.
+const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast?latitude=56.86&longitude=35.9&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&hourly=temperature_2m,weather_code,precipitation_probability&timezone=Europe%2FMoscow&forecast_days=1&wind_speed_unit=ms';
+function handleWeather_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('weather:v1');
+  if (cached) return { ok: true, weather: JSON.parse(cached), cached: true };
+  try {
+    const r = UrlFetchApp.fetch(WEATHER_URL, { muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) return { ok: false, error: 'open-meteo ' + r.getResponseCode() };
+    const text = r.getContentText();
+    const json = JSON.parse(text);
+    if (!json || !json.current) return { ok: false, error: 'пустой прогноз' };
+    cache.put('weather:v1', text, 1800);
+    return { ok: true, weather: json };
+  } catch (err) {
+    return { ok: false, error: 'нет связи с сервисом погоды' };
+  }
+}
+
 function dayPrivateSpreadsheet_() {
   const props = PropertiesService.getScriptProperties();
   const id = props.getProperty('PRIVATE_SPREADSHEET_ID');

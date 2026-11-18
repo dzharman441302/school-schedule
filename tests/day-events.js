@@ -129,6 +129,20 @@ test('doPost: «dailyTask» goes to the task, «На экран» of notices is 
   assert.equal(t.ctx.noticeScreen_('что-то'), '');
 });
 
+test('weather for the screens: fetched by the script, kept 30 minutes, errors told plainly', () => {
+  const t = dayHarness();
+  let calls = 0, code = 200;
+  t.ctx.UrlFetchApp = { fetch: (url) => { calls += 1; assert.match(url, /open-meteo/); return { getResponseCode: () => code, getContentText: () => JSON.stringify({ current: { temperature_2m: 1.5 } }) }; } };
+  assert.equal(t.h.plain(t.ctx.handleWeather_()).weather.current.temperature_2m, 1.5);
+  assert.equal(t.h.plain(t.ctx.handleWeather_()).cached, true);
+  assert.equal(calls, 1, 'one request to Open-Meteo for the whole school');
+  t.ctx.CacheService.getScriptCache().remove('weather:v1');
+  code = 503;
+  assert.deepEqual(t.h.plain(t.ctx.handleWeather_()), { ok: false, error: 'open-meteo 503' });
+  const res = t.ctx.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'weather' }) } });
+  assert.equal(JSON.parse(res).ok, false, 'routed through doPost');
+});
+
 let failed = 0;
 for (const [name, fn] of tests) {
   try { fn(); console.log(`PASS ${name}`); } catch (err) { failed += 1; console.error(`FAIL ${name}\n${err.stack}`); }

@@ -116,4 +116,28 @@ test('«Задача дня»: the task of the date and the result of the last o
   assert.equal(t.taskResultBefore([results[0], ['17.11.2026', '0', '4', '', '6']], '2026-11-18').text, 'Ответ на задачу: 6', 'nobody solved it');
 });
 
+test('weather: Open-Meteo first; if the screen cannot reach it — through the school script; status for ?debug=1', async () => {
+  const forecast = { current: { temperature_2m: 3.6, apparent_temperature: 1, weather_code: 3, wind_speed_10m: 2, precipitation: 0 } };
+  const reply = (body) => ({ ok: true, status: 200, json: async () => body });
+  let direct = true, posts = 0;
+  const screen = await startScreen(null, {
+    sheets: { 'Настройки_сайта': [['Ключ', 'Значение'], ['appsScriptUrl', 'https://script.google.com/macros/s/x/exec']] }, epoch: '2026-11-18T08:00:00Z',
+    fetchMore: (url, options) => {
+      if (/open-meteo/.test(url)) return direct ? reply(forecast) : Promise.reject(new Error('Failed to fetch'));
+      if (/script\.google\.com/.test(url)) { posts += 1; assert.equal(JSON.parse(options.body).action, 'weather'); return reply({ ok: true, weather: { ...forecast, current: { ...forecast.current, temperature_2m: -1.2 } } }); }
+      return null;
+    },
+  });
+  const t = screen.today;
+  assert.equal((await t.loadWeather({ force: true })).temp, 4);
+  assert.equal(t.weatherStatus.source, 'open-meteo');
+  assert.equal(posts, 0, 'the script is not asked when Open-Meteo answers');
+  direct = false;
+  const w = await t.loadWeather({ force: true });
+  assert.equal(w.temp, -1, 'the forecast came through the school script');
+  assert.equal(t.weatherStatus.source, 'через скрипт школы');
+  assert.match(t.weatherStatus.error, /напрямую: Failed to fetch/);
+  assert.equal(posts, 1);
+});
+
 runTests('«Сегодня» data checks', tests);
