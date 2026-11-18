@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#15366D">
+  <title>Заявки ИКТ — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=22">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>заявки по ИКТ</span></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack ikt">
+
+    <section class="ikt-login" data-login hidden aria-labelledby="ikt-login-title">
+      <span class="eyebrow">Служебная страница</span>
+      <h1 id="ikt-login-title" class="staff-day-title">Заявки по ИКТ</h1>
+      <form data-login-form>
+        <div class="field"><label for="ikt-pin">PIN заместителя по ИКТ</label><input class="input" id="ikt-pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" required></div>
+        <div class="help-error" data-login-error role="alert" hidden></div>
+        <button class="btn" type="submit" data-login-btn>Войти</button>
+      </form>
+    </section>
+
+    <div class="stack" data-app hidden>
+      <div class="ikt-head">
+        <div>
+          <span class="eyebrow">Заместитель по ИКТ</span>
+          <h1>Заявки по ИКТ</h1>
+          <span class="ikt-sync" data-sync role="status"></span>
+        </div>
+        <div class="ikt-head__tools">
+          <button class="btn btn--ghost btn--sm" type="button" data-refresh>Обновить</button>
+          <a class="btn btn--ghost btn--sm" href="help-qr.html" target="_blank" rel="noopener">QR-наклейки</a>
+          <a class="btn btn--ghost btn--sm" href="help.html" target="_blank" rel="noopener">Форма учителя</a>
+          <button class="btn btn--ghost btn--sm" type="button" data-logout>Выйти</button>
+        </div>
+      </div>
+
+      <div class="ikt-stats" data-stats></div>
+
+      <div class="help-alert" data-pin-warning hidden>PIN для учителей ещё не задан — без него форма заявок не работает. Задайте его в настройках ниже.</div>
+
+      <div class="ikt-filters">
+        <div class="ikt-tabs" role="group" aria-label="Какие заявки показать" data-tabs></div>
+        <label class="visually-hidden" for="ikt-search">Поиск по учителю, кабинету или номеру</label>
+        <input class="input ikt-search" id="ikt-search" type="search" placeholder="Учитель, кабинет или №" autocomplete="off">
+      </div>
+
+      <div class="ikt-list" data-list aria-live="polite"></div>
+
+      <details class="ikt-settings">
+        <summary>Настройки</summary>
+        <form class="ikt-settings__body" data-staff-pin-form>
+          <div class="field"><label for="ikt-staff-pin">PIN для учителей (4–8 цифр)</label><input class="input" id="ikt-staff-pin" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="например, 2468"></div>
+          <button class="btn btn--ghost btn--sm" type="submit">Сохранить PIN</button>
+          <p class="help-note" data-staff-pin-state></p>
+        </form>
+      </details>
+    </div>
+  </div>
+</main>
+
+<div class="ikt-toast" data-toast role="status" hidden><span data-toast-text></span><button type="button" data-toast-undo hidden>Отменить</button></div>
+
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="ict-core.js?v=2"></script>
+<script src="ikt.js?v=2"></script>
+</body>
+</html>

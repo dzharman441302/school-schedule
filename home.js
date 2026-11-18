@@ -135,11 +135,11 @@
 
   function lessonRow(x, isToday, moment, now, date) {
     const info = core.cellInfo(x);
-    const current = moment?.type === 'lesson' && moment.current.lesson === x.lesson;
-    const past = isToday && !current && core.toMin(core.bellEnd(x.lesson, date)) <= now;
-    const classes = ['hd-lesson', x.type !== 'normal' ? 'is-changed' : '', x.type === 'cancelled' ? 'is-cancelled' : '', current ? 'is-now' : '', past && x.type === 'normal' ? 'is-past' : ''].filter(Boolean).join(' ');
+    const clock = isToday ? core.lessonClock(x, moment, now, date) : null, current = clock?.state === 'now';
+    const classes = ['hd-lesson', x.type !== 'normal' ? 'is-changed' : '', x.type === 'cancelled' ? 'is-cancelled' : '', current ? 'is-now' : '', clock?.state === 'next' ? 'is-next' : '', clock?.state === 'past' ? 'is-past' : ''].filter(Boolean).join(' ');
     const badge = current ? 'Сейчас' : info.badge;
-    return `<li class="${classes}"><b class="hd-lesson__n">${x.lesson}</b><span class="hd-lesson__main"><span class="hd-lesson__subj">${esc(info.subject)}</span><span class="hd-lesson__meta">${esc(core.bellStart(x.lesson, date))}${info.room ? ` · каб. ${esc(info.room)}` : ''}</span>${info.old ? `<span class="hd-lesson__was">${esc(info.old)}</span>` : ''}${info.note ? `<span class="hd-lesson__meta">${esc(info.note)}</span>` : ''}</span>${badge ? `<span class="hd-badge">${esc(badge)}</span>` : ''}</li>`;
+    const room = info.room && x.type !== 'cancelled' ? `<span class="hd-lesson__room"><small>каб.</small>${core.roomMarkup(info.room)}</span>` : '';
+    return `<li class="${classes}"><b class="hd-lesson__n">${x.lesson}</b><span class="hd-lesson__main"><span class="hd-lesson__subj">${esc(info.subject)}</span><span class="hd-lesson__meta">${esc(core.bellRange(x.lesson, date))}</span>${info.old ? `<span class="hd-lesson__was">${esc(info.old)}</span>` : ''}${info.note ? `<span class="hd-lesson__meta">${esc(info.note)}</span>` : ''}${badge ? `<span class="hd-badge">${esc(badge)}</span>` : ''}${core.clockMarkup(clock)}</span>${room}</li>`;
   }
 
   // «Приходить к 08:50 — к 2-му уроку (обычно к 08:00)» when the changes move the start or the end of the day.
@@ -312,6 +312,7 @@
   renderClock();
   load();
   setInterval(renderClock, 20000);
-  setInterval(() => { if (loaded) { renderDay(); renderChanges(); renderHeroNext(); } }, 60000);
+  setInterval(() => { if (loaded) renderDay(); }, 30000); // the progress of the lesson on now
+  setInterval(() => { if (loaded) { renderChanges(); renderHeroNext(); } }, 60000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(); });
 })();

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="Заявка по ИКТ для учителей МОУ СОШ № 20: не работает техника или нужен совет по программам.">
+  <meta name="theme-color" content="#15366D">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="СОШ 20">
+  <title>Помощь по ИКТ — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest?v=18">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=22">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>г. Тверь · для учителей</span></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a class="topnav__link" href="schedule.html">Расписание</a>
+      <a class="topnav__link" href="schedule.html#changes">Изменения</a>
+      <a class="topnav__link" href="staff.html">Учителям</a>
+    </nav>
+    <div class="topbar__actions">
+      <span class="live-pill" data-live-pill hidden></span>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack help">
+
+    <div class="page-title">
+      <div>
+        <span class="eyebrow">Учителям</span>
+        <h1>Помощь по ИКТ</h1>
+        <p class="lead">Не работает техника в кабинете или нужен совет по программам — оставьте заявку, это минута.</p>
+      </div>
+    </div>
+
+    <div class="help-alert" data-broken hidden role="alert">Приём заявок пока не подключён. Обратитесь к заместителю директора по ИКТ лично.</div>
+
+    <form class="help-form" data-form novalidate>
+      <fieldset class="help-step">
+        <legend class="help-step__title"><span>1</span>Что случилось?</legend>
+        <div class="help-kinds">
+          <label class="help-kind"><input type="radio" name="type" value="tech"><span class="help-kind__icon" aria-hidden="true">🖥</span><b>Техника не работает</b><small>Компьютер, принтер, проектор, панель, интернет</small></label>
+          <label class="help-kind"><input type="radio" name="type" value="question"><span class="help-kind__icon" aria-hidden="true">❓</span><b>Вопрос по программам</b><small>Журнал, отчёты, Excel, Сферум, почта</small></label>
+        </div>
+      </fieldset>
+
+      <div class="help-body" data-body hidden>
+        <fieldset class="help-step" data-for="tech">
+          <legend class="help-step__title"><span>2</span>Где и что</legend>
+          <div class="field">
+            <label for="help-room">Кабинет</label>
+            <select class="select" id="help-room" name="room"><option value="">Выберите кабинет</option></select>
+          </div>
+          <div class="field">
+            <span class="field__label" id="help-device-label">Устройство</span>
+            <div class="help-chips" role="radiogroup" aria-labelledby="help-device-label" data-devices></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="help-step" data-for="question">
+          <legend class="help-step__title"><span>2</span>Тема</legend>
+          <div class="help-chips" role="radiogroup" aria-label="Тема вопроса" data-topics></div>
+        </fieldset>
+
+        <fieldset class="help-step">
+          <legend class="help-step__title"><span>3</span><span data-text-title>Опишите проблему</span></legend>
+          <div class="field">
+            <label for="help-text" class="visually-hidden">Описание</label>
+            <textarea class="input help-text" id="help-text" name="text" rows="4" maxlength="1000" placeholder="Например: проектор включается, но нет изображения с ноутбука"></textarea>
+            <div class="help-counter" data-counter aria-live="polite">0 / 1000</div>
+          </div>
+          <div class="field">
+            <span class="field__label" data-photo-title>Фото (по желанию)</span>
+            <label class="help-photo" data-photo-pick><input type="file" accept="image/*" data-photo hidden><span aria-hidden="true">📷</span> <span data-photo-label>Сфотографировать или выбрать фото</span></label>
+            <div class="help-photo-preview" data-photo-preview hidden><img alt="Выбранное фото" data-photo-img><button class="btn btn--ghost btn--sm" type="button" data-photo-remove>Убрать фото</button></div>
+            <p class="help-note" data-question-note hidden>Не снимайте экран, на котором видны оценки или фамилии учеников.</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="help-step">
+          <legend class="help-step__title"><span>4</span>Насколько срочно?</legend>
+          <div class="help-urgency" data-urgency></div>
+          <p class="help-note help-note--red" data-red-note hidden>Инженер приходит только по субботам — такую заявку сразу увидит заместитель директора по ИКТ.</p>
+        </fieldset>
+
+        <fieldset class="help-step">
+          <legend class="help-step__title"><span>5</span>Кто отправляет</legend>
+          <div class="help-who">
+            <div class="field"><label for="help-teacher">Фамилия</label><select class="select" id="help-teacher" name="teacher"><option value="">Выберите себя</option></select></div>
+            <div class="field"><label for="help-pin">PIN сотрудников</label><input class="input" id="help-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••"></div>
+          </div>
+          <p class="help-note">PIN общий для всех учителей, его сообщает заместитель директора по ИКТ. Фамилия запомнится на этом устройстве, PIN — нет.</p>
+        </fieldset>
+
+        <div class="help-error" data-error role="alert" hidden></div>
+        <button class="btn help-send" type="submit" data-send>Отправить заявку</button>
+      </div>
+    </form>
+
+    <section class="help-done" data-done hidden tabindex="-1" aria-live="polite">
+      <span class="help-done__mark" aria-hidden="true">✓</span>
+      <h2>Заявка <span data-done-id></span> принята</h2>
+      <p data-done-next></p>
+      <div class="help-max" data-max hidden>
+        <b>Ответ и результат — в MAX</b>
+        <p>Нажмите кнопку один раз — бот запомнит вас, и ответы по заявкам будут приходить в MAX. Или отправьте боту команду <code data-max-cmd></code>.</p>
+        <a class="btn" data-max-link href="#" target="_blank" rel="noopener">Получать ответы в MAX</a>
+      </div>
+      <div class="help-done__actions"><button class="btn" type="button" data-again>Ещё одна заявка</button><a class="btn btn--ghost" href="staff.html">В учительскую</a></div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <span>© <span data-current-year></span> МОУ СОШ № 20 · заявки по ИКТ</span>
+    <nav class="footer__links" aria-label="Ссылки">
+      <a href="staff.html">Учителям</a>
+      <a href="schedule.html">Расписание</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="subject-names.js?v=18"></script>
+<script src="schedule-core.js?v=21"></script>
+<script src="site-shell.js?v=19"></script>
+<script src="ict-core.js?v=2"></script>
+<script src="help.js?v=2"></script>
+</body>
+</html>

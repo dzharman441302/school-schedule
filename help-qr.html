@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>QR-наклейки «Помощь по ИКТ» — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=22">
+</head>
+<body class="qr-page">
+<main id="main" class="page">
+  <div class="container stack">
+    <div class="page-title">
+      <div>
+        <span class="eyebrow">Для печати</span>
+        <h1>QR-наклейки на кабинеты</h1>
+        <p class="lead">12 наклеек на листе A4 (подходят листы самоклеящейся бумаги 70×74 мм). QR открывает форму заявки с уже подставленным кабинетом.</p>
+      </div>
+    </div>
+    <div class="qr-tools">
+      <div class="field"><label for="qr-rooms">Кабинеты через запятую (пусто — все кабинеты школы)</label><input class="input" id="qr-rooms" placeholder="например, 211, 304, Библиотека"></div>
+      <button class="btn" type="button" data-print>Печать</button>
+    </div>
+    <p class="help-note qr-note" data-qr-count role="status">Загружаем кабинеты…</p>
+    <div data-sheets></div>
+  </div>
+</main>
+<script src="config.js?v=18"></script>
+<script src="app.js?v=18"></script>
+<script src="ict-core.js?v=2"></script>
+<script src="qr.js?v=1"></script>
+<script src="help-qr.js?v=1"></script>
+</body>
+</html>

@@ -185,10 +185,11 @@
     if (d.holiday) body = `<div class="empty-state"><strong>${esc(d.holiday.title)}</strong><span>Уроков нет.</span></div>`;
     else if (!d.lessons.length) body = '<div class="empty-state"><strong>Уроков нет.</strong></div>';
     else body = `<ol class="lessons" aria-label="Уроки">${d.lessons.map((x) => {
-      const info = cellInfo(x), timing = lessonTiming(d.date, x.lesson, state);
-      const kind = x.type !== 'normal' ? x.type : timing;
-      const meta = [bellRange(x.lesson, d.date), timing === 'now' && state.moment.remaining ? `осталось ${state.moment.remaining} мин` : timing === 'past' ? 'прошёл' : '', info.note].filter(Boolean).join(' · ');
-      return `<li class="lesson${kind ? ` lesson--${kind}` : ''}${timing === 'now' && kind !== 'now' ? ' lesson--now' : ''}"><div class="lesson__no"><b>${x.lesson}</b><span>${esc(bellStart(x.lesson, d.date))}</span></div><div class="lesson__main">${timing === 'now' ? '<span class="badge badge--now">Идёт сейчас</span>' : ''}${info.badge ? `<span class="badge ${badgeClass[x.type]}">${esc(info.badge)}</span>` : ''}<span class="lesson__subject">${esc(info.subject)}</span>${info.old ? `<span class="lesson__meta">${esc(info.old)}</span>` : ''}<span class="lesson__meta">${esc(meta)}</span></div>${info.room ? `<span class="lesson__room">каб. ${esc(info.room)}</span>` : ''}</li>`;
+      const info = cellInfo(x), clock = sameDay(d.date, state.today) ? core.lessonClock(x, state.moment, core.nowMinutes(), d.date) : null;
+      const timing = clock?.state || '', kind = x.type !== 'normal' ? x.type : timing;
+      const meta = [bellRange(x.lesson, d.date), info.note].filter(Boolean).join(' · ');
+      const marks = `${timing === 'now' && kind !== 'now' ? ' lesson--now' : ''}${timing === 'next' && kind !== 'next' ? ' lesson--next' : ''}${timing === 'past' ? ' is-past' : ''}`;
+      return `<li class="lesson${kind ? ` lesson--${kind}` : ''}${marks}"><div class="lesson__no"><b>${x.lesson}</b><span>${esc(bellStart(x.lesson, d.date))}</span></div><div class="lesson__main">${timing === 'now' ? '<span class="badge badge--now">Идёт сейчас</span>' : ''}${info.badge ? `<span class="badge ${badgeClass[x.type]}">${esc(info.badge)}</span>` : ''}<span class="lesson__subject">${esc(info.subject)}</span>${info.old ? `<span class="lesson__meta">${esc(info.old)}</span>` : ''}<span class="lesson__meta">${esc(meta)}</span>${core.clockMarkup(clock)}</div>${info.room ? `<span class="lesson__room"><small>каб.</small>${core.roomMarkup(info.room)}</span>` : ''}</li>`;
     }).join('')}</ol>`;
     const real = d.lessons.filter((x) => x.type !== 'cancelled');
     const summary = real.length ? `${lessonsLabel(real.length)} · ${bellStart(real[0].lesson, d.date)}–${bellEnd(real[real.length - 1].lesson, d.date)}${d.changes ? ` · ${changeCountLabel(d.changes)}` : ''}` : '';
@@ -252,17 +253,20 @@
   function lessonNewText(next) { return core.lessonText(next); }
   function typeLabel(type) { return ({ cancelled: 'ОТМЕНЕНО', changed: 'ИЗМЕНЕНО', room: 'НОВЫЙ КАБИНЕТ', merged: 'ВЕСЬ КЛАСС ВМЕСТЕ', added: 'ДОБАВЛЕНО' })[type] || ''; }
 
-  function lessonMarkup(x, isNow, date) {
+  // One lesson of the «Изменения» tab: the room is the biggest thing on the card, the time is small.
+  function lessonMarkup(x, clock, date) {
     const time = bellRange(x.lesson, date), cancel = x.type === 'cancelled', next = x.newLesson || x.base || {}, base = x.base;
-    const title = cancel ? 'Урок отменён' : next.subject || x.change || 'Урок';
-    const meta = `<span class="student-lesson__time">${esc(time)}</span>${!cancel && next.room ? `<span class="student-lesson__room">Кабинет ${esc(next.room)}</span>` : ''}`;
+    const isNow = clock?.state === 'now', title = cancel ? 'Урок отменён' : next.subject || x.change || 'Урок';
+    const meta = `<span class="student-lesson__time">${esc(time)}</span>`;
+    const room = !cancel && next.room ? `<span class="student-lesson__room"><small>каб.</small>${core.roomMarkup(next.room)}</span>` : '';
     let detail = '';
     if (cancel && base) detail = `<span class="student-lesson__previous">${esc(base.subject || '')}${base.room ? ' · каб. ' + esc(base.room) : ''}</span>`;
     else if (x.type === 'room') detail = `<span class="student-room-change">Был кабинет ${esc(base?.room || '—')}</span>`;
     else if (x.type === 'merged') detail = `<span class="student-room-change">Без деления на группы · было каб. ${esc(base.room)}</span>`;
     else if (x.type !== 'normal' && base) detail = `<span class="student-lesson__previous">Было: ${esc(lessonOldText(base))}</span>`;
     const label = x.type === 'room' ? 'Новый кабинет' : x.type === 'merged' ? 'Весь класс вместе' : x.type === 'changed' ? 'Изменён' : x.type === 'added' ? 'Новый урок' : x.type === 'cancelled' ? 'Отменён' : '';
-    return `<div class="student-lesson ${x.type}${isNow ? ' is-now' : ''}" data-lesson="${x.lesson}"><div class="student-lesson__number">${x.lesson}</div><div class="student-lesson__body">${isNow ? '<span class="student-lesson__badge badge--now">Идёт сейчас</span>' : ''}<strong>${esc(title)}</strong><div class="student-lesson__meta">${meta}</div>${detail}${x.note ? `<small>${esc(x.note)}</small>` : ''}${label ? `<span class="student-lesson__badge">${label}</span>` : ''}</div></div>`;
+    const marks = `${isNow ? ' is-now' : ''}${clock?.state === 'next' ? ' is-next' : ''}${clock?.state === 'past' ? ' is-past' : ''}`;
+    return `<div class="student-lesson ${x.type}${marks}" data-lesson="${x.lesson}"><div class="student-lesson__number">${x.lesson}</div><div class="student-lesson__body">${isNow ? '<span class="student-lesson__badge badge--now">Идёт сейчас</span>' : ''}<strong>${esc(title)}</strong><div class="student-lesson__meta">${meta}</div>${detail}${x.note ? `<small>${esc(x.note)}</small>` : ''}${label ? `<span class="student-lesson__badge">${label}</span>` : ''}${core.clockMarkup(clock)}</div>${room}</div>`;
   }
 
   // «Приходить к 08:50 — к 2-му уроку (обычно к 08:00)» and «Сокращённые уроки» for one day of the class.
@@ -281,8 +285,8 @@
 
   function renderSelectedClassDay(label, date, state) {
     const rows = core.actualDay(scheduleRows, changesRows, date, selectedClass), title = fmtDate(date);
-    const nowLesson = sameDay(date, state.today) && state.moment.type === 'lesson' ? state.moment.current.lesson : 0;
-    return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)} · ${esc(selectedClass)}</span><h3>${esc(title)}</h3></div><div class="student-change-summary">${summaryMarkup(rows)}</div></header>${boundsMarkup(rows, date)}<div class="student-day-lessons">${rows.length ? rows.map((x) => lessonMarkup(x, x.lesson === nowLesson, date)).join('') : '<div class="empty-state"><strong>Уроков нет.</strong><span>На этот день расписание не найдено.</span></div>'}</div></section>`;
+    const today = sameDay(date, state.today), minutes = core.nowMinutes();
+    return `<section class="student-day-card"><header class="student-day-card__head"><div><span class="section-kicker">${esc(label)} · ${esc(selectedClass)}</span><h3>${esc(title)}</h3></div><div class="student-change-summary">${summaryMarkup(rows)}</div></header>${boundsMarkup(rows, date)}<div class="student-day-lessons">${rows.length ? rows.map((x) => lessonMarkup(x, today ? core.lessonClock(x, state.moment, minutes, date) : null, date)).join('') : '<div class="empty-state"><strong>Уроков нет.</strong><span>На этот день расписание не найдено.</span></div>'}</div></section>`;
   }
 
   function renderAllClassesDay(label, date) {

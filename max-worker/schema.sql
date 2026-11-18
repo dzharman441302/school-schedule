@@ -73,3 +73,19 @@ CREATE TABLE IF NOT EXISTS notice_deliveries (
   sent_at TEXT NOT NULL,
   PRIMARY KEY (notice_id, user_id)
 );
+
+-- v0.5: «Заявки по ИКТ». Roles by secret codes (/role): engineer or ikt (the ИКТ deputy),
+-- kept apart from schedule subscriptions. mode: instant | digest (the deputy's notifications).
+CREATE TABLE IF NOT EXISTS ict_roles (
+  user_id TEXT PRIMARY KEY,
+  role TEXT NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'instant',
+  updated_at TEXT NOT NULL
+);
+-- A teacher bound by the code from the request form (not by a schedule subscription: anyone may follow any teacher).
+CREATE TABLE IF NOT EXISTS ict_links (
+  user_id TEXT PRIMARY KEY,
+  teacher TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ict_links_teacher ON ict_links(teacher);

@@ -15,7 +15,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=18">
   <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="site.css?v=21">
+  <link rel="stylesheet" href="site.css?v=22">
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к содержанию</a>
@@ -63,6 +63,15 @@
       <a class="btn" href="analytics/">Сдать отчёт за триместр →</a>
     </section>
 
+    <section class="staff-banner staff-banner--ict" aria-label="Помощь по ИКТ">
+      <div>
+        <span class="eyebrow">Не работает техника?</span>
+        <h2>Помощь по ИКТ</h2>
+        <p>Компьютер, проектор, принтер или вопрос по журналу и программам — оставьте заявку.</p>
+      </div>
+      <a class="btn btn--ghost" href="help.html">Оставить заявку →</a>
+    </section>
+
     <section class="card staff-controls" aria-label="Параметры сетки">
       <div class="field">
         <label for="staff-date">Дата</label>
@@ -89,6 +98,7 @@
       <summary>Мои настройки и персональная ссылка</summary>
       <section class="staff-controls" aria-label="Мои настройки">
         <div class="field"><label for="staff-my-teacher">Моя фамилия</label><select class="select" id="staff-my-teacher"></select></div>
+        <div class="field"><span class="field__label">Показывать</span><div class="segmented" role="group" aria-label="День или неделя"><button class="segmented__btn" type="button" data-view="day" aria-pressed="true">День</button><button class="segmented__btn" type="button" data-view="week" aria-pressed="false">Моя неделя</button></div></div>
         <div class="field"><span class="field__label">Изменения на дату</span><div class="staff-metrics" data-staff-stats>Изменений нет</div></div>
         <div class="staff-actions">
           <button class="btn btn--ghost btn--sm" type="button" data-my-only>Показать только меня</button>
@@ -98,6 +108,22 @@
     </details>
 
     <div class="staff-legend" aria-label="Обозначения"><strong>Обозначения:</strong><span class="badge">без изменений</span><span class="badge badge--cancelled">отмена</span><span class="badge badge--changed">замена</span><span class="badge badge--room">новый кабинет</span><span class="badge badge--added">добавленный урок</span><span class="badge badge--now">идёт сейчас</span></div>
+
+    <section class="staff-week" data-week hidden aria-label="Моя неделя">
+      <div class="staff-week__head">
+        <div><span class="eyebrow">Моя неделя</span><h2 class="staff-day-title" data-week-title>—</h2></div>
+        <div class="staff-week__tools">
+          <label class="visually-hidden" for="week-teacher">Учитель</label><select class="select" id="week-teacher"></select>
+          <button class="btn btn--ghost btn--sm" type="button" data-week-shift="-7" aria-label="Предыдущая неделя">←</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-week-shift="7" aria-label="Следующая неделя">→</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-print>Печать недели</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-view="day">Сетка дня</button>
+        </div>
+      </div>
+      <div class="staff-metrics staff-week__summary" data-week-summary></div>
+      <div class="staff-week__scroll"><table class="staff-week__table" data-week-table></table></div>
+      <div class="staff-week__list" data-week-list></div>
+    </section>
 
     <section class="staff-grid-card" aria-label="Сетка учителей">
       <div class="staff-grid-toolbar">
@@ -131,8 +157,8 @@
 <script src="config.js?v=18"></script>
 <script src="app.js?v=18"></script>
 <script src="subject-names.js?v=18"></script>
-<script src="schedule-core.js?v=20"></script>
-<script src="site-shell.js?v=18"></script>
-<script src="staff.js?v=19"></script>
+<script src="schedule-core.js?v=21"></script>
+<script src="site-shell.js?v=19"></script>
+<script src="staff.js?v=20"></script>
 </body>
 </html>

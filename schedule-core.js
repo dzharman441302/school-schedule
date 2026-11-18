@@ -254,6 +254,48 @@
   const fmtDay = (date) => site.capitalize(site.formatSchoolDate(date, { weekday: true, year: false }));
   const duration = (min) => (min < 60 ? `${min} мин` : `${Math.floor(min / 60)} ч ${min % 60 ? `${min % 60} мин` : ''}`.trim());
 
+  // What a card of today's lesson says about time. `moment` is classMoment() of that class:
+  // the lesson on now («до звонка 12 мин», how much of it has passed), the next one during a break
+  // or before school, or a lesson already over. Other days and other lessons get null.
+  // «Моя неделя» of a teacher. days: [{ code, off, lessons: [numbers taught], changed }].
+  // A gap is a free lesson between the first and the last one of that day.
+  function teacherWeekSummary(days) {
+    let total = 0, gapsTotal = 0, maxRun = 0;
+    const gaps = [], changedDays = [];
+    days.forEach((d) => {
+      if (d.off) return;
+      const list = [...new Set(d.lessons)].sort((a, b) => a - b);
+      total += list.length;
+      if (d.changed) changedDays.push(d.code);
+      if (!list.length) return;
+      const free = list[list.length - 1] - list[0] + 1 - list.length;
+      if (free) { gaps.push({ code: d.code, count: free }); gapsTotal += free; }
+      let run = 1;
+      list.forEach((n, i) => { run = i && n === list[i - 1] + 1 ? run + 1 : 1; maxRun = Math.max(maxRun, run); });
+    });
+    return { total, gapsTotal, gaps, maxRun, changedDays };
+  }
+
+  function lessonClock(x, moment, minutes = nowMinutes(), date) {
+    if (!moment || moment.type === 'off' || moment.type === 'none') return null;
+    if (moment.type === 'lesson' && moment.current.lesson === x.lesson) return { state: 'now', percent: moment.progress, minutes: moment.remaining, label: `до звонка ${moment.remaining} мин` };
+    if ((moment.type === 'break' || moment.type === 'before') && moment.next.lesson === x.lesson) {
+      return { state: 'next', minutes: moment.until, label: moment.type === 'break' ? `перемена, следующий урок через ${duration(moment.until)}` : `первый урок через ${duration(moment.until)}` };
+    }
+    if (moment.type === 'after' || toMin(bellEnd(x.lesson, date)) <= minutes) return { state: 'past' };
+    return null;
+  }
+
+  // A room for the big badge of a card: «304/407» may break only after the slash, never inside a number.
+  const roomMarkup = (room) => site.escapeHtml(room).replace(/\//g, '/<wbr>');
+
+  // The line under a card: the text and, for the lesson on now, a progress bar along the bottom.
+  function clockMarkup(clock) {
+    if (!clock || clock.state === 'past') return '';
+    const bar = clock.state === 'now' ? `<span class="lesson-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${clock.percent}" aria-label="Прошло ${clock.percent}% урока"><i style="width:${clock.percent}%"></i></span>` : '';
+    return `<span class="lesson-clock lesson-clock--${clock.state}">${site.escapeHtml(clock.label)}</span>${bar}`;
+  }
+
   // State of today for one class: { today, lessons, moment }.
   function todayFor(scheduleRows, changesRows, className) {
     const today = site.getSchoolToday();
@@ -293,6 +335,6 @@
     dayCode, fullSubject, sameText, sameDay, fmtDay, duration, lessonNumber, normalizeDateValue, parseLesson,
     scheduleParts, changesParts, mapScheduleColumns, mapChangesColumns, deriveClasses, dayColumns,
     baseLessonsFor, changeRowsFor, classifyChange, actualDay,
-    nowMinutes, classMoment, bellMoment, dayBounds, boundsLines, lessonText, plural, cellInfo, todayFor, nowCardMarkup
+    nowMinutes, classMoment, bellMoment, lessonClock, clockMarkup, roomMarkup, teacherWeekSummary, dayBounds, boundsLines, lessonText, plural, cellInfo, todayFor, nowCardMarkup
   });
 })();
