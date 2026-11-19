@@ -42,6 +42,7 @@
 - `assets/fonts/` — шрифт Onest (лицензия OFL); `assets/icons/` — сжатый логотип и иконки приложения.
 - `apps-script/` — код панели изменений (копируется в проект Apps Script вручную).
 - `max-worker/` — бот в MAX на Cloudflare Workers; `max-bot/` — тот же бот для своего сервера (Docker).
+- `yc-achievements/` — «Достижения учащихся»: API в Яндекс Облаке (Python, YDB, Object Storage); ФИО учеников хранятся только там. Развёртывание и раздел о персональных данных — в `yc-achievements/README.md`. На сайте не публикуется.
 - `tests/` — регрессионные тесты: `node tests/<файл>.js`.
 
 ## Листы Google Таблицы

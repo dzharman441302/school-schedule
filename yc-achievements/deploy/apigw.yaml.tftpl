@@ -1,0 +1,20 @@
+openapi: 3.0.0
+info:
+  title: sosh20-achievements
+  version: 1.0.0
+# Все запросы, включая OPTIONS, уходят в одну функцию. CORS (только sosh20tver.ru и GitHub Pages)
+# и Cache-Control: no-store ставит сама функция — список доменов в ALLOWED_ORIGINS.
+paths:
+  /{path+}:
+    x-yc-apigateway-any-method:
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: ${function_id}
+        service_account_id: ${service_account_id}
+        payload_format_version: '0.1'

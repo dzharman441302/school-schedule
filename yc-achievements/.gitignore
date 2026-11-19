@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+dist/
+# Список педагогов с полными ФИО — только локально (репозиторий публичный)
+seed/staff.csv
+# Старый реестр для импорта (этап 3) — передаётся скрипту путём, в репозиторий не кладётся
+*.xlsx
+# Terraform: состояние содержит секреты
+deploy/terraform/.terraform/
+deploy/terraform/.terraform.lock.hcl
+deploy/terraform/*.tfstate
+deploy/terraform/*.tfstate.*
+deploy/terraform/terraform.tfvars

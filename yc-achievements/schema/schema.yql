@@ -1,0 +1,62 @@
+-- Схема базы «Достижения учащихся» (Managed YDB, serverless).
+-- Применяется скриптом tools/init_db.py (CREATE TABLE IF NOT EXISTS — повторный запуск безопасен).
+
+CREATE TABLE IF NOT EXISTS staff (
+    id Utf8,
+    short_name Utf8,
+    full_name Utf8,
+    position Utf8,
+    role Utf8,           -- teacher | checker | admin
+    pin_hash Utf8,       -- scrypt; сам PIN нигде не хранится
+    pin_set_at Timestamp,
+    active Bool,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS records (
+    id Utf8,
+    created_at Timestamp,
+    updated_at Timestamp,
+    author_id Utf8,
+    event_name Utf8,
+    contest_id Utf8,
+    direction Utf8,
+    level Utf8,
+    form Utf8,
+    subject Utf8,
+    event_date Date,
+    class_name Utf8,
+    student_name Utf8,
+    result Utf8,
+    supervisor_id Utf8,
+    diploma_key Utf8,
+    consent Bool,
+    status Utf8,         -- new | checked | returned
+    checker_id Utf8,
+    checked_at Timestamp,
+    return_comment Utf8,
+    deleted Bool,
+    PRIMARY KEY (id),
+    INDEX idx_event_date GLOBAL ON (event_date),
+    INDEX idx_author GLOBAL ON (author_id, created_at)
+);
+
+-- Кто что создал, изменил, просмотрел. В details — только id и количества, без ФИО учеников.
+CREATE TABLE IF NOT EXISTS audit (
+    id Utf8,
+    at Timestamp,
+    staff_id Utf8,
+    action Utf8,
+    record_id Utf8,
+    details Utf8,
+    PRIMARY KEY (at, id)
+);
+
+-- Служебная: неверные PIN подряд (ключ staff:<id>) и частота входов с адреса (ключ ip:<адрес>).
+CREATE TABLE IF NOT EXISTS login_limits (
+    key Utf8,
+    count Int32,
+    window_start Timestamp,
+    locked_until Timestamp,
+    PRIMARY KEY (key)
+);

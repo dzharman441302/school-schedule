@@ -4,6 +4,7 @@ exclude:
   - apps-script
   - max-bot
   - max-worker
+  - yc-achievements
   - "*.md"
   - ADMIN-GUIDE.txt
   - DEPLOY.txt
