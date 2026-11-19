@@ -70,6 +70,23 @@ class Storage:
     def delete_url(self, key: str, now: float) -> str:
         return self._url('DELETE', key, 300, now)
 
+    def put_public(self, bucket: str, key: str, data: bytes, content_type: str, cache_control: str, now: float) -> None:
+        """Публичный объект (achievements.json) в отдельный бакет с анонимным чтением."""
+        import urllib.error
+        import urllib.request
+        if not (bucket and self.access_key and self.secret_key):
+            raise RuntimeError('public bucket not configured')
+        headers = {'content-type': content_type, 'cache-control': cache_control}
+        url = presign('PUT', host=self.host, path=f'/{bucket}/{key}', access_key=self.access_key,
+                      secret_key=self.secret_key, expires=300, now=now, headers=headers)
+        req = urllib.request.Request(url, data=data, method='PUT', headers={'Content-Type': content_type, 'Cache-Control': cache_control})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                if resp.status not in (200, 201):
+                    raise RuntimeError(f'put {resp.status}')
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f'put {e.code}') from None
+
     def delete(self, key: str, now: float | None = None) -> bool:
         import urllib.request
         req = urllib.request.Request(self.delete_url(key, now if now is not None else time.time()), method='DELETE')

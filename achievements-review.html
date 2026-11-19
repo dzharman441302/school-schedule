@@ -9,7 +9,7 @@
   <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
   <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="site.css?v=24">
+  <link rel="stylesheet" href="site.css?v=25">
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к содержанию</a>
@@ -52,6 +52,8 @@
           <select class="select ach-year" data-year aria-label="Учебный год"></select>
           <button class="btn btn--ghost btn--sm" type="button" data-refresh>Обновить</button>
           <button class="btn btn--ghost btn--sm" type="button" data-export>Скачать реестр (Excel)</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-export-disk title="Обычно выгружается сам раз в час с 7 до 21">Выгрузить на Яндекс Диск</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-publish title="Обычно обновляется сама раз в 30 минут">Обновить «Наши достижения»</button>
           <a class="btn btn--ghost btn--sm" href="achievements-form.html">Внести достижение</a>
           <button class="btn btn--ghost btn--sm" type="button" data-logout>Выйти</button>
         </div>
@@ -79,6 +81,17 @@
         <input class="input" type="search" data-staff-search placeholder="Поиск по фамилии" aria-label="Поиск педагога" autocomplete="off">
         <div class="ach-staff" data-staff-list></div>
       </div>
+
+      <div class="stack" data-report-view hidden>
+        <p class="help-note">Для листа оценивания стимулирующих: призёры считаются только по проверенным записям, по дате мероприятия. «Не проверено» — для сведения.</p>
+        <form class="ach-report-form" data-report-form>
+          <div class="field"><label for="rv-from">С</label><input class="input" id="rv-from" type="date" name="from" required></div>
+          <div class="field"><label for="rv-to">По</label><input class="input" id="rv-to" type="date" name="to" required></div>
+          <button class="btn btn--sm" type="submit">Показать</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-report-xlsx>Скачать Excel</button>
+        </form>
+        <div class="ach-report" data-report-table></div>
+      </div>
     </div>
   </div>
 </main>
@@ -98,8 +111,8 @@
 
 <div class="ikt-toast" data-toast role="status" hidden><span data-toast-text></span></div>
 
-<script src="config.js?v=23"></script>
+<script src="config.js?v=24"></script>
 <script src="achievements-core.js?v=1"></script>
-<script src="achievements-review.js?v=1"></script>
+<script src="achievements-review.js?v=2"></script>
 </body>
 </html>

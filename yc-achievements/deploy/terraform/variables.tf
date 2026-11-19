@@ -19,6 +19,18 @@ variable "diploma_bucket" {
   default     = "sosh20-achievements-diplomas"
 }
 
+variable "public_bucket" {
+  type        = string
+  description = "Бакет с публичным achievements.json — уникальное имя"
+  default     = "sosh20-achievements-public"
+}
+
+variable "yadisk_path" {
+  type        = string
+  description = "Куда класть реестр на Яндекс Диске; {year} заменяется на 2026-2027"
+  default     = "/Школа/Достижения/Реестр достижений (выгрузка).xlsx"
+}
+
 variable "allowed_origins" {
   type    = list(string)
   default = ["https://sosh20tver.ru", "https://dzharman441302.github.io"]
@@ -43,7 +55,7 @@ variable "function_zip" {
 
 variable "yadisk_token" {
   type        = string
-  description = "OAuth-токен Яндекс Диска (этап 3). До этапа 3 — заглушка."
-  default     = "not-set-until-stage-3"
+  description = "OAuth-токен Яндекс Диска с правом записи (см. README, «Выгрузка на Яндекс Диск»)"
+  default     = "not-set" # пока «not-set», выгрузка на Диск пропускается с ошибкой no-token
   sensitive   = true
 }

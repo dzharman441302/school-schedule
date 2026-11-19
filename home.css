@@ -191,3 +191,12 @@
 .hd :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){.hd-tile,.hd-chip{transition:none}.hd-tile:hover,.hd-chip:hover{transform:none}}
 @media print{.hd-hero,.hd-tiles,.hd-ticker,.hd-bot,.hd-school{display:none}}
+
+/* «Поздравляем!»: последние результаты регионального уровня и выше (achievements-public.js) */
+.hd-congrats{background:#FEF9C3}
+.hd-congrats .hd-sub{text-decoration:none;color:var(--hd-ink)}
+.congrats{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.congrats__item{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border:2px solid var(--hd-ink);border-radius:16px;background:#fff}
+.congrats__medal{font-size:28px;line-height:1}
+.congrats__item b{font-weight:800}
+.congrats__item small{display:block;font-size:13px;color:var(--hd-muted)}

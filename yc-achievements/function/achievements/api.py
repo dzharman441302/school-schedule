@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from urllib.parse import urlsplit
 
-from . import auth, config
+from . import auth, config, jobs
 from .contests import ContestsCache
-from .export import build_registry
+from .export import REPORT_COLUMNS, build_registry, build_supervisors_report, supervisors_report
 from .repo import Repo
 from .validation import (ValidationError, clean_text, school_year_range, school_year_start, split_form,
                          validate_event, validate_student)
@@ -61,10 +61,11 @@ def _new_id() -> str:
 
 class App:
     def __init__(self, repo: Repo, settings: config.Settings, *, clock=time.time,
-                 contests: ContestsCache | None = None, storage=None):
+                 contests: ContestsCache | None = None, storage=None, disk=None):
         self.repo, self.settings, self.clock = repo, settings, clock
         self.contests = contests or ContestsCache(settings.sheet_id, settings.contests_sheet, clock=clock)
         self.storage = storage
+        self.disk = disk or jobs.YandexDisk(settings.yadisk_token)
         self._audit: list[dict] = []
         r = re.compile
         I = r'(?P<id>[0-9a-zA-Z_-]{1,64})'
@@ -86,12 +87,17 @@ class App:
             ('GET', r(r'^/admin/staff$'), self.admin_staff, ADMIN),
             ('PUT', r(rf'^/admin/staff/{I}$'), self.admin_staff_update, ADMIN),
             ('POST', r(rf'^/admin/staff/{I}/pin$'), self.admin_pin, ADMIN),
+            ('POST', r(r'^/admin/export-disk$'), self.admin_export_disk, CHECKERS),
+            ('POST', r(r'^/admin/publish$'), self.admin_publish, CHECKERS),
+            ('GET', r(r'^/report/supervisors$'), self.report_supervisors, ADMIN),
         ]
 
     # ------------------------------------------------------------------ entry
 
     def handle_event(self, event: dict) -> dict:
-        """Событие Yandex API Gateway → ответ Cloud Functions."""
+        """Событие Yandex API Gateway → ответ Cloud Functions. Событие таймера — фоновая задача."""
+        if isinstance(event.get('messages'), list):
+            return self.handle_timer(event)
         headers = {str(k).lower(): str(v) for k, v in (event.get('headers') or {}).items()}
         raw_url = event.get('url') or event.get('path') or '/'
         path = urlsplit(raw_url).path or '/'
@@ -111,6 +117,34 @@ class App:
                 body = '\x00'
         resp = self.handle(method, path, headers, event.get('queryStringParameters') or {}, body, ip)
         return self._to_yc(resp, origin)
+
+    # ------------------------------------------------------------------ timers
+
+    TASKS = ('export_disk', 'publish')
+
+    def run_task(self, task: str) -> dict:
+        """Выгрузка и публикация. Ошибку пишем в лог кодом; следующий запуск таймера повторит."""
+        now = self.now()
+        try:
+            if task == 'export_disk':
+                result = jobs.export_to_disk(self.repo, self.settings, self.disk, now)
+            elif task == 'publish':
+                result = jobs.publish_public(self.repo, self.settings, self.storage, now)
+            else:
+                return {'task': task, 'ok': False, 'error': 'unknown'}
+        except Exception as exc:
+            code = str(exc) if isinstance(exc, (jobs.JobError, RuntimeError)) else type(exc).__name__
+            print(f'task {task} failed: {code[:60]}')
+            return {'task': task, 'ok': False, 'error': code[:60]}
+        print(f'task {task} ok: {result}')
+        return {'task': task, 'ok': True, **result}
+
+    def handle_timer(self, event: dict) -> dict:
+        results = []
+        for message in event['messages']:
+            payload = str(((message or {}).get('details') or {}).get('payload') or '').strip()
+            results.append(self.run_task(payload))
+        return {'statusCode': 200, 'body': json.dumps(results, ensure_ascii=False)}
 
     def handle(self, method: str, path: str, headers: dict, query: dict, body: str, ip: str) -> Response:
         self._audit = []
@@ -505,7 +539,7 @@ class App:
     def export(self, req: Request) -> Response:
         user, year = req.user, self._year(req)
         recs = self.repo.list_records(*school_year_range(year))
-        data = build_registry(recs, self._staff_names())
+        data = build_registry(recs, self._staff_names(), school_year=year, updated_at=datetime.fromtimestamp(self.now(), config.MSK))
         self.audit(user, 'export', details=f'year={year} count={len(recs)}')
         return Response(200, data, content_type=XLSX, filename=f'Реестр достижений {year}-{year + 1}.xlsx')
 
@@ -542,6 +576,30 @@ class App:
         self.audit(user, 'staff_update', details=f"staff={staff['id']} {' '.join(changes)}")
         return Response(200, {'staff': {'id': staff['id'], 'role': staff['role'], 'active': staff['active']}})
 
+    def admin_export_disk(self, req: Request) -> Response:
+        result = self.run_task('export_disk')
+        self.audit(req.user, 'export_disk', details=f"ok={result['ok']}")
+        if not result['ok']:
+            raise ApiError(502, 'disk', f"Не удалось выгрузить на Яндекс Диск ({result['error']}). Повторится автоматически в течение часа.")
+        return Response(200, result)
+
+    def admin_publish(self, req: Request) -> Response:
+        result = self.run_task('publish')
+        self.audit(req.user, 'publish', details=f"ok={result['ok']}")
+        if not result['ok']:
+            raise ApiError(502, 'publish', f"Не удалось обновить страницу «Наши достижения» ({result['error']}).")
+        return Response(200, result)
+
+    def report_supervisors(self, req: Request) -> Response:
+        date_from, date_to = _report_period(req.query, self.today())
+        recs = self.repo.list_records(date_from, date_to)
+        rows = supervisors_report(recs, self._staff_names())
+        self.audit(req.user, 'report', details=f'{date_from}..{date_to} count={len(recs)}')
+        if str(req.query.get('format') or '') == 'xlsx':
+            data = build_supervisors_report(rows, date_from, date_to)
+            return Response(200, data, content_type=XLSX, filename=f'Достижения по руководителям {date_from}—{date_to}.xlsx')
+        return Response(200, {'from': date_from, 'to': date_to, 'columns': REPORT_COLUMNS, 'rows': rows})
+
     def admin_pin(self, req: Request) -> Response:
         user = req.user
         staff = self.repo.get_staff(req.params['id'])
@@ -554,6 +612,15 @@ class App:
         self.audit(user, 'pin_reset', details=f"staff={staff['id']}")
         # PIN возвращается один раз и нигде не сохраняется в открытом виде.
         return Response(200, {'staff_id': staff['id'], 'short_name': staff['short_name'], 'pin': pin})
+
+
+def _report_period(q: dict, today) -> tuple[str, str]:
+    start = school_year_range(school_year_start(today))[0]
+    date_from = str(q.get('from') or start)
+    date_to = str(q.get('to') or today.isoformat())
+    if not (re.fullmatch(r'\d{4}-\d{2}-\d{2}', date_from) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', date_to)) or date_from > date_to:
+        raise ApiError(400, 'bad_period', 'Неверный период')
+    return date_from, date_to
 
 
 def _quote(text: str) -> str:

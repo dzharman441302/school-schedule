@@ -65,15 +65,16 @@
 
   function renderTabs() {
     const tabs = TABS.map(([key, label]) => [key, key === 'new' && state.counts.new != null ? `${label} · ${state.counts.new}` : label]);
-    if (state.me.role === 'admin') tabs.push(['staff', 'Педагоги']);
+    if (state.me.role === 'admin') tabs.push(['staff', 'Педагоги'], ['report', 'По руководителям']);
     $('[data-tabs]').innerHTML = tabs.map(([key, label]) => `<button class="chip" type="button" data-tab="${key}" aria-pressed="${key === state.tab}">${esc(label)}</button>`).join('');
     $('[data-tabs]').querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
       state.tab = b.dataset.tab;
       state.selected.clear();
       renderTabs();
-      $('[data-records-view]').hidden = state.tab === 'staff';
+      $('[data-records-view]').hidden = ['staff', 'report'].includes(state.tab);
       $('[data-staff-view]').hidden = state.tab !== 'staff';
-      if (state.tab === 'staff') loadStaff(); else loadRecords();
+      $('[data-report-view]').hidden = state.tab !== 'report';
+      if (state.tab === 'staff') loadStaff(); else if (state.tab === 'report') loadReport(); else loadRecords();
     }));
   }
 
@@ -197,20 +198,50 @@
     } catch (err) { if (win) win.close(); handle(err); }
   }
 
-  async function exportXlsx() {
-    const button = $('[data-export]');
+  async function download(button, path, name) {
     button.disabled = true;
     try {
-      const res = await api.file(`/export.xlsx?year=${state.year}`);
+      const res = await api.file(path);
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `Реестр достижений ${state.year}-${state.year + 1}.xlsx`;
+      a.download = name;
       document.body.append(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     } catch (err) { handle(err); } finally { button.disabled = false; }
+  }
+  const exportXlsx = () => download($('[data-export]'), `/export.xlsx?year=${state.year}`, `Реестр достижений ${state.year}-${state.year + 1}.xlsx`);
+
+  // Выгрузка на Диск и публикация сами идут по таймеру; кнопки — «сейчас».
+  async function runNow(button, path, okText) {
+    button.disabled = true;
+    const old = button.textContent;
+    button.textContent = 'Подождите…';
+    try { await api.post(path); toast(okText); } catch (err) { handle(err); } finally { button.disabled = false; button.textContent = old; }
+  }
+
+  /* Отчёт по руководителям (admin) ------------------------------------------------------ */
+
+  function reportPeriod() {
+    const f = $('[data-report-form]');
+    if (!f.elements.from.value) {
+      const now = new Date();
+      f.elements.from.value = `${core.schoolYearStart(now)}-09-01`;
+      f.elements.to.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    return new URLSearchParams({ from: f.elements.from.value, to: f.elements.to.value });
+  }
+
+  async function loadReport() {
+    const box = $('[data-report-table]');
+    try {
+      const data = await api.get(`/report/supervisors?${reportPeriod()}`);
+      box.innerHTML = data.rows.length ? `<div class="ach-report__scroll"><table class="ach-table"><thead><tr>${data.columns.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>
+        <tbody>${data.rows.map((r) => `<tr>${r.map((v, i) => (i ? `<td>${v}</td>` : `<th scope="row">${esc(v)}</th>`)).join('')}</tr>`).join('')}</tbody></table></div>`
+        : '<div class="ikt-empty">За этот период записей нет.</div>';
+    } catch (err) { handle(err); }
   }
 
   /* Педагоги (admin) ----------------------------------------------------------------- */
@@ -265,8 +296,12 @@
     }
     $('[data-logout]').addEventListener('click', () => { api.logout(); window.location.reload(); });
     $('[data-relogin]').addEventListener('click', () => { api.logout(); window.location.reload(); });
-    $('[data-refresh]').addEventListener('click', () => (state.tab === 'staff' ? loadStaff() : loadRecords()));
+    $('[data-refresh]').addEventListener('click', () => (state.tab === 'staff' ? loadStaff() : state.tab === 'report' ? loadReport() : loadRecords()));
     $('[data-export]').addEventListener('click', exportXlsx);
+    $('[data-export-disk]').addEventListener('click', (e) => runNow(e.currentTarget, '/admin/export-disk', 'Реестр выгружен на Яндекс Диск'));
+    $('[data-publish]').addEventListener('click', (e) => runNow(e.currentTarget, '/admin/publish', 'Страница «Наши достижения» обновлена'));
+    $('[data-report-form]').addEventListener('submit', (e) => { e.preventDefault(); loadReport(); });
+    $('[data-report-xlsx]').addEventListener('click', (e) => { const q = reportPeriod(); download(e.currentTarget, `/report/supervisors?${q}&format=xlsx`, `Достижения по руководителям ${q.get('from')}—${q.get('to')}.xlsx`); });
     $('[data-year]').addEventListener('change', (e) => { state.year = Number(e.target.value); loadRecords(); });
     let timer = null;
     document.querySelectorAll('[data-filter]').forEach((el) => el.addEventListener(el.type === 'search' ? 'input' : 'change', () => { clearTimeout(timer); timer = setTimeout(loadRecords, el.type === 'search' ? 350 : 0); }));

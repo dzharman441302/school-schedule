@@ -18,6 +18,8 @@ DIRECTIONS = [
 LEVELS = ['Школьный', 'Муниципальный', 'Региональный', 'Межрегиональный', 'Всероссийский', 'Международный']
 FORMS = ['Очно', 'Дистанционно']
 RESULTS = ['Участник', 'Призёр', 'Победитель', '1 место', '2 место', '3 место', 'Лауреат', 'Дипломант', 'Финалист']
+# «Призёр и выше» — для сводки, ленты побед на сайте и отчёта по руководителям.
+PRIZE_RESULTS = ['Победитель', 'Призёр', '1 место', '2 место', '3 место', 'Лауреат', 'Дипломант']
 ROLES = ['teacher', 'checker', 'admin']
 STATUSES = ['new', 'checked', 'returned']
 
@@ -57,6 +59,10 @@ class Settings:
     s3_host: str = 'storage.yandexcloud.net'
     sheet_id: str = ''
     contests_sheet: str = 'Конкурсы_сайт'
+    public_bucket: str = ''
+    public_key: str = 'achievements.json'
+    yadisk_token: str = ''
+    yadisk_path: str = '/Школа/Достижения/Реестр достижений (выгрузка).xlsx'
 
     @classmethod
     def from_env(cls) -> 'Settings':
@@ -71,4 +77,8 @@ class Settings:
             s3_host=env('S3_HOST', 'storage.yandexcloud.net'),
             sheet_id=env('SHEET_ID', ''),
             contests_sheet=env('CONTESTS_SHEET', 'Конкурсы_сайт'),
+            public_bucket=env('PUBLIC_BUCKET', ''),
+            public_key=env('PUBLIC_KEY', 'achievements.json'),
+            yadisk_token=env('YADISK_TOKEN', ''),
+            yadisk_path=env('YADISK_PATH', cls.yadisk_path),
         )

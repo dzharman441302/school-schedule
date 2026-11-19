@@ -14,3 +14,8 @@ output "ydb_database" {
 output "diploma_bucket" {
   value = yandex_storage_bucket.diplomas.bucket
 }
+
+output "public_json_url" {
+  description = "Вписать в config.js → achievementsPublicUrl"
+  value       = "https://storage.yandexcloud.net/${yandex_storage_bucket.public.bucket}/achievements.json"
+}

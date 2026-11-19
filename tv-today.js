@@ -7,7 +7,8 @@
 //    дежурство + пунктуальный класс, «Сегодня в школе»;
 //  • полоса «Задача дня» с QR на task.html (ученики) или «Сегодня по расписанию» (учительская:
 //    сколько изменений сегодня, сколько учителей затронуто, после 15:00 — что уже на завтра);
-//  • бегущая строка из «Оповещений» с отметкой «На экран».
+//  • бегущая строка из «Оповещений» с отметкой «На экран» и поздравления «Наших достижений»
+//    (муниципальный уровень и выше за 14 дней, achievements-public.js; имя — только с согласия).
 // Блока без данных нет на экране — соседние растягиваются; «нет данных» не пишется никогда.
 (() => {
   'use strict';
@@ -28,7 +29,8 @@
   }
 
   function create({ audience = 'students' } = {}) {
-    const data = { holidays: [], weather: null, duty: [], events: [], tasks: [], results: [], ticker: [], days: {}, phrases: null, menuReady: false, late: null };
+    const data = { holidays: [], weather: null, duty: [], events: [], tasks: [], results: [], ticker: [], days: {}, phrases: null, menuReady: false, late: null, wins: null };
+    const wins = window.AchievementsPublic;
     const lateCore = window.LatenessCore;
 
     async function load({ force = false } = {}) {
@@ -49,6 +51,7 @@
         safe(menu ? menu.loadMenuCycle({ force: false }) : null, null),
       ]);
       if (audience === 'teachers' && lateCore) data.late = await loadLate().catch(() => data.late);
+      if (wins && config.achievementsPublicUrl) data.wins = await safe(wins.load(config.achievementsPublicUrl, { force }), data.wins);
       Object.assign(data, { holidays: holidays || [], weather: weather || data.weather, duty: duty || [], events: events || [], tasks: task?.tasks || [], results: task?.results || [], ticker: ticker || [], days: days || {}, phrases, menuReady: Boolean(menuState?.cycle) });
     }
 
@@ -212,10 +215,14 @@
     }
 
     function tickerBlock(m) {
-      const items = today.tickerItems(data.ticker, m.date, audience);
+      const notices = today.tickerItems(data.ticker, m.date, audience);
+      const congrats = wins && data.wins ? wins.tickerTexts(data.wins, isoOf(m.date)) : [];
+      // Без объявлений ярлык строки — «Поздравляем», и в самих строках слово не повторяется.
+      const items = [...notices, ...(notices.length ? congrats : congrats.map((t) => t.replace(/^Поздравляем! /, '')))];
       if (!items.length) return '';
       const text = items.map(esc).join('<span class="td-ticker__dot" aria-hidden="true">•</span>');
-      return `<div class="td-ticker" role="marquee" aria-label="Объявления"><span class="td-ticker__tag">${ICON.megaphone}<b>Объявления</b></span><div class="td-ticker__window"><div class="td-ticker__track">${text}</div></div></div>`;
+      const tag = notices.length ? 'Объявления' : 'Поздравляем';
+      return `<div class="td-ticker" role="marquee" aria-label="${tag}"><span class="td-ticker__tag">${ICON.megaphone}<b>${tag}</b></span><div class="td-ticker__window"><div class="td-ticker__track">${text}</div></div></div>`;
     }
 
     /* Slide ---------------------------------------------------------------------------- */

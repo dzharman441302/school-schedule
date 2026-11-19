@@ -33,6 +33,10 @@ class FakeStorage(Storage):
     def __init__(self):
         super().__init__('diplomas-test', 'AKTESTKEY', 'secret-test')
         self.deleted = []
+        self.public = {}
+
+    def put_public(self, bucket, key, data, content_type, cache_control, now):
+        self.public[(bucket, key)] = {'data': data, 'content_type': content_type, 'cache_control': cache_control}
 
     def delete(self, key, now=None):
         self.deleted.append(key)
@@ -62,7 +66,7 @@ def storage():
 
 @pytest.fixture
 def app(repo, clock, storage):
-    settings = config.Settings(token_secret='test-secret')
+    settings = config.Settings(token_secret='test-secret', public_bucket='pub-test', yadisk_token='disk-token')
     contests = ContestsCache('sheet', 'Конкурсы_сайт', clock=clock,
                              fetch=lambda *_: 'ID,Название,Направление,Уровень,Предмет\nc1,Олимпиада по математике,Предметная олимпиада,Муниципальный,Математика\n')
     return App(repo, settings, clock=clock, contests=contests, storage=storage)

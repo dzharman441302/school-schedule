@@ -58,5 +58,7 @@ window.SCHOOL_CONFIG = Object.freeze({
   vector20: { coordinator: '', contactEmail: '', applicationUrl: '' },
   // «Достижения учащихся»: адрес API в Яндекс Облаке (terraform output api_url, см. yc-achievements/README.md).
   // Пусто — страницы achievements-form.html и achievements-review.html показывают «ещё не подключён».
-  achievementsApi: ''
+  achievementsApi: '',
+  // Публичный achievements.json (terraform output public_json_url): achievements.html, «Поздравляем!» на главной, бегущая строка ТВ.
+  achievementsPublicUrl: ''
 });

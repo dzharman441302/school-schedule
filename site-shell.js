@@ -82,6 +82,7 @@
       <div class="sheet__links">
         <a href="index.html">Главная</a>
         <a href="schedule.html#bells">Расписание звонков</a>
+        ${config.achievementsPublicUrl ? '<a href="achievements.html">Наши достижения</a>' : ''}
         <a href="help.html">Помощь по ИКТ</a>
         ${page === 'staff' || /achievements-form\.html$/.test(path) ? '<a href="achievements-form.html">Внести достижение</a>' : ''}
         ${contact ? `<a href="${esc(contact)}"${ext(contact)}>Связаться со школой</a>` : ''}
