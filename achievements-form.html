@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#15366D">
+  <title>Внести достижение — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=24">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>достижения учащихся</span></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a class="topnav__link" href="schedule.html">Расписание</a>
+      <a class="topnav__link" href="staff.html">Учителям</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack ach">
+
+    <div class="page-title">
+      <div>
+        <span class="eyebrow">Учителям</span>
+        <h1>Внести достижение</h1>
+        <p class="lead">Олимпиады, конкурсы, проекты, соревнования. Одна форма — одно мероприятие и сколько угодно учеников (до 40).</p>
+      </div>
+    </div>
+
+    <div class="help-alert" data-broken hidden role="alert"></div>
+
+    <section class="ikt-login" data-login hidden aria-labelledby="ach-login-title">
+      <h2 id="ach-login-title" class="ach-h2">Вход</h2>
+      <form data-login-form>
+        <div class="field"><label for="ach-staff">Кто вы</label><select class="select" id="ach-staff" data-login-select><option value="">Загружаем список…</option></select></div>
+        <div class="field"><label for="ach-pin">Личный PIN (6 цифр)</label><input class="input" id="ach-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" data-login-pin></div>
+        <div class="help-error" data-login-error role="alert" hidden></div>
+        <button class="btn" type="submit" data-login-btn>Войти</button>
+        <p class="help-note">PIN выдаёт ответственный за олимпиады или администратор. Забыли — попросите выдать новый.</p>
+      </form>
+    </section>
+
+    <div class="stack" data-app hidden>
+      <div class="ach-who">
+        <span>Вы вошли: <b data-me></b></span>
+        <a class="btn btn--ghost btn--sm" href="achievements-review.html" data-review-link hidden>Проверка записей</a>
+        <button class="btn btn--ghost btn--sm" type="button" data-logout>Выйти</button>
+      </div>
+
+      <form class="help-form" data-form novalidate>
+        <fieldset class="help-step">
+          <legend class="help-step__title"><span>1</span>Мероприятие</legend>
+          <div class="field ach-search">
+            <label for="ach-event">Название</label>
+            <div class="ach-search__box">
+              <input class="input" id="ach-event" name="event_name" autocomplete="off" maxlength="200" placeholder="Начните вводить: «олимпиада математ…»" data-event aria-autocomplete="list" aria-controls="ach-suggest">
+              <div class="ach-suggest" id="ach-suggest" role="listbox" data-suggest hidden></div>
+            </div>
+            <p class="help-note" data-event-note>Выберите из списка конкурсов школы или впишите своё.</p>
+          </div>
+          <div class="ach-grid">
+            <div class="field"><label for="ach-direction">Направление</label><select class="select" id="ach-direction" name="direction"></select></div>
+            <div class="field"><label for="ach-level">Уровень</label><select class="select" id="ach-level" name="level"></select></div>
+            <div class="field"><label for="ach-subject">Предмет / номинация</label><input class="input" id="ach-subject" name="subject" maxlength="120" placeholder="необязательно"></div>
+            <div class="field"><label for="ach-date">Дата</label><input class="input" id="ach-date" name="event_date" type="date"></div>
+            <div class="field"><label for="ach-form">Форма</label><select class="select" id="ach-form" name="form"></select></div>
+            <div class="field"><label for="ach-supervisor">Руководитель</label><select class="select" id="ach-supervisor" name="supervisor_id"></select></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="help-step">
+          <legend class="help-step__title"><span>2</span>Ученики</legend>
+          <label class="ach-check"><input type="checkbox" data-same-toggle> Результат одинаковый для всех</label>
+          <div class="field" data-same-wrap hidden><label for="ach-same">Результат для всех</label><select class="select" id="ach-same" data-same-result></select></div>
+          <div class="ach-rows" data-rows></div>
+          <button class="btn btn--ghost" type="button" data-add-row>+ ещё ученик</button>
+          <p class="help-note ach-consent-note">Галочку «Можно публиковать ФИО» отмечайте, только если у школы есть письменное согласие родителей на публикацию ФИО.</p>
+        </fieldset>
+
+        <div class="help-error" data-error role="alert" hidden></div>
+        <button class="btn help-send" type="submit" data-send>Записать</button>
+      </form>
+
+      <div class="ach-done" data-done role="status" hidden tabindex="-1"></div>
+
+      <section class="stack" aria-labelledby="ach-mine-title">
+        <div class="ach-mine-head">
+          <h2 id="ach-mine-title" class="ach-h2">Мои записи</h2>
+          <select class="select ach-year" data-year aria-label="Учебный год"></select>
+        </div>
+        <div class="ach-list" data-mine aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="ikt-toast" data-toast role="status" hidden><span data-toast-text></span></div>
+
+<script src="config.js?v=23"></script>
+<script src="app.js?v=18"></script>
+<script src="site-shell.js?v=20"></script>
+<script src="achievements-core.js?v=1"></script>
+<script src="achievements-form.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#15366D">
+  <title>Проверка достижений — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=24">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>проверка достижений</span></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack ikt">
+
+    <div class="help-alert" data-broken hidden role="alert"></div>
+
+    <section class="ikt-login" data-login hidden aria-labelledby="rv-login-title">
+      <span class="eyebrow">Служебная страница</span>
+      <h1 id="rv-login-title" class="ach-h2">Проверка достижений</h1>
+      <form data-login-form>
+        <div class="field"><label for="rv-staff">Кто вы</label><select class="select" id="rv-staff" data-login-select><option value="">Загружаем список…</option></select></div>
+        <div class="field"><label for="rv-pin">Личный PIN (6 цифр)</label><input class="input" id="rv-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" data-login-pin></div>
+        <div class="help-error" data-login-error role="alert" hidden></div>
+        <button class="btn" type="submit" data-login-btn>Войти</button>
+      </form>
+    </section>
+
+    <div class="help-alert" data-denied hidden role="alert">Этот кабинет — для ответственного за олимпиады и администратора. <a href="achievements-form.html">Внести достижение →</a> <button class="btn btn--ghost btn--sm" type="button" data-relogin>Войти под другим именем</button></div>
+
+    <div class="stack" data-app hidden>
+      <div class="ikt-head">
+        <div>
+          <span class="eyebrow" data-me></span>
+          <h1>Проверка достижений</h1>
+          <span class="ikt-sync" data-count role="status"></span>
+        </div>
+        <div class="ikt-head__tools">
+          <select class="select ach-year" data-year aria-label="Учебный год"></select>
+          <button class="btn btn--ghost btn--sm" type="button" data-refresh>Обновить</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-export>Скачать реестр (Excel)</button>
+          <a class="btn btn--ghost btn--sm" href="achievements-form.html">Внести достижение</a>
+          <button class="btn btn--ghost btn--sm" type="button" data-logout>Выйти</button>
+        </div>
+      </div>
+
+      <div class="ikt-tabs" role="group" aria-label="Раздел" data-tabs></div>
+
+      <div class="stack" data-records-view>
+        <div class="ach-filters">
+          <select class="select" data-filter="level" aria-label="Уровень"></select>
+          <select class="select" data-filter="class_name" aria-label="Класс"></select>
+          <select class="select" data-filter="supervisor_id" aria-label="Руководитель"></select>
+          <input class="input" type="search" data-filter="event" placeholder="Мероприятие" aria-label="Мероприятие" autocomplete="off">
+          <label class="ach-check"><input type="checkbox" data-filter="no_diploma"> Без диплома</label>
+        </div>
+        <div class="ach-bulk" data-bulk hidden>
+          <label class="ach-check"><input type="checkbox" data-select-all> Выбрать все</label>
+          <button class="btn btn--sm" type="button" data-bulk-check disabled>Проверено: выбранные</button>
+        </div>
+        <div class="ikt-list" data-list aria-live="polite"></div>
+      </div>
+
+      <div class="stack" data-staff-view hidden>
+        <p class="help-note">PIN показывается один раз — передайте его педагогу лично. Новый PIN отменяет старый, педагогу придётся войти заново.</p>
+        <input class="input" type="search" data-staff-search placeholder="Поиск по фамилии" aria-label="Поиск педагога" autocomplete="off">
+        <div class="ach-staff" data-staff-list></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<dialog class="ach-dialog" data-pin-dialog aria-labelledby="rv-pin-title">
+  <h2 id="rv-pin-title" data-pin-who></h2>
+  <p>Новый PIN:</p>
+  <div class="ach-pin" data-pin-value></div>
+  <p class="help-note">Запишите и передайте лично. Повторно этот PIN не показать — только выдать новый.</p>
+  <button class="btn" type="button" data-pin-close>Готово, записал</button>
+</dialog>
+
+<dialog class="ach-dialog ach-dialog--wide" data-diploma-dialog aria-label="Диплом">
+  <img alt="Диплом" data-diploma-img>
+  <div class="ikt-card__actions"><a class="btn btn--ghost btn--sm" data-diploma-open target="_blank" rel="noopener noreferrer">Открыть в новой вкладке</a><button class="btn btn--sm" type="button" data-diploma-close>Закрыть</button></div>
+</dialog>
+
+<div class="ikt-toast" data-toast role="status" hidden><span data-toast-text></span></div>
+
+<script src="config.js?v=23"></script>
+<script src="achievements-core.js?v=1"></script>
+<script src="achievements-review.js?v=1"></script>
+</body>
+</html>

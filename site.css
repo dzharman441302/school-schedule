@@ -802,6 +802,85 @@ body.is-week .staff-grid-card,body.is-week .staff-mobile{display:none}
 @media (min-width:980px){.ikt-toast{bottom:24px}}
 @media (prefers-reduced-motion:reduce){.help-kind,.ikt-card{transition:none}}
 
+/* achievements-form.html / achievements-review.html: «Достижения учащихся» */
+.ach{max-width:820px}
+.ach-h2{font-family:var(--display);font-size:20px;font-weight:800}
+.staff-banner--ach{background:#FCE7F3}
+.ach-who{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:15px}
+.ach-who>span{flex:1 1 auto}
+.ach-grid{display:grid;gap:12px}
+@media (min-width:640px){.ach-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ach-search__box{position:relative}
+.ach-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;display:flex;flex-direction:column;max-height:320px;overflow-y:auto;border:2px solid var(--ink-line);border-radius:14px;background:var(--surface);box-shadow:var(--hard-sm)}
+.ach-suggest button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:48px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;text-align:left;cursor:pointer}
+.ach-suggest button:last-child{border-bottom:0}
+.ach-suggest button:hover,.ach-suggest button:focus-visible{background:var(--sun-soft)}
+.ach-suggest small{font-size:13px;color:var(--muted)}
+.ach-check{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:700;cursor:pointer}
+.ach-check input{width:22px;height:22px;accent-color:var(--brand);flex-shrink:0}
+.ach-rows{display:flex;flex-direction:column;gap:12px}
+.ach-row{display:grid;gap:10px;padding:12px;border:2px solid var(--line-2);border-radius:18px;background:var(--bg)}
+.ach-row.has-error{border-color:var(--cancel-ink);background:var(--cancel-tint)}
+.ach-row__head{display:flex;align-items:center;justify-content:space-between;min-height:32px}
+.ach-row__head b{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink-line);color:#fff;font-size:13px}
+.ach-row__error{color:var(--cancel-ink);font-size:14px;font-weight:700}
+.ach-row .field[hidden]{display:none}
+@media (min-width:640px){
+  .ach-row{grid-template-columns:minmax(0,1fr) 110px 170px}
+  .ach-row__head,.ach-row__name,.ach-row__error,.ach-row__diploma{grid-column:1/-1}
+  .ach-row__name{grid-column:1/2}
+  .ach-row__consent{grid-column:1/2}
+  .ach-row__diploma{grid-column:2/-1;grid-row:3}
+}
+.ach-row__diploma{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ach-photo{min-height:44px;flex:1 1 auto;font-size:15px}
+.ach-file{font-weight:700;overflow-wrap:anywhere}
+.ach-consent-note{padding:10px 12px;border-radius:12px;background:var(--sun-soft);color:var(--ink-2)}
+.ach-done{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border:2px solid var(--ink-line);border-radius:var(--r-card);background:var(--add-tint);box-shadow:var(--hard-sm)}
+.ach-done:focus{outline:none}
+.ach-done b{font-family:var(--display);font-size:20px;color:var(--add-ink)}
+.ach-warn{color:var(--cancel-ink);font-weight:700}
+.ach-mine-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.ach-year{width:auto;min-width:0}
+.ach-list{display:flex;flex-direction:column;gap:10px}
+.ach-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:2px solid var(--ink-line);border-left-width:8px;border-radius:20px;background:var(--surface)}
+.ach-card--new{border-left-color:#60A5FA}
+.ach-card--checked{border-left-color:var(--ok)}
+.ach-card--returned{border-left-color:#DC2626;background:var(--cancel-tint)}
+.ach-card__top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ach-card__event{font-size:16px;font-weight:800;overflow-wrap:anywhere}
+.ach-card__who{font-size:15px;overflow-wrap:anywhere}
+.ach-card__comment{padding:8px 12px;border-radius:12px;background:#fff;border:1.5px solid var(--cancel-ink);color:var(--cancel-ink);font-size:14px;overflow-wrap:anywhere}
+.ach-returned-note{padding:10px 14px;border-radius:14px;background:var(--cancel-bg);color:var(--cancel-ink);font-weight:800}
+.ach-status{display:inline-flex;align-items:center;height:24px;padding:0 9px;border:1.5px solid var(--ink-line);border-radius:999px;font-size:12px;font-weight:800;background:#DBEAFE}
+.ach-status--checked{background:var(--add-bg);color:var(--add-ink)}
+.ach-status--returned{background:var(--cancel-bg);color:var(--cancel-ink)}
+.ach-edit{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.ach-card .ikt-card__actions label.btn{cursor:pointer}
+.ach-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:900px){.ach-filters{grid-template-columns:repeat(4,minmax(0,1fr)) auto}}
+.ach-bulk{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border:2px solid var(--ink-line);border-radius:16px;background:var(--surface)}
+.ach-review{display:grid;gap:12px}
+@media (min-width:640px){.ach-review{grid-template-columns:minmax(0,1fr) auto;align-items:start}}
+.ach-review__text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ach-thumb{padding:0;border:2px solid var(--ink-line);border-radius:12px;background:#fff;cursor:zoom-in;overflow:hidden}
+.ach-thumb img{width:140px;height:100px;object-fit:cover}
+.ach-dialog{max-width:min(420px,calc(100% - 32px));padding:24px;border:2px solid var(--ink-line);border-radius:var(--r-card);box-shadow:var(--hard)}
+.ach-dialog::backdrop{background:rgba(15,23,42,.55)}
+.ach-dialog h2{font-family:var(--display);font-size:20px}
+.ach-dialog>*+*{margin-top:12px}
+.ach-dialog--wide{max-width:min(960px,calc(100% - 32px))}
+.ach-dialog--wide img{max-height:75vh;margin:0 auto;object-fit:contain}
+.ach-pin{white-space:nowrap;font-family:var(--display);font-size:clamp(30px,10vw,48px);font-weight:800;letter-spacing:.08em;text-align:center;padding:12px;border-radius:16px;background:var(--sun-soft)}
+.ach-staff{display:flex;flex-direction:column;gap:8px}
+.ach-staff__row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 12px;padding:10px 14px;border:2px solid var(--ink-line);border-radius:16px;background:var(--surface)}
+.ach-staff__row.is-off{opacity:.6}
+.ach-staff__row small{display:block;font-size:13px;color:var(--muted)}
+.ach-staff__row .select{width:auto}
+.ach-pin-state{font-size:13px;color:var(--muted)}
+@media (min-width:760px){.ach-staff__row{grid-template-columns:minmax(0,1fr) 170px 150px auto}}
+[aria-invalid="true"]{border-color:var(--cancel-ink)!important;background:var(--cancel-tint)}
+
 /* help-qr.html: A4 sheet of 12 stickers */
 .qr-tools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
 .qr-tools .field{flex:1 1 280px}

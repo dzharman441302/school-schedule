@@ -55,5 +55,8 @@ window.SCHOOL_CONFIG = Object.freeze({
       2: ['Науменко Е. В.', 'Цветкова Н. Н.', 'Фатьянова Е. А.', 'Федотова И. А.', 'Новик Е. А.']
     }
   },
-  vector20: { coordinator: '', contactEmail: '', applicationUrl: '' }
+  vector20: { coordinator: '', contactEmail: '', applicationUrl: '' },
+  // «Достижения учащихся»: адрес API в Яндекс Облаке (terraform output api_url, см. yc-achievements/README.md).
+  // Пусто — страницы achievements-form.html и achievements-review.html показывают «ещё не подключён».
+  achievementsApi: ''
 });

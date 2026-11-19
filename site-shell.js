@@ -83,6 +83,7 @@
         <a href="index.html">Главная</a>
         <a href="schedule.html#bells">Расписание звонков</a>
         <a href="help.html">Помощь по ИКТ</a>
+        ${page === 'staff' || /achievements-form\.html$/.test(path) ? '<a href="achievements-form.html">Внести достижение</a>' : ''}
         ${contact ? `<a href="${esc(contact)}"${ext(contact)}>Связаться со школой</a>` : ''}
         ${official ? `<a href="${esc(official)}"${ext(official)}>Официальная страница школы</a>` : ''}
         ${vk ? `<a href="${esc(vk)}"${ext(vk)}>Паблик ВКонтакте</a>` : ''}
