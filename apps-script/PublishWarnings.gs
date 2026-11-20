@@ -35,7 +35,7 @@ function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode,expectedRe
     const previousEdits=readTeacherEditsForDate_(dateIso),previousChanges=readChangesForDate_(dateIso);
     writeTeacherEditsForDate_(dateIso,edits);writeStudentChangesForDate_(dateIso,changes);writeTeacherPublicGrid_(dateIso,edits,built);
     appendHistory_(dateIso,previousEdits,previousChanges,edits,changes,(mode||'Сейчас')+(notices.length?' · предупреждений: '+notices.length:''));
-    const archiveId=appendDailyArchive_(dateIso,edits,changes,summary,mode||'Сейчас');writePublicationStatus_(dateIso,summary,mode||'Сейчас');
+    const archiveId=appendDailyArchive_(dateIso,edits,changes,summary,mode||'Сейчас');writePublicationStatus_(dateIso,summary,mode||'Сейчас');publicWindowAfterPublish_();
     SpreadsheetApp.flush();scheduleWritten=true;
     const review=replacementFinish_(snapshot);SpreadsheetApp.flush();
     return{teacherCount:edits.length,studentCount:changes.length,date:dateIso,savedAt:Utilities.formatDate(new Date(),CONFIG.timeZone,'HH:mm:ss'),
@@ -193,7 +193,11 @@ function writePublicationStatus_(dateIso, summary, mode) {
   const values = perfRows_(sheet.getDataRange().getValues());
   const preserved = values.slice(1).filter(row => row.some(Boolean) && normalizeDate_(row[0]) !== dateIso);
   const row = [formatRuDate_(dateIso), new Date(), summary.studentChanges, summary.teacherEdits, summary.warnings, mode || 'Сейчас'];
-  rewriteBody_(sheet, 6, preserved.concat([row]));
+  const rows = preserved.concat([row]);
+  rewriteBody_(sheet, 6, rows);
+  // Дата и время публикации видны сайту («Изменения опубликованы в 14:05», проверка новой версии);
+  // в ячейке по-прежнему дата — бот MAX читает её числом.
+  sheet.getRange(2, 2, rows.length, 1).setNumberFormat('dd.MM.yyyy HH:mm:ss');
 }
 
 function appendDailyArchive_(dateIso, edits, changes, summary, mode) {

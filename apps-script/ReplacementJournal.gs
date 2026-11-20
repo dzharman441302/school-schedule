@@ -284,7 +284,7 @@ function restoreReplacementPeriod(token,fromIso,toIso){
   assertSession_(token);replacementRange_(fromIso,toIso,30);const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
     replacementEnsure_();const ss=getSpreadsheet_(),read=name=>{const s=ss.getSheetByName(name);return s?perfRows_(s.getDataRange().getValues()).slice(1):[];};
-    const publicRows=read(CONFIG.teacherPublicSheet),editRows=read(CONFIG.teacherChangesSheet),archives=read(ENHANCEMENT_SHEETS.archive),studentRows=read(CONFIG.changesSheet);
+    const publicRows=readPublicRows_(ss,CONFIG.teacherPublicSheet,fromIso,toIso),editRows=read(CONFIG.teacherChangesSheet),archives=read(ENHANCEMENT_SHEETS.archive),studentRows=readPublicRows_(ss,CONFIG.changesSheet,fromIso,toIso);
     const dates=new Set();publicRows.forEach(r=>dates.add(normalizeDate_(r[0])));editRows.forEach(r=>dates.add(normalizeDate_(r[0])));archives.forEach(r=>dates.add(normalizeDate_(r[2])));
     const existing=new Map(replacementSnapshots_().map(s=>[s.date,s])),restored=[],skipped=[];
     for(const date of Array.from(dates).filter(d=>d&&d>=fromIso&&d<=toIso).sort()){

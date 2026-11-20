@@ -6,6 +6,7 @@ function createHarness(root=path.resolve(__dirname,'..')){
   getValues(){return Array.from({length:this.h},(_,i)=>Array.from({length:this.w},(_,j)=>this.s.rows[this.r-1+i]?.[this.c-1+j]??''));}
   getDisplayValues(){return this.getValues().map(r=>r.map(v=>String(v??'')));}
   setValues(rows){if(rows.length!==this.h||rows.some(r=>r.length!==this.w))throw Error('range dimensions');if(this.s.fail)throw Error('simulated write failure');rows.forEach((r,i)=>{const n=this.r-1+i;this.s.rows[n]??=[];r.forEach((v,j)=>this.s.rows[n][this.c-1+j]=v);});return this;}
+  setNumberFormat(f){for(let i=0;i<this.h;i++){const n=this.r-1+i;this.s.formats??={};this.s.formats[n+'|'+(this.c-1)]=f;}return this;}
   setValue(v){return this.setValues([[v]]);}getValue(){return this.getValues()[0][0];}
   clearContent(){return this.setValues(Array.from({length:this.h},()=>Array(this.w).fill('')));}
  }
@@ -32,7 +33,7 @@ function createHarness(root=path.resolve(__dirname,'..')){
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},LockService:{getScriptLock:()=>({waitLock:()=>{if(locked)throw Error('nested lock');locked=true;},releaseLock:()=>{locked=false;}})},
   ScriptApp:{getService:()=>({getUrl:()=>''}),newTrigger:()=>({timeBased:()=>({at:()=>({create:()=>{}})})})}};
  const context=vm.createContext(sandbox);
- for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs','Bells.gs','Скорость.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
+ for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs','Bells.gs','PublicWindow.gs','Скорость.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
  return{context,model:context.S20Schedule,sheets,put,names,token:'fixture-token',date:'2026-09-25',call:(name,...args)=>context[name](...args),plain:v=>JSON.parse(JSON.stringify(v))};
 }
 module.exports={createHarness};
