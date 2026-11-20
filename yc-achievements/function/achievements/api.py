@@ -210,6 +210,10 @@ class App:
                 'Access-Control-Expose-Headers': 'Content-Disposition',
                 'Access-Control-Max-Age': '600',
             })
+        elif self.settings.allowed_origins:
+            # Без своего заголовка API Gateway подставляет «*». Явный адрес школы: браузер
+            # на чужом сайте ответ не отдаст.
+            headers['Access-Control-Allow-Origin'] = self.settings.allowed_origins[0]
         if resp.body is None:
             return {'statusCode': resp.status, 'headers': headers, 'body': '', 'isBase64Encoded': False}
         headers['Content-Type'] = resp.content_type

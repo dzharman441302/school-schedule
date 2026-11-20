@@ -82,7 +82,7 @@ resource "yandex_storage_bucket" "public" {
   grant {
     id          = yandex_iam_service_account.fn.id
     type        = "CanonicalUser"
-    permissions = ["WRITE"]
+    permissions = ["READ", "WRITE"] # Object Storage не выдаёт WRITE без READ
   }
 
   cors_rule {

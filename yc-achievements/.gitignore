@@ -12,3 +12,4 @@ deploy/terraform/.terraform.lock.hcl
 deploy/terraform/*.tfstate
 deploy/terraform/*.tfstate.*
 deploy/terraform/terraform.tfvars
+tfplan

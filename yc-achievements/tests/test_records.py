@@ -179,7 +179,8 @@ def test_cors_and_no_store(client):
     assert headers['Access-Control-Allow-Origin'] == ORIGIN
     assert headers['Cache-Control'] == 'no-store'
     _, _, headers = client.call('GET', '/staff', origin='https://evil.example')
-    assert 'Access-Control-Allow-Origin' not in headers
+    assert headers['Access-Control-Allow-Origin'] == ORIGIN, 'чужому сайту — адрес школы, а не «*» шлюза'
+    assert 'Access-Control-Allow-Headers' not in headers
     _, _, headers = client.call('GET', '/staff', origin='https://dzharman441302.github.io')
     assert headers['Access-Control-Allow-Origin'] == 'https://dzharman441302.github.io'
     resp = client.app.handle_event({'httpMethod': 'OPTIONS', 'url': '/records', 'headers': {'Origin': ORIGIN}})
