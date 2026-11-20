@@ -101,7 +101,7 @@ Terraform создаёт:
 - сервисный аккаунт функции `sosh20-achievements-fn`: `ydb.editor` только на эту базу, `lockbox.payloadViewer` только на этот секрет, чтение и запись только в бакет дипломов; ролей на весь каталог нет;
 - сервисный аккаунт шлюза `sosh20-achievements-gw`: только `functions.functionInvoker` на эту функцию;
 - YDB serverless `sosh20-achievements-db`;
-- приватный бакет `sosh20-achievements-diplomas` (шифрование на стороне сервера, анонимный доступ закрыт, CORS для сайта). Имя бакета уникально во всём Object Storage — если занято, добавьте `-var "diploma_bucket=другое-имя"`;
+- приватный бакет `sosh20-achievements-diplomas` (анонимный доступ закрыт, CORS для сайта; отдельный ключ KMS не используется). Имя бакета уникально во всём Object Storage — если занято, добавьте `-var "diploma_bucket=другое-имя"`;
 - секрет Lockbox: случайный ключ подписи токенов, статический ключ S3 функции, заглушка для токена Яндекс Диска (этап 3);
 - функцию `sosh20-achievements-api` (Python 3.12, 256 МБ) и API Gateway.
 

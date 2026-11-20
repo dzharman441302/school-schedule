@@ -61,13 +61,8 @@ resource "yandex_storage_bucket" "diplomas" {
     max_age_seconds = 600
   }
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
+  # Шифрование своим ключом (SSE) в Яндекс Облаке возможно только через KMS (aws:kms) —
+  # не включаем: нужен платный ключ и права функции на него. Анонимный доступ закрыт выше.
 }
 
 # --- Object Storage: публичный achievements.json (этап 3) --------------------------
