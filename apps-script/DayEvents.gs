@@ -205,7 +205,9 @@ function getDailyTask(token, dateIso) {
   // Results of past days: once a day is enough (the night trigger does it too).
   const cache = CacheService.getScriptCache(), doneKey = 'dayResults:' + isoToday_();
   // The panel is also the fallback for the triggers: today's scheduled task, and the triggers themselves.
-  if (!cache.get(doneKey)) { dayPublishResults_(); dayPublishScheduled_(); dayEnsureTrigger_(); cache.put(doneKey, '1', 6 * 3600); }
+  if (!cache.get(doneKey)) { dayPublishResults_(); dayPublishScheduled_(); cache.put(doneKey, '1', 6 * 3600); }
+  // Not inside the 6-hour block: the triggers must appear on the first open after a release.
+  if (PropertiesService.getScriptProperties().getProperty('DAY_TRIGGERS') !== '2') dayEnsureTrigger_();
   const t = dayTaskRow_(dateIso), k = dayKeyRow_(dateIso);
   const answers = perfRows_(daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getValues()).slice(1).filter((r) => normalizeDate_(r[0]) === dateIso);
   const stats = { answers: answers.length, correct: answers.filter((r) => String(r[3]) === 'да').length };
@@ -350,5 +352,6 @@ function dayEnsureTrigger_() {
     const have = ScriptApp.getProjectTriggers().map((t) => t.getHandlerFunction());
     if (!have.includes('publishDailyTaskResults')) ScriptApp.newTrigger('publishDailyTaskResults').timeBased().everyDays(1).atHour(0).create();
     if (!have.includes('publishScheduledDailyTask')) ScriptApp.newTrigger('publishScheduledDailyTask').timeBased().everyDays(1).atHour(6).create();
+    PropertiesService.getScriptProperties().setProperty('DAY_TRIGGERS', '2');
   } catch (_) { /* без триггера итоги и задача из графика выйдут при следующем открытии панели */ }
 }

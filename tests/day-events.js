@@ -180,6 +180,15 @@ test('the schedule does not replace a task set by hand', () => {
   assert.equal(t.priv('Задача_дня_ключи')[1][1], '1');
 });
 
+test('opening the window makes the triggers even if results were already checked today', () => {
+  const t = dayHarness();
+  t.ctx.CacheService.getScriptCache().put('dayResults:2026-09-25', '1', 3600); // the panel was opened before the release
+  t.call('getDailyTask', '2026-09-25');
+  assert.deepEqual(t.triggers, ['publishDailyTaskResults', 'publishScheduledDailyTask']);
+  t.call('getDailyTask', '2026-09-25');
+  assert.equal(t.triggers.length, 2, 'made once');
+});
+
 test('the window opens with one call; past results are checked once a day', () => {
   const t = dayHarness();
   t.call('saveDailyTask', D, { task: 'Задача', answer: '7' });
