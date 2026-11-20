@@ -227,7 +227,12 @@ function fullChangeText(v){const raw=String(v??'').trim();if(!raw||/^отмен/
 const LATIN_CLASS={A:'А',B:'В',E:'Е',K:'К',M:'М',H:'Н',O:'О',P:'Р',C:'С',T:'Т',X:'Х',Y:'У'},cyrClass=v=>v.replace(/^(\d+)([ABEKMHOPCTXY])$/,(_,n,ch)=>n+LATIN_CLASS[ch]);
 const classList=v=>[...new Set(String(v||'').split(/[+,;/]/).map(x=>cyrClass(x.trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,''))).filter(x=>/^(?:10|11|[1-9])[А-Я]$/.test(x)))];
 const normClass=v=>cyrClass(String(v||'').trim().toUpperCase().replace(/Ё/g,'Е').replace(/\s+/g,'')),key=(c,l)=>normClass(c)+'|'+Number(l),cellKey=(t,l)=>String(t)+'|'+Number(l);
-const call=(name,...args)=>new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message?e.message:String(e))))[name](...args));
+// Замер скорости: каждый вызов сервера «туда-обратно» запоминается; при ?debug=1 в адресе панели — таблица внизу.
+const perfCalls=[],perfShow=()=>{const box=document.getElementById('s20-perf');if(!box)return;const total=perfCalls.reduce((s,c)=>s+c.ms,0),slow=perfCalls.reduce((a,c)=>!a||c.ms>a.ms?c:a,null);box.innerHTML='<b>Замер</b> · вызовов: '+perfCalls.length+' · всего '+total+' мс'+(slow?' · самый долгий: '+slow.name+' '+slow.ms+' мс':'')+'<br>'+perfCalls.map(c=>c.at+' мс → '+c.name+' '+c.ms+' мс'+(c.ok?'':' (ошибка)')).join('<br>');};
+try{google.script.url.getLocation(loc=>{if(!loc||!loc.parameter||loc.parameter.debug!=='1')return;const box=document.createElement('div');box.id='s20-perf';box.style.cssText='position:fixed;left:8px;bottom:8px;z-index:99999;max-width:min(560px,96vw);max-height:40vh;overflow:auto;padding:8px 10px;border-radius:10px;background:rgba(15,23,42,.92);color:#E2E8F0;font:12px/1.5 ui-monospace,Consolas,monospace';document.body.appendChild(box);perfShow();});}catch(_){}
+const perfStart=performance.now();
+const call=(name,...args)=>{const t=performance.now(),done=ok=>{perfCalls.push({name,at:Math.round(t-perfStart),ms:Math.round(performance.now()-t),ok});perfShow();};return new Promise((res,rej)=>google.script.run.withSuccessHandler(v=>{done(true);res(v)}).withFailureHandler(e=>{done(false);rej(new Error(e&&e.message?e.message:String(e)))})[name](...args));};
+window.S20PanelPerf={calls:perfCalls,call};
 const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 function setStatus(t,type=''){const e=$('#status');e.textContent=t;e.className='status'+(type?' '+type:'')}
 // A short message; with opt.action it carries a button (usually «Отменить») and stays longer.

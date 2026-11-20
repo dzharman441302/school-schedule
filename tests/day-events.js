@@ -21,7 +21,7 @@ function dayHarness() {
   ctx.ScriptApp.getProjectTriggers = () => triggers.map((name) => ({ getHandlerFunction: () => name }));
   ctx.ScriptApp.newTrigger = (name) => ({ timeBased: () => ({ everyDays: () => ({ atHour: () => ({ create: () => triggers.push(name) }) }) }) });
   ctx.ContentService = { createTextOutput: (t) => ({ setMimeType: () => t }), MimeType: { JSON: 'json' } };
-  for (const f of ['Lateness.gs', 'IctRequests.gs', 'DayEvents.gs']) vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', f), 'utf8'), ctx, { filename: f });
+  for (const f of ['Lateness.gs', 'IctRequests.gs', 'DayEvents.gs', 'Скорость.gs']) vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', f), 'utf8'), ctx, { filename: f });
   const pub = (name) => h.sheets.get(name)?.rows || [];
   const priv = (name) => privateSheets.get(name)?.rows || [];
   return { h, ctx, call: (n, ...a) => h.plain(ctx[n](h.token, ...a)), pub, priv, triggers, created: () => created, post: (body) => h.plain(ctx.handleDailyTaskPost_(body)) };

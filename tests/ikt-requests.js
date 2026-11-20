@@ -34,7 +34,7 @@ function ictHarness() {
   ctx.Utilities.newBlob = (bytes, type, name) => ({ bytes, type, name });
   ctx.Utilities.sleep = () => {};
   ctx.ContentService = { createTextOutput: (t) => ({ setMimeType: () => t }), MimeType: { JSON: 'json' } };
-  vm.runInContext(fs.readFileSync(path.join(root, 'apps-script/IctRequests.gs'), 'utf8'), ctx, { filename: 'IctRequests.gs' });
+  for (const f of ['IctRequests.gs', 'Скорость.gs']) vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', f), 'utf8'), ctx, { filename: f });
   const post = (body) => h.plain(ctx.handleIctPost_(body));
   const request = (extra = {}) => post({ action: 'ictRequest', pin: '2468', teacher: h.names[0], type: 'tech', room: '209', device: 'Проектор', text: 'Не включается', urgency: 'yellow', ...extra });
   return { h, ctx, props, post, request, files, privateSheets, created: () => created };

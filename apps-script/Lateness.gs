@@ -65,7 +65,7 @@ function lateClasses_() {
 // Counts of one day by class, the closed shifts of that day and the ids already stored.
 function lateDayState_(sheets, dateIso) {
   const counts = {}, ids = new Set();
-  sheets.marks.getDataRange().getValues().slice(1).forEach((r) => {
+  perfRows_(sheets.marks.getDataRange().getValues()).slice(1).forEach((r) => {
     if (r[0]) ids.add(String(r[0]));
     if (normalizeDate_(r[1]) !== dateIso) return;
     const cls = normalizeClass_(r[3]);
@@ -73,7 +73,7 @@ function lateDayState_(sheets, dateIso) {
     counts[cls] = Math.max(0, (counts[cls] || 0) + (Number(r[4]) || 0));
   });
   const closed = [];
-  sheets.shifts.getDataRange().getValues().slice(1).forEach((r) => {
+  perfRows_(sheets.shifts.getDataRange().getValues()).slice(1).forEach((r) => {
     if (normalizeDate_(r[0]) !== dateIso) return;
     const shift = Number(r[1]);
     if ((shift === 1 || shift === 2) && !closed.includes(shift)) closed.push(shift);

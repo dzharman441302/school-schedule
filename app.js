@@ -189,7 +189,15 @@
   const MISSING_TTL = 60 * 60 * 1000;
   const inflight = new Map();
 
-  async function loadSheet(sheetName, { force = false, optional = false, ttl = CACHE_TTL } = {}) {
+  // Замер (perf.js, только при ?debug=1): откуда лист, сколько строк, когда пришли все данные.
+  const perf = () => window.S20Perf || null;
+
+  async function loadSheet(sheetName, options = {}) {
+    perf()?.begin();
+    try { return await loadSheetInner(sheetName, options); } finally { perf()?.end(); }
+  }
+
+  async function loadSheetInner(sheetName, { force = false, optional = false, ttl = CACHE_TTL } = {}) {
     if (!sheetName) {
       if (optional) return [];
       throw new Error('Не задано название листа Google Таблицы');
@@ -202,6 +210,7 @@
 
     if (!force && cached && now - cached.savedAt < freshFor) {
       sheetMeta.set(sheetName, { source: 'cache', savedAt: cached.savedAt, stale: false });
+      perf()?.cache(sheetName, cached.rows.length, now - cached.savedAt, cached.missing ? 'кэш (листа нет)' : 'кэш');
       return cached.rows;
     }
 
@@ -230,6 +239,7 @@
       if (!response.ok) throw new Error(`Google Sheets: ${response.status}`);
       const data = await response.json();
       const rows = Array.isArray(data.values) ? data.values : [];
+      perf()?.rows(sheetName, rows.length);
       const cacheEntry = { savedAt: Date.now(), rows };
       writeStoredCache(cacheKey, cacheEntry);
       sheetMeta.set(sheetName, { source: 'network', savedAt: cacheEntry.savedAt, stale: false });
@@ -237,6 +247,7 @@
     } catch (error) {
       if (cached && now - cached.savedAt < CACHE_MAX_STALE) {
         sheetMeta.set(sheetName, { source: 'stale', savedAt: cached.savedAt, stale: true, error: String(error) });
+        perf()?.cache(sheetName, cached.rows.length, now - cached.savedAt, 'кэш (сеть не ответила)');
         return cached.rows;
       }
       sheetMeta.set(sheetName, { source: 'error', savedAt: 0, stale: false, error: String(error) });

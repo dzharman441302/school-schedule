@@ -31,7 +31,7 @@ function replacementPack_(cells){return(cells||[]).filter(c=>c.className||c.subj
 function replacementUnpack_(rows){return(rows||[]).map(r=>({teacher:r[0],lesson:Number(r[1]),className:r[2]||'',subject:r[3]||'',room:r[4]||'',status:r[5]||'normal'}));}
 function replacementSnapshots_(){
   const sh=replacementSheet_(REPLACEMENTS.snapshots,REPLACEMENTS.snapshotHeaders);
-  return sh.getDataRange().getValues().slice(1).map((r,i)=>({sheetRow:i+2,date:normalizeDate_(r[0]),revision:String(r[1]||''),phase:String(r[2]||''),
+  return perfRows_(sh.getDataRange().getValues()).slice(1).map((r,i)=>({sheetRow:i+2,date:normalizeDate_(r[0]),revision:String(r[1]||''),phase:String(r[2]||''),
     base:replacementUnpack_(safeJsonParse_(r[3],[])),final:replacementUnpack_(safeJsonParse_(r[4],[])),publishedAt:String(r[5]||''),
     source:String(r[6]||''),studentChanges:safeJsonParse_(r[7],[]),reviewVersion:Number(r[8])||0})).filter(r=>r.date);
 }
@@ -40,7 +40,7 @@ function replacementPutSnapshot_(s){
   const r=[formatRuDate_(s.date),s.revision,s.phase,JSON.stringify(replacementPack_(s.base)),JSON.stringify(replacementPack_(s.final)),
     s.publishedAt,s.source,JSON.stringify(s.studentChanges||[]),s.reviewVersion||0];
   if(r.some(v=>typeof v==='string'&&v.length>49000))throw new Error('Снимок слишком большой. Публикация остановлена до записи расписания.');
-  if(!s.sheetRow){const found=sh.getDataRange().getValues().slice(1).findIndex(x=>normalizeDate_(x[0])===s.date);s.sheetRow=found>=0?found+2:sh.getLastRow()+1;}
+  if(!s.sheetRow){const found=perfRows_(sh.getDataRange().getValues()).slice(1).findIndex(x=>normalizeDate_(x[0])===s.date);s.sheetRow=found>=0?found+2:sh.getLastRow()+1;}
   if(s.sheetRow>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),1);
   sh.getRange(s.sheetRow,1,1,r.length).setValues([r]);return s;
 }
@@ -50,7 +50,7 @@ function replacementBegin_(date,built,studentChanges,source){
 }
 function replacementRead_(){
   const sh=replacementSheet_(REPLACEMENTS.journal,REPLACEMENTS.headers);
-  return sh.getDataRange().getValues().slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map((r,i)=>({
+  return perfRows_(sh.getDataRange().getValues()).slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map((r,i)=>({
     date:normalizeDate_(r[0]),lesson:Number(r[1])||0,className:String(r[2]||''),subject:String(r[3]||''),room:String(r[4]||''),
     originalTeachers:String(r[5]||'').split(/\s*;\s*/).filter(Boolean),replacementTeacher:String(r[6]||''),kind:String(r[7]||''),publishedAt:String(r[8]||''),
     id:String(r[9]||''),decision:String(r[10]||(r[9]?'pending':'legacy')),hours:Number(r[11])||0,comment:String(r[12]||''),
@@ -283,7 +283,7 @@ function addManualReplacement(token,dateIso,revision,reviewVersion,item){
 function restoreReplacementPeriod(token,fromIso,toIso){
   assertSession_(token);replacementRange_(fromIso,toIso,30);const lock=LockService.getScriptLock();lock.waitLock(30000);
   try{
-    replacementEnsure_();const ss=getSpreadsheet_(),read=name=>{const s=ss.getSheetByName(name);return s?s.getDataRange().getValues().slice(1):[];};
+    replacementEnsure_();const ss=getSpreadsheet_(),read=name=>{const s=ss.getSheetByName(name);return s?perfRows_(s.getDataRange().getValues()).slice(1):[];};
     const publicRows=read(CONFIG.teacherPublicSheet),editRows=read(CONFIG.teacherChangesSheet),archives=read(ENHANCEMENT_SHEETS.archive),studentRows=read(CONFIG.changesSheet);
     const dates=new Set();publicRows.forEach(r=>dates.add(normalizeDate_(r[0])));editRows.forEach(r=>dates.add(normalizeDate_(r[0])));archives.forEach(r=>dates.add(normalizeDate_(r[2])));
     const existing=new Map(replacementSnapshots_().map(s=>[s.date,s])),restored=[],skipped=[];
@@ -307,6 +307,6 @@ function restoreReplacementPeriod(token,fromIso,toIso){
 }
 function getReplacementAudit(token,dateIso){
   assertSession_(token);validateIsoDate_(dateIso);
-  return replacementSheet_(REPLACEMENTS.audit,REPLACEMENTS.auditHeaders).getDataRange().getValues().slice(1)
+  return perfRows_(replacementSheet_(REPLACEMENTS.audit,REPLACEMENTS.auditHeaders).getDataRange().getValues()).slice(1)
     .filter(r=>normalizeDate_(r[2])===dateIso).slice(-200).reverse().map(r=>({at:String(r[0]),event:String(r[1]),id:String(r[3]),before:safeJsonParse_(r[4],null),after:safeJsonParse_(r[5],null)}));
 }

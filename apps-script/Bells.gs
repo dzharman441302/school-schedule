@@ -44,7 +44,7 @@ function bellProblems_(times) {
 
 function readBells_() {
   ensureBellSheets_();
-  const ss = getSpreadsheet_(), rows = ss.getSheetByName(BELL_SHEETS.times).getDataRange().getDisplayValues();
+  const ss = getSpreadsheet_(), rows = perfRows_(ss.getSheetByName(BELL_SHEETS.times).getDataRange().getDisplayValues());
   const head = rows[0] || [], variants = {}, order = [];
   for (let c = 1; c < head.length; c++) {
     const name = String(head[c] || '').trim();
@@ -62,7 +62,7 @@ function readBells_() {
   const ready = {};
   order.forEach((name) => { ready[name] = !bellProblems_(variants[name]).length; });
   const dates = {};
-  ss.getSheetByName(BELL_SHEETS.dates).getDataRange().getValues().slice(1).forEach((r) => {
+  perfRows_(ss.getSheetByName(BELL_SHEETS.dates).getDataRange().getValues()).slice(1).forEach((r) => {
     const date = normalizeDate_(r[0]), name = String(r[1] || '').trim();
     if (date && name && ready[name] && name !== BELL_BASE) dates[date] = { variant: name, comment: String(r[2] || '').trim() };
   });
@@ -88,7 +88,7 @@ function saveBells(token, input) {
   lock.waitLock(20000);
   try {
     ensureBellSheets_();
-    const sh = getSpreadsheet_().getSheetByName(BELL_SHEETS.times), rows = sh.getDataRange().getDisplayValues();
+    const sh = getSpreadsheet_().getSheetByName(BELL_SHEETS.times), rows = perfRows_(sh.getDataRange().getDisplayValues());
     const head = (rows[0] || ['Урок']).map((x) => String(x || '').trim());
     Object.keys(input || {}).forEach((name) => {
       const label = String(name || '').trim();
@@ -125,7 +125,7 @@ function setDayBells(token, dateIso, variant, comment) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const sh = getSpreadsheet_().getSheetByName(BELL_SHEETS.dates), values = sh.getDataRange().getValues();
+    const sh = getSpreadsheet_().getSheetByName(BELL_SHEETS.dates), values = perfRows_(sh.getDataRange().getValues());
     const keep = values.slice(1).filter((r) => r.some((x) => String(x || '').trim()) && normalizeDate_(r[0]) !== dateIso).map((r) => [r[0], r[1] || '', r[2] || '']);
     if (name !== BELL_BASE) keep.push([formatRuDate_(dateIso), name, String(comment || '').trim()]);
     keep.sort((x, y) => normalizeDate_(x[0]).localeCompare(normalizeDate_(y[0])));

@@ -58,7 +58,9 @@
   const $ = (s) => document.querySelector(s);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const token = () => sessionStorage.getItem('school20:adminSession') || '';
-  const run = (name, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler((e) => rej(new Error(e && e.message ? e.message : String(e))))[name](token(), ...args));
+  const run = (name, ...args) => (window.S20PanelPerf
+    ? window.S20PanelPerf.call(name, token(), ...args) // тот же вызов, но с замером времени
+    : new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler((e) => rej(new Error(e && e.message ? e.message : String(e))))[name](token(), ...args)));
   const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Moscow' }).format(new Date());
   const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const ru = (iso) => iso.split('-').reverse().join('.');

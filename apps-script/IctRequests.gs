@@ -132,7 +132,7 @@ function ictRow_(r) {
 }
 
 function ictReadAll_(sheet) {
-  const values = (sheet || ensureIctSheet_()).getDataRange().getValues();
+  const values = perfRows_((sheet || ensureIctSheet_()).getDataRange().getValues());
   return values.slice(1).filter((r) => r[0] !== '' && r[0] != null).map(ictRow_);
 }
 
@@ -153,7 +153,7 @@ function ictRooms_() {
   getTeacherTable_().rows.forEach((row) => row.slice(2).forEach((cell) => { const p = String(cell || '').split(/\r?\n|\s*\|\s*/); if (p.length >= 3) add(p[2]); }));
   getScheduleTable_().rows.forEach((row) => row.slice(2).forEach((cell) => { const m = String(cell || '').match(/\(([^)]*)\)\s*$/); if (m) add(m[1]); }));
   const extra = getSpreadsheet_().getSheetByName(ICT.roomsSheet);
-  if (extra) extra.getDataRange().getDisplayValues().slice(1).forEach((r) => add(String(r[0] || '').replace(/\//g, ' ')));
+  if (extra) perfRows_(extra.getDataRange().getDisplayValues()).slice(1).forEach((r) => add(String(r[0] || '').replace(/\//g, ' ')));
   return out;
 }
 
@@ -391,7 +391,7 @@ function ictWriteUpdate_(id, body, by) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const sheet = ensureIctSheet_(), values = sheet.getDataRange().getValues();
+    const sheet = ensureIctSheet_(), values = perfRows_(sheet.getDataRange().getValues());
     const index = values.findIndex((r, i) => i > 0 && ictId_(r[0]) === id);
     if (index < 1) return { ok: false, error: 'Заявка №' + id + ' не найдена' };
     const item = ictRow_(values[index]), now = new Date();
@@ -451,7 +451,7 @@ function ictPingBot_() {
 function ictHolidays_() {
   const sheet = getSpreadsheet_().getSheetByName('Календарь');
   if (!sheet) return [];
-  return sheet.getDataRange().getValues().slice(1).map((r) => {
+  return perfRows_(sheet.getDataRange().getValues()).slice(1).map((r) => {
     const from = normalizeDate_(r[0]), to = normalizeDate_(r[1]) || from;
     return from ? { from: from < to ? from : to, to: from < to ? to : from, title: String(r[2] || 'Выходной день') } : null;
   }).filter(Boolean);
@@ -502,7 +502,7 @@ function ictBotNotified_(ids, value) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const sheet = ensureIctSheet_(), values = sheet.getDataRange().getValues();
+    const sheet = ensureIctSheet_(), values = perfRows_(sheet.getDataRange().getValues());
     let count = 0;
     values.forEach((r, i) => {
       if (i < 1 || !list.includes(ictId_(r[0]))) return;

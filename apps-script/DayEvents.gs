@@ -91,13 +91,13 @@ function dayCleanEvents_(events) {
 
 function dayPublicRows_(dateIso) {
   const sh = daySheet_(getSpreadsheet_(), DAY.eventsPublic, DAY.eventsHead);
-  return sh.getDataRange().getDisplayValues().slice(1).map((r, i) => ({ row: i + 2, date: normalizeDate_(r[0]), time: String(r[1]).replace(/^'/, ''), what: r[2], where: r[3], teachers: /учител/i.test(r[4]), at: r[5] })).filter((r) => r.date === dateIso);
+  return perfRows_(sh.getDataRange().getDisplayValues()).slice(1).map((r, i) => ({ row: i + 2, date: normalizeDate_(r[0]), time: String(r[1]).replace(/^'/, ''), what: r[2], where: r[3], teachers: /учител/i.test(r[4]), at: r[5] })).filter((r) => r.date === dateIso);
 }
 
 function getDayEvents(token, dateIso) {
   assertSession_(token); validateIsoDate_(dateIso);
   const drafts = daySheet_(dayPrivateSpreadsheet_(), DAY.eventsDrafts, ['Дата', 'События JSON', 'Обновлено']);
-  const row = drafts.getDataRange().getValues().slice(1).find((r) => normalizeDate_(r[0]) === dateIso);
+  const row = perfRows_(drafts.getDataRange().getValues()).slice(1).find((r) => normalizeDate_(r[0]) === dateIso);
   const published = dayPublicRows_(dateIso);
   return {
     date: dateIso,
@@ -112,10 +112,10 @@ function getDayEvents(token, dateIso) {
 // Даты от сегодня вперёд, у которых есть черновик или опубликованные события (для списка в панели).
 function dayUpcomingDates_() {
   const today = isoToday_(), out = {};
-  daySheet_(dayPrivateSpreadsheet_(), DAY.eventsDrafts, ['Дата', 'События JSON', 'Обновлено']).getDataRange().getValues().slice(1).forEach((r) => {
+  perfRows_(daySheet_(dayPrivateSpreadsheet_(), DAY.eventsDrafts, ['Дата', 'События JSON', 'Обновлено']).getDataRange().getValues()).slice(1).forEach((r) => {
     const d = normalizeDate_(r[0]); if (d && d >= today && safeJsonParse_(r[1], []).length) (out[d] = out[d] || {}).draft = true;
   });
-  daySheet_(getSpreadsheet_(), DAY.eventsPublic, DAY.eventsHead).getDataRange().getDisplayValues().slice(1).forEach((r) => {
+  perfRows_(daySheet_(getSpreadsheet_(), DAY.eventsPublic, DAY.eventsHead).getDataRange().getDisplayValues()).slice(1).forEach((r) => {
     const d = normalizeDate_(r[0]); if (d && d >= today) (out[d] = out[d] || {}).published = true;
   });
   return Object.keys(out).sort().slice(0, 30).map((d) => ({ date: d, draft: Boolean(out[d].draft), published: Boolean(out[d].published) }));
@@ -127,7 +127,7 @@ function saveDayEventsDraft(token, dateIso, events) {
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     const sh = daySheet_(dayPrivateSpreadsheet_(), DAY.eventsDrafts, ['Дата', 'События JSON', 'Обновлено']);
-    const values = sh.getDataRange().getValues(), at = dayStamp_();
+    const values = perfRows_(sh.getDataRange().getValues()), at = dayStamp_();
     const i = values.findIndex((r, k) => k > 0 && normalizeDate_(r[0]) === dateIso);
     const row = [formatRuDate_(dateIso), JSON.stringify(list), at];
     if (i > 0) sh.getRange(i + 1, 1, 1, 3).setValues([row]); else sh.appendRow(row);
@@ -180,13 +180,13 @@ function dayParallels_(text) { return String(text || '').split(/[\s,;]+/).map((x
 
 function dayTaskRow_(dateIso) {
   const sh = daySheet_(getSpreadsheet_(), DAY.taskPublic, DAY.taskHead);
-  const values = sh.getDataRange().getDisplayValues();
+  const values = perfRows_(sh.getDataRange().getDisplayValues());
   const i = values.findIndex((r, k) => k > 0 && normalizeDate_(r[0]) === dateIso);
   return { sh, index: i, task: i > 0 ? { task: values[i][1], explain: values[i][2], parallels: values[i][3] } : null };
 }
 function dayKeyRow_(dateIso) {
   const sh = daySheet_(dayPrivateSpreadsheet_(), DAY.taskKeys, ['Дата', 'Ответ', 'Обновлено']);
-  const values = sh.getDataRange().getDisplayValues();
+  const values = perfRows_(sh.getDataRange().getDisplayValues());
   const i = values.findIndex((r, k) => k > 0 && normalizeDate_(r[0]) === dateIso);
   return { sh, index: i, answer: i > 0 ? values[i][1] : '' };
 }
@@ -195,7 +195,7 @@ function getDailyTask(token, dateIso) {
   assertSession_(token); validateIsoDate_(dateIso);
   dayPublishResults_();
   const t = dayTaskRow_(dateIso), k = dayKeyRow_(dateIso);
-  const answers = daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getValues().slice(1).filter((r) => normalizeDate_(r[0]) === dateIso);
+  const answers = perfRows_(daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getValues()).slice(1).filter((r) => normalizeDate_(r[0]) === dateIso);
   return { date: dateIso, task: t.task ? t.task.task : '', explain: t.task ? t.task.explain : '', parallels: t.task ? t.task.parallels : '', answer: k.answer, answers: answers.length, correct: answers.filter((r) => String(r[3]) === 'да').length };
 }
 
@@ -251,7 +251,7 @@ function handleDailyTaskPost_(body) {
     const lock = LockService.getScriptLock(); lock.waitLock(15000);
     try {
       const sh = daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']);
-      const done = sh.getDataRange().getValues().slice(1).find((r) => normalizeDate_(r[0]) === today && String(r[4]) === hash);
+      const done = perfRows_(sh.getDataRange().getValues()).slice(1).find((r) => normalizeDate_(r[0]) === today && String(r[4]) === hash);
       if (done) return { ok: true, already: true, correct: String(done[3]) === 'да' };
       const correct = dayAnswerOk_(answer, dayKeyRow_(today).answer);
       sh.appendRow([formatRuDate_(today), "'" + Utilities.formatDate(new Date(), CONFIG.timeZone, 'HH:mm:ss'), cls, correct ? 'да' : 'нет', hash]);
@@ -267,12 +267,12 @@ function handleDailyTaskPost_(body) {
 function dayPublishResults_() {
   const today = isoToday_(), ss = getSpreadsheet_();
   const results = daySheet_(ss, DAY.taskResults, DAY.resultsHead);
-  const done = new Set(results.getDataRange().getDisplayValues().slice(1).map((r) => normalizeDate_(r[0])));
-  const tasks = daySheet_(ss, DAY.taskPublic, DAY.taskHead).getDataRange().getDisplayValues().slice(1).map((r) => normalizeDate_(r[0])).filter((d) => d && d < today && !done.has(d));
+  const done = new Set(perfRows_(results.getDataRange().getDisplayValues()).slice(1).map((r) => normalizeDate_(r[0])));
+  const tasks = perfRows_(daySheet_(ss, DAY.taskPublic, DAY.taskHead).getDataRange().getDisplayValues()).slice(1).map((r) => normalizeDate_(r[0])).filter((d) => d && d < today && !done.has(d));
   if (!tasks.length) return 0;
   const priv = dayPrivateSpreadsheet_();
-  const keys = daySheet_(priv, DAY.taskKeys, ['Дата', 'Ответ', 'Обновлено']).getDataRange().getDisplayValues().slice(1);
-  const answers = daySheet_(priv, DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getDisplayValues().slice(1);
+  const keys = perfRows_(daySheet_(priv, DAY.taskKeys, ['Дата', 'Ответ', 'Обновлено']).getDataRange().getDisplayValues()).slice(1);
+  const answers = perfRows_(daySheet_(priv, DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getDisplayValues()).slice(1);
   const rows = tasks.sort().map((d) => {
     const list = answers.filter((r) => normalizeDate_(r[0]) === d);
     const right = list.filter((r) => r[3] === 'да').sort((a, b) => String(a[1]).replace(/^'/, '').padStart(8, '0').localeCompare(String(b[1]).replace(/^'/, '').padStart(8, '0')));

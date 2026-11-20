@@ -47,7 +47,7 @@ function getPublicationMeta(token, dateIso) {
   assertSession_(token);
   validateIsoDate_(dateIso);
   const sheet = ensurePublicationStatusSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   const rows = values.slice(1).filter(row => normalizeDate_(row[0]) === dateIso);
   if (!rows.length) return null;
   const row = rows[rows.length - 1];
@@ -90,7 +90,7 @@ function scheduleAdminPublication(token, dateIso, publishAtIso, teacherEdits, st
 function getScheduledPublications(token) {
   assertSession_(token);
   const sheet = ensureScheduledSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   return values.slice(1).filter(row => row.some(Boolean)).map(row => ({
     id: String(row[0] || ''),
     createdAt: row[1] instanceof Date ? Utilities.formatDate(row[1], CONFIG.timeZone, 'dd.MM.yyyy HH:mm') : String(row[1] || ''),
@@ -105,7 +105,7 @@ function getScheduledPublications(token) {
 function cancelScheduledPublication(token, id) {
   assertSession_(token);
   const sheet = ensureScheduledSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0] || '') !== String(id || '')) continue;
     if (String(values[i][6] || '') !== 'Ожидает') throw new Error('Эта публикация уже обработана');
@@ -118,7 +118,7 @@ function cancelScheduledPublication(token, id) {
 function processScheduledPublications() {
   ensureEnhancementSheets_();
   const sheet = ensureScheduledSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   const now = Date.now();
   for (let i = 1; i < values.length; i++) {
     const status = String(values[i][6] || '');
@@ -139,7 +139,7 @@ function processScheduledPublications() {
 function getDailyArchive(token, limit) {
   assertSession_(token);
   const sheet = ensureDailyArchiveSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   return values.slice(1).filter(row => row.some(Boolean)).reverse().slice(0, Math.max(1, Math.min(Number(limit) || 30, 100))).map(row => {
     const summary = safeJsonParse_(row[5], {});
     return {
@@ -159,7 +159,7 @@ function getDailyArchive(token, limit) {
 function getArchiveSnapshot(token, archiveId) {
   assertSession_(token);
   const sheet = ensureDailyArchiveSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   const row = values.slice(1).find(r => String(r[0] || '') === String(archiveId || ''));
   if (!row) throw new Error('Снимок архива не найден');
   return {
@@ -190,7 +190,7 @@ function buildPublicationSummary_(edits, changes, notices) {
 
 function writePublicationStatus_(dateIso, summary, mode) {
   const sheet = ensurePublicationStatusSheet_();
-  const values = sheet.getDataRange().getValues();
+  const values = perfRows_(sheet.getDataRange().getValues());
   const preserved = values.slice(1).filter(row => row.some(Boolean) && normalizeDate_(row[0]) !== dateIso);
   const row = [formatRuDate_(dateIso), new Date(), summary.studentChanges, summary.teacherEdits, summary.warnings, mode || 'Сейчас'];
   rewriteBody_(sheet, 6, preserved.concat([row]));

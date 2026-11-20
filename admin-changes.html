@@ -38,13 +38,14 @@ body.panel-connected{overflow:hidden;background:#f1f5fb}
   </section></div></main>
 </div>
 <script src="config.js?v=25"></script>
+<script src="perf.js?v=1"></script>
 <script>
 (() => {
   'use strict';
   const KEY='school20:adminAppsScriptUrl',setup=document.querySelector('[data-admin-setup]'),wrap=document.querySelector('[data-admin-frame-wrap]'),frame=document.querySelector('[data-admin-frame]'),input=document.querySelector('[data-admin-url]'),error=document.querySelector('[data-admin-error]');
   function isValid(url){return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/.test(String(url||'').trim())}
   function showSetup(message=''){document.body.classList.remove('panel-connected');setup.hidden=false;wrap.hidden=true;error.textContent=message;try{input.value=localStorage.getItem(KEY)||''}catch(_){}}
-  function showPanel(url){document.body.classList.add('panel-connected');setup.hidden=true;wrap.hidden=false;document.querySelector('[data-open-panel]').href=url;frame.src=url;}
+  function showPanel(url){document.body.classList.add('panel-connected');setup.hidden=true;wrap.hidden=false;document.querySelector('[data-open-panel]').href=url;frame.src=/[?&]debug=1/.test(location.search)?url+(url.includes('?')?'&':'?')+'debug=1':url;}
   function save(url){const value=String(url||'').trim();if(!isValid(value)){showSetup('Нужен адрес развернутого Apps Script вида https://script.google.com/macros/s/.../exec');return}try{localStorage.setItem(KEY,value)}catch(_){}showPanel(value)}
   const params=new URLSearchParams(location.search),paramUrl=params.get('app');if(paramUrl&&isValid(paramUrl))save(paramUrl);else{let stored='';try{stored=localStorage.getItem(KEY)||''}catch(_){}if(isValid(stored))showPanel(stored);else showSetup()}
   document.querySelector('[data-save-admin-url]').addEventListener('click',()=>save(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')save(input.value)});
