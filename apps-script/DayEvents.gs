@@ -11,6 +11,11 @@
 // answer, device}; в закрытый лист пишется «дата, время, класс, верно/неверно» без ФИО. На следующий
 // день в публичный лист «Задача_дня_итоги» выходит: сколько верных, какой класс решил первым, ответ.
 //
+// График задач: задачи наперёд лежат в закрытом листе «Задача_дня_график» (с ответами и решением).
+// Ночной триггер (00:xx, запасной — в 06:xx) переносит задачу на сегодня в «Задача_дня», ответ — в
+// ключи, так что будущие задачи до своего дня нигде не видны. Задача, заданная в панели вручную,
+// главнее графика; убранная в панели задача дня из графика больше не возвращается.
+//
 // Закрытая таблица — PRIVATE_SPREADSHEET_ID («СОШ20 — служебная, закрытая»); скрипт создаёт её сам.
 
 const DAY = Object.freeze({
@@ -23,6 +28,10 @@ const DAY = Object.freeze({
   resultsHead: ['Дата', 'Верных', 'Всего ответов', 'Первым решил', 'Ответ'],
   taskKeys: 'Задача_дня_ключи',
   taskAnswers: 'Задача_дня_ответы',
+  // График задач наперёд (закрытая таблица): столбцы как в файле «Задачи дня — …xlsx», строки
+  // можно вставлять оттуда целиком. Скрипт читает столбцы по заголовкам.
+  taskSchedule: 'Задача_дня_график',
+  scheduleHead: ['Дата', 'День', 'Предмет', 'Задача', 'Пояснение (подсказка)', 'Параллели (пусто — все)', 'Правильный ответ', 'Решение (для учителя, на экран не выводить)'],
   maxEvents: 5,
   maxText: 120,
   maxTask: 600,
@@ -195,10 +204,16 @@ function getDailyTask(token, dateIso) {
   assertSession_(token); validateIsoDate_(dateIso);
   // Results of past days: once a day is enough (the night trigger does it too).
   const cache = CacheService.getScriptCache(), doneKey = 'dayResults:' + isoToday_();
-  if (!cache.get(doneKey)) { dayPublishResults_(); cache.put(doneKey, '1', 6 * 3600); }
+  // The panel is also the fallback for the triggers: today's scheduled task, and the triggers themselves.
+  if (!cache.get(doneKey)) { dayPublishResults_(); dayPublishScheduled_(); dayEnsureTrigger_(); cache.put(doneKey, '1', 6 * 3600); }
   const t = dayTaskRow_(dateIso), k = dayKeyRow_(dateIso);
   const answers = perfRows_(daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getValues()).slice(1).filter((r) => normalizeDate_(r[0]) === dateIso);
-  return { date: dateIso, task: t.task ? t.task.task : '', explain: t.task ? t.task.explain : '', parallels: t.task ? t.task.parallels : '', answer: k.answer, answers: answers.length, correct: answers.filter((r) => String(r[3]) === 'да').length };
+  const stats = { answers: answers.length, correct: answers.filter((r) => String(r[3]) === 'да').length };
+  if (!t.task) {
+    const s = dateIso >= isoToday_() ? dayScheduledTask_(dateIso) : null;
+    if (s) return { date: dateIso, task: s.task, explain: s.explain, parallels: s.parallels, answer: s.answer, scheduled: true, ...stats };
+  }
+  return { date: dateIso, task: t.task ? t.task.task : '', explain: t.task ? t.task.explain : '', parallels: t.task ? t.task.parallels : '', answer: k.answer, ...stats };
 }
 
 function saveDailyTask(token, dateIso, item) {
@@ -210,15 +225,51 @@ function saveDailyTask(token, dateIso, item) {
   if (!answer) throw new Error('Укажите правильный ответ (он не публикуется до следующего дня)');
   if (answer.length > DAY.maxAnswer) throw new Error('Слишком длинный ответ');
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try {
-    const t = dayTaskRow_(dateIso), row = [formatRuDate_(dateIso), task, explain, parallels];
-    if (t.index > 0) t.sh.getRange(t.index + 1, 1, 1, 4).setValues([row]); else t.sh.appendRow(row);
-    const k = dayKeyRow_(dateIso), keyRow = [formatRuDate_(dateIso), answer, dayStamp_()];
-    if (k.index > 0) k.sh.getRange(k.index + 1, 1, 1, 3).setValues([keyRow]); else k.sh.appendRow(keyRow);
-  } finally { lock.releaseLock(); }
+  try { dayWriteTask_(dateIso, task, explain, parallels, answer); } finally { lock.releaseLock(); }
   dayEnsureTrigger_();
   return { ok: true };
 }
+// Задача — в публичный лист, ответ — в закрытые ключи (строка даты заменяется). Под блокировкой.
+function dayWriteTask_(dateIso, task, explain, parallels, answer) {
+  const t = dayTaskRow_(dateIso), row = [formatRuDate_(dateIso), task, explain, parallels];
+  if (t.index > 0) t.sh.getRange(t.index + 1, 1, 1, 4).setValues([row]); else t.sh.appendRow(row);
+  const k = dayKeyRow_(dateIso), keyRow = [formatRuDate_(dateIso), answer, dayStamp_()];
+  if (k.index > 0) k.sh.getRange(k.index + 1, 1, 1, 3).setValues([keyRow]); else k.sh.appendRow(keyRow);
+}
+
+/* График задач ----------------------------------------------------------------- */
+
+// Строки «Задача_дня_график»: столбцы ищутся по заголовкам (Дата, Задача, Пояснение, Параллели,
+// …ответ), так что лишние столбцы (День, Предмет, Решение) не мешают.
+function dayScheduleRows_() {
+  const sh = daySheet_(dayPrivateSpreadsheet_(), DAY.taskSchedule, DAY.scheduleHead);
+  const values = perfRows_(sh.getDataRange().getValues());
+  const head = (values[0] || []).map((x) => String(x).toLowerCase());
+  const col = (word, def) => { const i = head.findIndex((x) => x.includes(word)); return i >= 0 ? i : def; };
+  const c = { date: col('дата', 0), task: col('задача', 3), explain: col('пояснение', 4), parallels: col('параллел', 5), answer: col('ответ', 6) };
+  const text = (v) => String(v == null ? '' : v).trim();
+  return values.slice(1).map((r) => ({ date: normalizeDate_(r[c.date]), task: text(r[c.task]), explain: text(r[c.explain]), parallels: dayParallels_(r[c.parallels]).join(', '), answer: text(r[c.answer]) }))
+    .filter((x) => x.date && x.task && x.answer && x.task.length <= DAY.maxTask && x.explain.length <= DAY.maxTask && x.answer.length <= DAY.maxAnswer);
+}
+function dayScheduledTask_(dateIso) { return dayScheduleRows_().find((x) => x.date === dateIso) || null; }
+
+// Задача из графика на сегодня — в публичный лист. Один раз за дату: если завуч убрал её в панели,
+// она не вернётся; задача, уже заданная вручную, не трогается.
+function dayPublishScheduled_() {
+  const today = isoToday_(), props = PropertiesService.getScriptProperties();
+  if (props.getProperty('DAY_SCHEDULE_DONE') === today) return false;
+  const item = dayScheduledTask_(today);
+  if (!item) return false; // a row added later today still goes out on the next run
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    if (props.getProperty('DAY_SCHEDULE_DONE') === today) return false;
+    let done = false;
+    if (dayTaskRow_(today).index < 0) { dayWriteTask_(today, item.task, item.explain, item.parallels, item.answer); done = true; }
+    props.setProperty('DAY_SCHEDULE_DONE', today);
+    return done;
+  } finally { lock.releaseLock(); }
+}
+function publishScheduledDailyTask() { dayPublishScheduled_(); }
 
 function deleteDailyTask(token, dateIso) {
   assertSession_(token); validateIsoDate_(dateIso);
@@ -284,17 +335,20 @@ function dayPublishResults_() {
   results.getRange(results.getLastRow() + 1, 1, rows.length, DAY.resultsHead.length).setValues(rows);
   return rows.length;
 }
-function publishDailyTaskResults() { dayPublishResults_(); }
+function publishDailyTaskResults() { dayPublishResults_(); dayPublishScheduled_(); }
 
 // The window «Сегодня на ТВ» opens with one call: events and the task of the date.
 function getDayPanel(token, dateIso) {
   return { events: getDayEvents(token, dateIso), task: getDailyTask(token, dateIso) };
 }
 
-// Ночной триггер в 00:xx: итоги вчерашней задачи. Создаётся один раз при сохранении задачи.
+// Ночной триггер в 00:xx: итоги вчерашней задачи и задача на сегодня из графика; запасной в 06:xx —
+// задача из графика, если ночной не сработал. Создаются один раз (при сохранении задачи или при
+// открытии окна в панели).
 function dayEnsureTrigger_() {
   try {
-    if (ScriptApp.getProjectTriggers().some((t) => t.getHandlerFunction() === 'publishDailyTaskResults')) return;
-    ScriptApp.newTrigger('publishDailyTaskResults').timeBased().everyDays(1).atHour(0).create();
-  } catch (_) { /* без триггера итоги выйдут при следующем открытии панели */ }
+    const have = ScriptApp.getProjectTriggers().map((t) => t.getHandlerFunction());
+    if (!have.includes('publishDailyTaskResults')) ScriptApp.newTrigger('publishDailyTaskResults').timeBased().everyDays(1).atHour(0).create();
+    if (!have.includes('publishScheduledDailyTask')) ScriptApp.newTrigger('publishScheduledDailyTask').timeBased().everyDays(1).atHour(6).create();
+  } catch (_) { /* без триггера итоги и задача из графика выйдут при следующем открытии панели */ }
 }

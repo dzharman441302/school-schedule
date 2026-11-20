@@ -99,7 +99,7 @@
       renderEvents(events.draft || []);
       renderState();
       $('#dp-task').value = task.task || ''; $('#dp-explain').value = task.explain || ''; $('#dp-parallels').value = task.parallels || ''; $('#dp-answer').value = task.answer || '';
-      $('#dp-task-state').textContent = task.task ? `Задача на ${ru(date)} сохранена${task.answers ? ` · ответов: ${task.answers}, верных: ${task.correct}` : ''}.` : 'На эту дату задачи нет.';
+      $('#dp-task-state').textContent = task.scheduled ? `Задача на ${ru(date)} из графика («Задача_дня_график» в закрытой таблице): выйдет сама ночью этого дня. «Сохранить задачу» выложит её сразу; чтобы отменить, удалите строку в графике.` : task.task ? `Задача на ${ru(date)} сохранена${task.answers ? ` · ответов: ${task.answers}, верных: ${task.correct}` : ''}.` : 'На эту дату задачи нет.';
     } catch (err) { toast(err.message); } finally { busy(false); }
   }
 

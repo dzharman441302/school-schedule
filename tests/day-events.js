@@ -71,10 +71,10 @@ test('the task: public text, private answer, a nightly trigger', () => {
   assert.deepEqual(t.pub('Задача_дня')[1], ['28.09.2026', 'Сколько будет 2+2×2?', 'Порядок действий', '5, 6, 7']);
   assert.ok(!JSON.stringify(t.h.sheets.get('Задача_дня').rows).includes('шесть'), 'the answer is not in the public sheet');
   assert.equal(t.priv('Задача_дня_ключи')[1][1], '6; шесть');
-  assert.deepEqual(t.triggers, ['publishDailyTaskResults']);
+  assert.deepEqual(t.triggers, ['publishDailyTaskResults', 'publishScheduledDailyTask']);
   t.call('saveDailyTask', D, { task: 'Новая', answer: '1' });
   assert.equal(t.pub('Задача_дня').length, 2, 'saving again replaces the day');
-  assert.equal(t.triggers.length, 1, 'one trigger');
+  assert.equal(t.triggers.length, 2, 'the triggers are made once');
   t.call('deleteDailyTask', D);
   assert.equal(t.pub('Задача_дня').length, 1);
   assert.equal(t.priv('Задача_дня_ключи').length, 1);
@@ -141,6 +141,43 @@ test('weather for the screens: fetched by the script, kept 30 minutes, errors to
   assert.deepEqual(t.h.plain(t.ctx.handleWeather_()), { ok: false, error: 'open-meteo 503' });
   const res = t.ctx.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'weather' }) } });
   assert.equal(JSON.parse(res).ok, false, 'routed through doPost');
+});
+
+test('the schedule: tasks wait in the private sheet, today goes out at night, once', () => {
+  const t = dayHarness();
+  const priv = t.ctx.SpreadsheetApp.openById('private');
+  t.call('getDailyTask', '2026-09-24'); // opens the private sheets
+  const sh = priv.getSheetByName('Задача_дня_график');
+  assert.ok(sh, 'the schedule sheet is made with the file columns');
+  assert.equal(sh.rows[0][6], 'Правильный ответ');
+  sh.appendRow(['25.09.2026', 'Пт', 'Математика', 'Сегодняшняя по графику', 'Подсказка', '5, 8', '301; 301.', 'Решение для учителя']);
+  sh.appendRow(['28.09.2026', 'Пн', 'Физика', 'Будущая', '', '', '4,32; 4.32', '']);
+  sh.appendRow(['29.09.2026', 'Вт', 'Химия', 'Без ответа', '', '', '', '']);
+  assert.equal(t.pub('Задача_дня').length, 1, 'nothing public before the night');
+  const future = t.call('getDailyTask', '2026-09-28');
+  assert.equal(future.scheduled, true);
+  assert.equal(future.task, 'Будущая');
+  assert.equal(future.answer, '4,32; 4.32', 'the panel sees the answer of a scheduled task');
+  t.ctx.publishDailyTaskResults();
+  assert.deepEqual(t.pub('Задача_дня').slice(1), [['25.09.2026', 'Сегодняшняя по графику', 'Подсказка', '5, 8']], 'only today, without the subject and the solution');
+  assert.ok(!JSON.stringify(t.h.sheets.get('Задача_дня').rows).includes('Решение'), 'the solution stays private');
+  assert.equal(t.priv('Задача_дня_ключи').find((r) => r[0] === '25.09.2026')[1], '301; 301.');
+  assert.equal(t.post({ action: 'dailyTask', cls: '5А', answer: '301', device: 'device-0001' }).correct, true, 'pupils can answer it');
+  t.call('deleteDailyTask', '2026-09-25');
+  t.ctx.publishScheduledDailyTask();
+  assert.equal(t.pub('Задача_дня').length, 1, 'a task removed in the panel does not come back');
+  assert.equal(t.call('getDailyTask', '2026-09-29').task, '', 'a row without an answer is skipped');
+});
+
+test('the schedule does not replace a task set by hand', () => {
+  const t = dayHarness();
+  t.call('saveDailyTask', '2026-09-25', { task: 'Вручную', answer: '1' });
+  t.call('getDailyTask', '2026-09-24'); // opens the private sheets
+  const sh = t.ctx.SpreadsheetApp.openById('private').getSheetByName('Задача_дня_график');
+  sh.appendRow(['25.09.2026', 'Пт', 'Математика', 'По графику', '', '', '2', '']);
+  t.ctx.publishScheduledDailyTask();
+  assert.deepEqual(t.pub('Задача_дня').slice(1).map((r) => r[1]), ['Вручную']);
+  assert.equal(t.priv('Задача_дня_ключи')[1][1], '1');
 });
 
 test('the window opens with one call; past results are checked once a day', () => {
