@@ -4,11 +4,9 @@
   const config = window.SCHOOL_CONFIG || {};
   const content = window.SITE_CONTENT || { important: [], fallbackNews: [], documents: [] };
 
-  const memoryCache = new Map();
   const sheetMeta = new Map();
   const CACHE_TTL = 10 * 60 * 1000;
   const CACHE_MAX_STALE = 7 * 24 * 60 * 60 * 1000;
-  const CACHE_PREFIX = 'school20:sheet:v3:';
 
   const classCollator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
 
@@ -161,101 +159,428 @@
     });
   }
 
-  function sheetUrl(sheetName) {
-    const sheets = config.googleSheets || {};
-    return `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheets.spreadsheetId || '')}/values/${encodeURIComponent(sheetName)}?key=${encodeURIComponent(sheets.apiKey || '')}`;
-  }
+  /* Sheets: cache first, one request, version check ------------------------------
+     • Сохранённые листы лежат в IndexedDB (localStorage — только для маленьких настроек;
+       старые ключи school20:sheet:* переносятся при первом запуске и удаляются).
+     • Страница сразу получает сохранённую копию (до 7 дней), свежая подгружается в фоне;
+       если что-то изменилось — onSheetsUpdated(fn) сообщает странице, она перерисовывается.
+     • Все листы, запрошенные почти одновременно, идут одним запросом values:batchGet.
+     • Большие листы публикации (Изменения, Учителя_сайт) перекачиваются только если
+       изменился маленький «Статус_публикации» (или копии больше часа).
+     • Google не ответил за 6 с — остаётся сохранённая копия, плашка «данные на ЧЧ:ММ». */
 
-  function readStoredCache(cacheKey) {
-    let cached = memoryCache.get(cacheKey) || null;
-    if (cached) return cached;
-    try {
-      cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-      if (cached && Array.isArray(cached.rows) && Number.isFinite(cached.savedAt)) {
-        memoryCache.set(cacheKey, cached);
-        return cached;
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  function writeStoredCache(cacheKey, entry) {
-    memoryCache.set(cacheKey, entry);
-    try { localStorage.setItem(cacheKey, JSON.stringify(entry)); } catch (_) {}
-  }
-
-  // A sheet that does not exist (HTTP 400) is remembered for an hour so optional
-  // sheets such as «Календарь» cost one request per hour instead of one per visit.
-  const MISSING_TTL = 60 * 60 * 1000;
-  const inflight = new Map();
+  const sheetsConfig = config.googleSheets || {};
+  const STATUS_SHEET = sheetsConfig.sheets?.publicationStatus || 'Статус_публикации';
+  const VERSIONED = new Set(sheetsConfig.versionedSheets || [sheetsConfig.sheets?.changes || 'Изменения', sheetsConfig.sheets?.teachersPublic || 'Учителя_сайт']);
+  const VERSIONED_MAX_AGE = 60 * 60 * 1000;
+  const NETWORK_TIMEOUT = 6000;
+  // A sheet that does not exist is remembered for 6 hours: optional sheets such as
+  // «Помещения» are not asked for on every visit.
+  const MISSING_TTL = 6 * 60 * 60 * 1000;
+  const LEGACY_PREFIX = 'school20:sheet:';
+  const DB_NAME = 'school20';
+  const DB_STORE = 'sheets';
 
   // Замер (perf.js, только при ?debug=1): откуда лист, сколько строк, когда пришли все данные.
   const perf = () => window.S20Perf || null;
+
+  // Cheap signature of the rows: did the sheet change?
+  function rowsSignature(rows) {
+    const text = JSON.stringify(rows || []);
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i += 1) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return `${text.length}:${(h >>> 0).toString(36)}`;
+  }
+
+  const validEntry = (e) => !!e && Array.isArray(e.rows) && Number.isFinite(e.savedAt);
+
+  /* IndexedDB --------------------------------------------------------------------- */
+
+  let dbPromise = null;
+  const idbRequest = (request) => new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  function openDb() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve) => {
+      let request = null;
+      try { request = window.indexedDB ? window.indexedDB.open(DB_NAME, 1) : null; } catch (_) { request = null; }
+      if (!request) { resolve(null); return; }
+      request.onupgradeneeded = () => { try { request.result.createObjectStore(DB_STORE); } catch (_) {} };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    }).then((db) => (db ? migrateLegacy(db).then(() => db, () => db) : null), () => null);
+    return dbPromise;
+  }
+
+  function dbStore(db, mode) { return db.transaction(DB_STORE, mode).objectStore(DB_STORE); }
+  async function dbGet(name) {
+    const db = await openDb();
+    if (!db) return null;
+    try { return await idbRequest(dbStore(db, 'readonly').get(name)); } catch (_) { return null; }
+  }
+  async function dbPut(name, entry) {
+    const db = await openDb();
+    if (!db) return;
+    try { await idbRequest(dbStore(db, 'readwrite').put(entry, name)); } catch (_) {}
+  }
+  async function dbDelete(name) {
+    const db = await openDb();
+    if (!db) return;
+    try { await idbRequest(dbStore(db, 'readwrite').delete(name)); } catch (_) {}
+  }
+
+  // Old copies in localStorage (school20:sheet:v3:Имя) move to IndexedDB once and are removed.
+  async function migrateLegacy(db) {
+    let keys = [];
+    try {
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(LEGACY_PREFIX)) keys.push(key);
+      }
+    } catch (_) { keys = []; }
+    for (const key of keys) {
+      const name = key.replace(/^school20:sheet:v\d+:/, '');
+      let entry = null;
+      try { entry = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) {}
+      if (validEntry(entry) && name && name !== key) {
+        try {
+          const existing = await idbRequest(dbStore(db, 'readonly').get(name));
+          if (!validEntry(existing) || existing.savedAt < entry.savedAt) {
+            await idbRequest(dbStore(db, 'readwrite').put({ ...entry, sig: rowsSignature(entry.rows) }, name));
+          }
+        } catch (_) {}
+      }
+      storageRemove(key);
+    }
+  }
+
+  /* Memory + IndexedDB ------------------------------------------------------------ */
+
+  const memoryCache = new Map();
+  let reading = 0;
+  let afterReads = null; // the request waits for the saved copies being read right now
+
+  async function readEntry(name) {
+    if (memoryCache.has(name)) return memoryCache.get(name);
+    reading += 1;
+    try {
+      const entry = await dbGet(name);
+      if (memoryCache.has(name)) return memoryCache.get(name);
+      if (validEntry(entry)) { memoryCache.set(name, entry); return entry; }
+      return null;
+    } finally {
+      reading -= 1;
+      if (!reading && afterReads) { const go = afterReads; afterReads = null; go(); }
+    }
+  }
+
+  function writeEntry(name, entry) {
+    memoryCache.set(name, entry);
+    dbPut(name, entry);
+  }
+
+  async function forgetSheets(names) {
+    for (const name of names) { memoryCache.delete(name); await dbDelete(name); }
+  }
+
+  /* Network: one batchGet for everything asked at once ------------------------------ */
+
+  const apiBase = () => `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetsConfig.spreadsheetId || '')}`;
+  const apiKey = () => encodeURIComponent(sheetsConfig.apiKey || '');
+  const quoteRange = (name) => `'${String(name).replace(/'/g, "''")}'`;
+
+  async function fetchJson(url) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timeout = window.setTimeout(() => controller?.abort(), NETWORK_TIMEOUT);
+    try {
+      const response = await fetch(url, { signal: controller?.signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+      return { status: response.status, ok: response.ok, data: response.ok ? await response.json() : null };
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw new Error('Google не ответил за 6 с');
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  // Titles of the spreadsheet's sheets: asked only when a batch fails because of a missing sheet.
+  async function sheetTitles() {
+    const cached = await readEntry('__titles__');
+    if (cached && Date.now() - cached.savedAt < MISSING_TTL) return new Set(cached.rows);
+    const res = await fetchJson(`${apiBase()}?fields=sheets.properties.title&key=${apiKey()}`);
+    if (!res.ok) throw new Error(`Google Sheets: ${res.status}`);
+    const titles = (res.data?.sheets || []).map((s) => String(s.properties?.title || ''));
+    writeEntry('__titles__', { savedAt: Date.now(), rows: titles });
+    return new Set(titles);
+  }
+
+  // → Map(name → rows | null), null = no such sheet.
+  async function batchFetch(names) {
+    const out = new Map();
+    let ask = [...new Set(names)];
+    for (let attempt = 0; attempt < 2 && ask.length; attempt += 1) {
+      const query = ask.map((n) => `ranges=${encodeURIComponent(quoteRange(n))}`).join('&');
+      const res = await fetchJson(`${apiBase()}/values:batchGet?${query}&key=${apiKey()}`);
+      if (res.ok) {
+        const ranges = Array.isArray(res.data?.valueRanges) ? res.data.valueRanges : [];
+        ask.forEach((name, i) => out.set(name, Array.isArray(ranges[i]?.values) ? ranges[i].values : []));
+        return out;
+      }
+      if (res.status !== 400 || attempt) throw new Error(`Google Sheets: ${res.status}`);
+      const titles = await sheetTitles();
+      ask.filter((n) => !titles.has(n)).forEach((n) => out.set(n, null));
+      ask = ask.filter((n) => titles.has(n));
+    }
+    return out;
+  }
+
+  /* Queue ---------------------------------------------------------------------------- */
+
+  const queue = new Map(); // name → { mode, waiters: [{ resolve, reject, optional }] }
+  const inflight = new Map(); // name → Promise<entry>
+  let flushPending = false;
+
+  function scheduleFlush() {
+    if (flushPending) return;
+    flushPending = true;
+    const later = (fn) => Promise.resolve().then(() => Promise.resolve()).then(() => Promise.resolve()).then(fn);
+    const run = () => {
+      if (reading > 0) { afterReads = () => later(run); return; } // the other sheets of this page join the request
+      flushPending = false;
+      flush();
+    };
+    // While the page is still being parsed, wait for all its scripts: one request for all of them.
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.setTimeout(run, 0), { once: true });
+    else later(run);
+  }
+
+  // mode: 'full' — download; 'check' — download only if «Статус_публикации» changed.
+  function request(name, { mode = 'full', optional = false } = {}) {
+    if (inflight.has(name)) return inflight.get(name);
+    const promise = new Promise((resolve, reject) => {
+      const job = queue.get(name) || { mode, waiters: [] };
+      if (mode === 'full') job.mode = 'full';
+      job.waiters.push({ resolve, reject, optional });
+      queue.set(name, job);
+      scheduleFlush();
+    });
+    inflight.set(name, promise);
+    const done = () => { if (inflight.get(name) === promise) inflight.delete(name); };
+    promise.then(done, done);
+    return promise;
+  }
+
+  function settle(name, job, entry, error) {
+    job.waiters.forEach((w) => {
+      if (entry && (!entry.missing || w.optional)) w.resolve(entry);
+      else w.reject(error || new Error(`Google Sheets: нет листа «${name}»`));
+    });
+  }
+
+  function store(name, rows, extra = {}) {
+    const entry = rows === null
+      ? { savedAt: Date.now(), rows: [], missing: true }
+      : { savedAt: Date.now(), rows, sig: rowsSignature(rows), ...extra };
+    writeEntry(name, entry);
+    if (rows !== null) perf()?.rows(name, rows.length);
+    return entry;
+  }
+
+  async function flush() {
+    const jobs = new Map(queue);
+    queue.clear();
+    if (!jobs.size) return;
+    const checks = [...jobs].filter(([name, job]) => job.mode === 'check' && VERSIONED.has(name));
+    const direct = [...jobs].filter(([name, job]) => !(job.mode === 'check' && VERSIONED.has(name)));
+    const needStatus = checks.length > 0 || direct.some(([name]) => VERSIONED.has(name));
+    const first = direct.map(([name]) => name);
+    if (needStatus && !first.includes(STATUS_SHEET)) first.push(STATUS_SHEET);
+
+    let version = null;
+    try {
+      const got = first.length ? await batchFetch(first) : new Map();
+      if (got.has(STATUS_SHEET) && got.get(STATUS_SHEET) !== null) {
+        const before = memoryCache.get(STATUS_SHEET);
+        const statusEntry = store(STATUS_SHEET, got.get(STATUS_SHEET));
+        version = statusEntry.sig;
+        if (jobs.has(STATUS_SHEET)) noteChange(STATUS_SHEET, statusEntry);
+        else if (before && before.sig !== statusEntry.sig) notifyChanged(STATUS_SHEET);
+      }
+      direct.forEach(([name, job]) => {
+        const entry = name === STATUS_SHEET && version
+          ? memoryCache.get(name)
+          : store(name, got.has(name) ? got.get(name) : [], VERSIONED.has(name) && version ? { version } : {});
+        if (name !== STATUS_SHEET) noteChange(name, entry);
+        settle(name, job, entry);
+      });
+    } catch (error) {
+      [...jobs].forEach(([name, job]) => settle(name, job, null, error));
+      return;
+    }
+
+    if (!checks.length) return;
+    const unchanged = [], stale = [];
+    checks.forEach(([name, job]) => {
+      const cached = memoryCache.get(name);
+      if (version && cached && cached.version === version) unchanged.push([name, job, cached]);
+      else stale.push([name, job]);
+    });
+    unchanged.forEach(([name, job, cached]) => {
+      const entry = { ...cached, savedAt: Date.now() };
+      writeEntry(name, entry);
+      perf()?.cache(name, entry.rows.length, null, 'версия та же — не качали');
+      settle(name, job, entry);
+    });
+    if (!stale.length) return;
+    try {
+      const got = await batchFetch(stale.map(([name]) => name));
+      stale.forEach(([name, job]) => {
+        const entry = store(name, got.has(name) ? got.get(name) : [], version ? { version } : {});
+        noteChange(name, entry);
+        settle(name, job, entry);
+      });
+    } catch (error) {
+      stale.forEach(([name, job]) => settle(name, job, null, error));
+    }
+  }
+
+  /* «Something changed» for the page --------------------------------------------- */
+
+  const listeners = new Set();
+  const backgroundShown = new Map(); // name → signature the page is showing from the cache
+  let changed = new Set();
+  let notifyPending = false;
+
+  function noteChange(name, entry) {
+    if (!backgroundShown.has(name)) return;
+    const shown = backgroundShown.get(name);
+    backgroundShown.delete(name);
+    if (entry && !entry.missing && entry.sig !== shown) notifyChanged(name);
+  }
+
+  function notifyChanged(name) {
+    changed.add(name);
+    if (notifyPending) return;
+    notifyPending = true;
+    Promise.resolve().then(() => Promise.resolve()).then(() => {
+      notifyPending = false;
+      const names = changed;
+      changed = new Set();
+      listeners.forEach((fn) => { try { fn(names); } catch (_) {} });
+    });
+  }
+
+  function onSheetsUpdated(fn) {
+    if (typeof fn === 'function') listeners.add(fn);
+    return () => listeners.delete(fn);
+  }
+
+  /* The small pill «обновляется…» / «данные на 14:05» ------------------------------- */
+
+  let pillCount = 0;
+  let pillError = 0;
+  function pill(state, savedAt) {
+    if (typeof document.createElement !== 'function' || !document.body || /\/tv(-students)?\.html$/.test(location.pathname)) return;
+    let el = document.querySelector('[data-refresh-pill]');
+    if (!el || !el.classList) {
+      el = document.createElement('div');
+      el.className = 'refresh-pill';
+      el.setAttribute('data-refresh-pill', '');
+      el.setAttribute('role', 'status');
+      el.hidden = true;
+      document.body.appendChild(el);
+    }
+    if (state === 'busy') { el.textContent = 'обновляется…'; el.classList.remove('is-stale'); el.hidden = false; }
+    else if (state === 'stale') { el.textContent = `нет связи · данные на ${formatCacheTime(savedAt)}`; el.classList.add('is-stale'); el.hidden = false; }
+    else el.hidden = true;
+  }
+
+  function refreshInBackground(name, cached, mode, optional) {
+    if (!backgroundShown.has(name)) backgroundShown.set(name, cached.sig || rowsSignature(cached.rows));
+    pillCount += 1;
+    pill('busy');
+    request(name, { mode, optional }).then((entry) => {
+      sheetMeta.set(name, { source: 'network', savedAt: entry.savedAt, stale: false });
+    }, (error) => {
+      backgroundShown.delete(name);
+      pillError = pillError ? Math.min(pillError, cached.savedAt) : cached.savedAt;
+      sheetMeta.set(name, { source: 'stale', savedAt: cached.savedAt, stale: true, error: String(error) });
+    }).then(() => {
+      pillCount -= 1;
+      if (pillCount) return;
+      if (pillError) pill('stale', pillError); else pill('hide');
+      pillError = 0;
+    });
+  }
+
+  /* loadSheet ------------------------------------------------------------------------
+     options: force — всё из сети (кнопка «Обновить»); fresh — из сети, но большие листы
+     публикации по проверке версии (экраны ТВ); ttl — сколько копия считается свежей. */
 
   async function loadSheet(sheetName, options = {}) {
     perf()?.begin();
     try { return await loadSheetInner(sheetName, options); } finally { perf()?.end(); }
   }
 
-  async function loadSheetInner(sheetName, { force = false, optional = false, ttl = CACHE_TTL } = {}) {
+  async function loadSheetInner(sheetName, { force = false, fresh = false, optional = false, ttl = CACHE_TTL } = {}) {
     if (!sheetName) {
       if (optional) return [];
       throw new Error('Не задано название листа Google Таблицы');
     }
-
-    const cacheKey = `${CACHE_PREFIX}${sheetName}`;
     const now = Date.now();
-    const cached = readStoredCache(cacheKey);
-    const freshFor = cached && cached.missing ? MISSING_TTL : ttl;
+    const cached = await readEntry(sheetName);
+    const age = cached ? now - cached.savedAt : Infinity;
+    const versionOk = (c) => VERSIONED.has(sheetName) && c && c.version && now - c.savedAt < VERSIONED_MAX_AGE;
+    const mode = !force && versionOk(cached) ? 'check' : 'full';
 
-    if (!force && cached && now - cached.savedAt < freshFor) {
-      sheetMeta.set(sheetName, { source: 'cache', savedAt: cached.savedAt, stale: false });
-      perf()?.cache(sheetName, cached.rows.length, now - cached.savedAt, cached.missing ? 'кэш (листа нет)' : 'кэш');
-      return cached.rows;
+    if (cached && cached.missing && !force && age < MISSING_TTL) {
+      sheetMeta.set(sheetName, { source: 'missing', savedAt: cached.savedAt, stale: false });
+      perf()?.cache(sheetName, 0, age, 'кэш (листа нет)');
+      if (optional) return [];
+      throw new Error(`Google Sheets: нет листа «${sheetName}»`);
     }
 
-    // Several widgets on one page may ask for the same sheet at once.
-    if (inflight.has(cacheKey)) return inflight.get(cacheKey);
-    const request = fetchSheet(sheetName, cacheKey, cached, now, optional);
-    inflight.set(cacheKey, request);
-    try { return await request; } finally { inflight.delete(cacheKey); }
+    if (cached && !cached.missing && !force && !fresh) {
+      perf()?.cache(sheetName, cached.rows.length, age, 'кэш');
+      if (age < ttl) {
+        sheetMeta.set(sheetName, { source: 'cache', savedAt: cached.savedAt, stale: false });
+      } else if (age < CACHE_MAX_STALE) {
+        // Cache first: the page draws the saved copy now, the fresh one comes in the background.
+        sheetMeta.set(sheetName, { source: 'cache', savedAt: cached.savedAt, stale: false, refreshing: true });
+        refreshInBackground(sheetName, cached, mode, optional);
+      } else {
+        return networkLoad(sheetName, cached, mode, optional, age);
+      }
+      return cached.rows;
+    }
+    return networkLoad(sheetName, cached, mode, optional, age);
   }
 
-  async function fetchSheet(sheetName, cacheKey, cached, now, optional) {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 12000);
-
+  async function networkLoad(sheetName, cached, mode, optional, age) {
     try {
-      const response = await fetch(sheetUrl(sheetName), {
-        signal: controller.signal,
-        cache: 'no-store',
-        headers: { Accept: 'application/json' }
-      });
-      if (response.status === 400 && optional) {
-        writeStoredCache(cacheKey, { savedAt: Date.now(), rows: [], missing: true });
-        sheetMeta.set(sheetName, { source: 'missing', savedAt: Date.now(), stale: false });
-        return [];
-      }
-      if (!response.ok) throw new Error(`Google Sheets: ${response.status}`);
-      const data = await response.json();
-      const rows = Array.isArray(data.values) ? data.values : [];
-      perf()?.rows(sheetName, rows.length);
-      const cacheEntry = { savedAt: Date.now(), rows };
-      writeStoredCache(cacheKey, cacheEntry);
-      sheetMeta.set(sheetName, { source: 'network', savedAt: cacheEntry.savedAt, stale: false });
-      return rows;
+      const entry = await request(sheetName, { mode, optional });
+      sheetMeta.set(sheetName, { source: entry.missing ? 'missing' : 'network', savedAt: entry.savedAt, stale: false });
+      return entry.rows;
     } catch (error) {
-      if (cached && now - cached.savedAt < CACHE_MAX_STALE) {
+      if (cached && !cached.missing && age < CACHE_MAX_STALE) {
         sheetMeta.set(sheetName, { source: 'stale', savedAt: cached.savedAt, stale: true, error: String(error) });
-        perf()?.cache(sheetName, cached.rows.length, now - cached.savedAt, 'кэш (сеть не ответила)');
+        perf()?.cache(sheetName, cached.rows.length, age, 'кэш (сеть не ответила)');
+        pill('stale', cached.savedAt);
         return cached.rows;
       }
       sheetMeta.set(sheetName, { source: 'error', savedAt: 0, stale: false, error: String(error) });
       if (optional) return [];
       throw error;
-    } finally {
-      window.clearTimeout(timeout);
     }
+  }
+
+  // Start loading the sheets a page will need, so they come in the same single request.
+  function preloadSheets(names, options = {}) {
+    (names || []).forEach((name) => { loadSheet(name, { optional: true, ...options }).catch(() => {}); });
   }
 
   function getSheetMeta(sheetName) {
@@ -1125,6 +1450,9 @@
     formatSchoolDate,
     formatCacheTime,
     loadSheet,
+    preloadSheets,
+    onSheetsUpdated,
+    forgetSheets,
     getSheetMeta,
     findHeaderIndex,
     looksLikeHeader,

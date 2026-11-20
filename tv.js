@@ -250,7 +250,7 @@
   async function load() {
     try {
       await Promise.all([site.loadCalendar?.(), window.ScheduleCore.loadBells()]);
-      const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { force: true, optional: true })));
+      const [b, c] = await Promise.all(SHEETS.map((name) => site.loadSheet(name, { fresh: true, optional: true })));
       baseRows = b || [];
       changeRows = c || [];
     } catch (_) {}

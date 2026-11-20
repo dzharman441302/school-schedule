@@ -21,11 +21,11 @@ function element(id) {
   };
 }
 
-async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080, screen, before = [], fetchMore }) {
+async function startScreen(script, { sheets, epoch, search = '', width = 1920, height = 1080, screen, before = [], fetchMore, globals = {}, stored = {} }) {
   let now = 0, id = 0, gate = null, open = null;
-  const timers = new Map(), elements = new Map(), events = {}, requests = [];
+  const timers = new Map(), elements = new Map(), events = {}, requests = [], batches = [];
   const el = (key) => { if (!elements.has(key)) elements.set(key, element(key)); return elements.get(key); };
-  const storage = new Map();
+  const storage = new Map(Object.entries(stored));
   const base = Date.parse(epoch);
   class FakeDate extends Date {
     constructor(...args) { super(...(args.length ? args : [base + now])); }
@@ -37,7 +37,7 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     document: { getElementById: el, querySelector: el, querySelectorAll: () => [], addEventListener() {} },
     location: { search, pathname: `/${String(script || 'index.js').replace('.js', '.html')}` },
     innerWidth: width, innerHeight: height, screen,
-    localStorage: { getItem: (k) => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) },
+    localStorage: { getItem: (k) => (storage.has(k) ? storage.get(k) : null), setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k), key: (i) => [...storage.keys()][i] ?? null, get length() { return storage.size; } },
     addEventListener: (name, fn) => { events[name] = fn; },
     getComputedStyle: () => ({ fontSize: '16px', whiteSpace: 'normal' }),
     setInterval: (fn, period) => { const key = ++id; timers.set(key, { fn, period, due: now + period }); return key; },
@@ -52,14 +52,29 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
         requests.push({ name: path.basename(file), at: now });
         return fs.existsSync(file) ? { ok: true, status: 200, json: async () => JSON.parse(fs.readFileSync(file, 'utf8')) } : { ok: false, status: 404, json: async () => ({}) };
       }
-      const name = decodeURIComponent(String(url).match(/\/values\/([^?]+)/)[1]);
-      requests.push({ name, at: now });
-      if (gate) await gate;
-      const rows = sheets[name];
-      if (rows === undefined) return { ok: false, status: 400, json: async () => ({}) };
-      return { ok: true, status: 200, json: async () => ({ values: rows.map((r) => r.slice()) }) };
+      const u = new URL(String(url));
+      if (u.searchParams.get('fields') === 'sheets.properties.title') { // the list of sheets
+        requests.push({ name: '__titles__', at: now });
+        return { ok: true, status: 200, json: async () => ({ sheets: Object.keys(sheets).map((title) => ({ properties: { title } })) }) };
+      }
+      // values:batchGet — several sheets in one request; a missing sheet fails the whole request (400).
+      const names = u.pathname.endsWith(':batchGet')
+        ? u.searchParams.getAll('ranges').map((r) => r.replace(/^'|'$/g, '').replace(/''/g, "'"))
+        : [decodeURIComponent(String(url).match(/\/values\/([^?]+)/)[1])];
+      names.forEach((name) => requests.push({ name, at: now }));
+      batches.push(names);
+      if (gate) {
+        const signal = options.signal;
+        await new Promise((resolve, reject) => {
+          gate.then(resolve);
+          signal?.addEventListener('abort', () => { const e = new Error('aborted'); e.name = 'AbortError'; reject(e); });
+        });
+      }
+      if (names.some((name) => sheets[name] === undefined)) return { ok: false, status: 400, json: async () => ({}) };
+      return { ok: true, status: 200, json: async () => ({ valueRanges: names.map((name) => ({ values: sheets[name].map((r) => r.slice()) })) }) };
     }
   };
+  Object.assign(context, globals);
   context.window = context;
   vm.createContext(context);
   for (const file of [...SHARED, ...before, ...(script ? [script] : [])]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
@@ -79,6 +94,8 @@ async function startScreen(script, { sheets, epoch, search = '', width = 1920, h
     html: (key) => el(key).innerHTML,
     pageTimers: (period) => [...timers.values()].filter((t) => t.period === period || (t.once && t.delay === period)).length,
     fetches: (name) => requests.filter((r) => r.name === name).length,
+    batches: () => batches.map((b) => b.slice()),
+    storage,
     hold() { gate = new Promise((resolve) => { open = resolve; }); },
     async release() { const go = open; gate = null; open = null; go(); await settle(); },
     async resize(w, h) { context.innerWidth = w; context.innerHeight = h; events.resize?.(); await settle(); },

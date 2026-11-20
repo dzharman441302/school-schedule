@@ -247,13 +247,13 @@
   async function load() {
     try {
       await Promise.all([site.loadCalendar?.(), core.loadBells()]);
-      const [schedule, changes] = await Promise.all([site.loadSheet(SHEETS[0], { force: true }), site.loadSheet(SHEETS[1], { force: true, optional: true })]);
+      const [schedule, changes] = await Promise.all([site.loadSheet(SHEETS[0], { fresh: true }), site.loadSheet(SHEETS[1], { fresh: true, optional: true })]);
       scheduleRows = schedule || [];
       changesRows = changes || [];
       if (late && !asked) { // a screen pinned to a parallel never shows the rating
         // The rating is extra: a missing sheet or a failed request never stops the schedule.
         try {
-          const [marks, shifts] = await Promise.all([site.loadSheet(late.SHEETS.marks, { force: true, optional: true }), site.loadSheet(late.SHEETS.shifts, { force: true, optional: true })]);
+          const [marks, shifts] = await Promise.all([site.loadSheet(late.SHEETS.marks, { fresh: true, optional: true }), site.loadSheet(late.SHEETS.shifts, { fresh: true, optional: true })]);
           markRows = marks || [];
           shiftRows = shifts || [];
         } catch (_) {}

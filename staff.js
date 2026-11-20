@@ -7,6 +7,8 @@
 
   const PUBLIC_SHEET = 'Учителя_сайт', BASE_TEACHERS = 'Учителя', SCHEDULE = config.googleSheets?.sheets?.schedule || 'Расписание';
   const SETTINGS_SHEET = config.googleSheets?.sheets?.siteSettings || 'Настройки_сайта';
+  // All the sheets of this page go to Google in one request, before the page asks for them one by one.
+  site.preloadSheets?.([PUBLIC_SHEET, BASE_TEACHERS, SCHEDULE, SETTINGS_SHEET]);
   const DAY_CODES = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
   const DAY_NAMES = { ПН: 'Понедельник', ВТ: 'Вторник', СР: 'Среда', ЧТ: 'Четверг', ПТ: 'Пятница', СБ: 'Суббота', ВС: 'Воскресенье' };
   // Bell times of the shown date (shortened days included) from schedule-core.js.
@@ -277,8 +279,8 @@
     if (site.isSchoolDay(dateOf(today))) setDate(today);
     else { const next = nextSchoolIso(today); setDate(next, `Сегодня выходной — показан ближайший учебный день, ${ruDate(next)}.`); }
     updateDateButtons();
-    $('#staff-date').addEventListener('change', () => { setDate($('#staff-date').value); load(true); });
-    document.querySelectorAll('[data-date]').forEach((b) => b.addEventListener('click', () => { setDate(b.dataset.date === 'tomorrow' ? nextSchoolIso(todayIso()) : todayIso()); load(true); }));
+    $('#staff-date').addEventListener('change', () => { setDate($('#staff-date').value); load(); });
+    document.querySelectorAll('[data-date]').forEach((b) => b.addEventListener('click', () => { setDate(b.dataset.date === 'tomorrow' ? nextSchoolIso(todayIso()) : todayIso()); load(); }));
     $('#staff-search').addEventListener('input', (e) => { state.search = e.target.value; renderGrid(); });
     $('[data-only-changed]').addEventListener('change', (e) => { state.onlyChanged = e.target.checked; renderGrid(); });
     $('[data-mobile-only-changed]').addEventListener('change', renderMobile);
@@ -287,14 +289,16 @@
     $('[data-refresh]').addEventListener('click', () => { load(true); window.SiteShell?.refreshFreshness(); });
     document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', () => window.print()));
     document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => { setView(b.dataset.view); if (state.view === 'week') $('[data-week]').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
-    document.querySelectorAll('[data-week-shift]').forEach((b) => b.addEventListener('click', () => { setDate(isoOf(site.addUtcDays(dateOf(weekDates(state.date)[0]), Number(b.dataset.weekShift)))); load(true); }));
+    document.querySelectorAll('[data-week-shift]').forEach((b) => b.addEventListener('click', () => { setDate(isoOf(site.addUtcDays(dateOf(weekDates(state.date)[0]), Number(b.dataset.weekShift)))); load(); }));
     $('#week-teacher')?.addEventListener('change', (e) => { saveTeacher(e.target.value); renderMobile(); renderWeek(); markSeen(e.target.value); });
     setView(new URLSearchParams(location.search).get('view'), { push: false });
     let markSeen = () => {};
     const seenReady = setupSeen();
     $('#teacher-select').addEventListener('change', (e) => { saveTeacher(e.target.value); renderMobile(); markSeen(e.target.value); });
     $('#staff-my-teacher')?.addEventListener('change', (e) => { saveTeacher(e.target.value); renderMobile(); if (state.view === 'week') renderWeek(); markSeen(e.target.value); });
-    await load(true);
+    // The saved copy is drawn at once; a newer one from Google redraws the grid (only if it changed).
+    await load();
+    site.onSheetsUpdated?.((names) => { if ([PUBLIC_SHEET, BASE_TEACHERS, SCHEDULE, 'Звонки', 'Звонки_даты'].some((n) => names.has(n))) load(); });
     markSeen = await seenReady;
     const saved = new URLSearchParams(location.search).get('teacher') || site.storageGet(STORE_TEACHER);
     if (saved && state.teachers.includes(saved)) markSeen(saved);

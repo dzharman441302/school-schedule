@@ -15,7 +15,8 @@
   function sheetName(url) {
     const m = url.pathname.match(/\/values\/([^/:]+)/);
     if (m) return decodeURIComponent(m[1]);
-    if (url.pathname.includes(':batchGet')) return url.searchParams.getAll('ranges').join(', ');
+    if (url.pathname.includes(':batchGet')) return url.searchParams.getAll('ranges').map((r) => r.replace(/^'|'$/g, '')).join(', ');
+    if (url.searchParams.get('fields')) return 'список листов';
     return url.searchParams.get('sheet') || '';
   }
 
@@ -80,7 +81,7 @@
     rows(name, rows) {
       for (let i = entries.length - 1; i >= 0; i--) {
         const e = entries[i];
-        if (e.kind === 'лист' && e.source === 'сеть' && e.name === name && e.rows == null) { e.rows = rows; schedule(); return; }
+        if (e.kind === 'лист' && e.source === 'сеть' && e.name.split(', ').includes(name)) { e.rows = (e.rows || 0) + rows; schedule(); return; }
       }
     },
     begin() { state.pending += 1; state.everStarted = true; },

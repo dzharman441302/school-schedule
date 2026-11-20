@@ -216,6 +216,10 @@
     setInterval(updateLivePill, 20000);
     loadNotices();
     loadFreshness();
+    site.onSheetsUpdated?.((names) => {
+      if (names.has(sheets.publicationStatus || 'Статус_публикации')) loadFreshness();
+      if (names.has(sheets.notices || 'Оповещения')) loadNotices();
+    });
     await site.loadCalendar();
     updateLivePill();
   };

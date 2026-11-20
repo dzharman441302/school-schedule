@@ -957,3 +957,7 @@ body.is-week .staff-grid-card,body.is-week .staff-mobile{display:none}
   .qr-sheet{page:qr;width:210mm;max-width:none;border:0;break-after:page}
   .qr-sticker{height:74.25mm;aspect-ratio:auto}
 }
+
+/* «обновляется…» / «нет связи · данные на 14:05» — app.js shows it while a newer copy loads */
+.refresh-pill{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;z-index:60;transform:translateX(-50%);padding:5px 12px;border:2px solid var(--ink-line);border-radius:999px;background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:700;line-height:1.3;box-shadow:var(--hard-sm);pointer-events:none;white-space:nowrap}
+.refresh-pill.is-stale{background:#FEF3C7;color:#92400E}

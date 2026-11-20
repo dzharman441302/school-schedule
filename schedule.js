@@ -384,6 +384,8 @@
     initViewTabs();
     initClassPicker();
     initActions();
+    // A newer copy from Google came in the background: redraw quietly.
+    site.onSheetsUpdated?.((names) => { if ([SHEET_SCHEDULE, SHEET_CHANGES, 'Звонки', 'Звонки_даты', 'Календарь'].some((n) => names.has(n))) loadData({ quiet: true }); });
     loadData().then(() => {
       if (location.hash === '#changes' && window.matchMedia('(max-width: 979px)').matches) $('.tabs')?.scrollIntoView({ block: 'start' });
     });

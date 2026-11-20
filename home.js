@@ -311,6 +311,7 @@
 
   renderClock();
   load();
+  site.onSheetsUpdated?.((names) => { if ([SHEET_SCHEDULE, SHEET_CHANGES, 'Звонки', 'Звонки_даты', 'Календарь'].some((n) => names.has(n))) load(); });
   setInterval(renderClock, 20000);
   setInterval(() => { if (loaded) renderDay(); }, 30000); // the progress of the lesson on now
   setInterval(() => { if (loaded) { renderChanges(); renderHeroNext(); } }, 60000);
