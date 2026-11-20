@@ -32,13 +32,14 @@ test('a panel call leaves one record with its name, time and rows read — and n
   h.call('getAdminDay', h.token, h.date);
   const r = h.records();
   assert.equal(r.length, 1, 'nested calls are counted inside the outer one');
-  const [when, action, ms, rows, result] = r[0];
+  const [when, action, ms, rows, result, steps] = r[0];
   assert.match(when, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
   assert.equal(action, 'getAdminDay');
   assert.equal(typeof ms, 'number');
   assert.ok(rows > 0, 'getDataRange reads are counted');
   assert.equal(result, 'ок');
-  assert.equal(r[0].length, 5);
+  assert.equal(r[0].length, 6);
+  assert.equal(steps, '', 'only long functions mark steps');
   assert.deepEqual(h.triggers, ['perfFlush'], 'the flush trigger is created once');
 });
 
@@ -70,10 +71,24 @@ test('perfFlush moves the records to the hidden sheet «Замеры» and clear
   const sheet = h.sheets.get('Замеры');
   assert.ok(sheet.hidden);
   const rows = sheet.getDataRange().getValues();
-  assert.deepEqual(rows[0], ['Когда', 'Действие', 'мс', 'Строк прочитано', 'Итог']);
+  assert.deepEqual(rows[0], ['Когда', 'Действие', 'мс', 'Строк прочитано', 'Итог', 'Шаги']);
   assert.deepEqual(rows.slice(1).map((r) => r[1]).sort(), ['getAdminDay', 'getInitialData']);
   assert.equal(h.records().length, 0);
   assert.equal(h.call('perfFlush'), 0);
+});
+
+test('a publication tells where its time goes; old 5-column records are still moved', () => {
+  const h = perfHarness();
+  h.props.set('perf|1|old', JSON.stringify(['2026-11-20 06:00:00', 'getAdminDay', 100, 5, 'ок']));
+  const day = h.plain(h.call('getAdminDay', h.token, h.date));
+  h.call('publishAdminDayEnhanced', h.token, h.date, [], [], day.revision);
+  const pub = h.records().find((r) => r[1] === 'publishAdminDayEnhanced');
+  const steps = pub[5].split('; ').map((x) => x.replace(/ \d+$/, ''));
+  ['листы', 'сетка', 'Изменения_учителей', 'Изменения', 'Учителя_сайт', 'статус', 'журнал замен'].forEach((x) => assert.ok(steps.includes(x), x));
+  pub[5].split('; ').forEach((x) => assert.match(x, / \d+$/));
+  h.call('perfFlush');
+  const rows = h.sheets.get('Замеры').getDataRange().getValues().slice(1);
+  assert.ok(rows.some((r) => r[1] === 'getAdminDay' && r[2] === 100 && r[5] === ''), 'the old record got an empty «Шаги»');
 });
 
 test('perfStatus reports what is wrapped', () => {

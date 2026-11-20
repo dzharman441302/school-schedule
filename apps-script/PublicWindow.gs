@@ -35,7 +35,7 @@ function archivePublicSheets() {
 }
 
 /* Рабочие листы кабинетов — только текущий учебный год (с 1 сентября) ----------------------
-   «Журнал_замен» (табель замен) и заявки ИКТ прошлых лет уходят в «Журнал_замен_архив» и
+   «Журнал_замен» (табель замен), «Просмотры_учителей» и заявки ИКТ прошлых лет уходят в «Журнал_замен_архив» и
    «Заявки_ИКТ_архив» (в той же таблице, что и рабочий лист). Незакрытые заявки остаются. */
 
 function schoolYearStart_(todayIso) {
@@ -45,6 +45,7 @@ function schoolYearStart_(todayIso) {
 
 function yearlyArchiveSpecs_() {
   const specs = [{ ss: getSpreadsheet_, name: REPLACEMENTS.journal, archive: REPLACEMENTS.journal + '_архив', columns: REPLACEMENTS.headers.length, date: (r) => normalizeDate_(r[0]) }];
+  if (typeof MGMT_SHEETS !== 'undefined') specs.push({ ss: getSpreadsheet_, name: MGMT_SHEETS.seen, archive: MGMT_SHEETS.seen + '_архив', columns: 4, date: (r) => normalizeDate_(r[0]) });
   if (typeof ICT !== 'undefined') specs.push({ ss: ictSpreadsheet_, name: ICT.sheet, archive: ICT.sheet + '_архив', columns: ICT.headers.length,
     date: (r) => normalizeDate_(r[ICT_COL['Создана']]), keep: (r) => ictOpen_(ictRow_(r)) });
   return specs;

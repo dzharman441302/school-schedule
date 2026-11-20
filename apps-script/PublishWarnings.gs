@@ -14,13 +14,16 @@ function publishAdminDayEnhanced(token, dateIso, teacherEdits, studentChanges, e
   return publishPayloadCore_(dateIso, teacherEdits, studentChanges, 'Сейчас', expectedRevision);
 }
 
+// Marks for «Замеры» (Скорость.gs): where the time of a publication goes.
+function publishStep_(name){try{perfStep_(name);}catch(_){}}
+
 function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode,expectedRevision) {
   validateIsoDate_(dateIso);tableFresh_();
   if(!Array.isArray(teacherEdits)||!Array.isArray(studentChanges))throw new Error('Некорректные данные публикации');
   const lock=LockService.getScriptLock();lock.waitLock(15000);let snapshot=null,scheduleWritten=false;
   try{
-    ensureTechnicalSheets_();ensureEnhancementSheets_();
-    const edits=prepareTeacherEdits_(dateIso,teacherEdits),built=buildEffectiveGrid_(dateIso,edits);
+    ensureTechnicalSheets_();ensureEnhancementSheets_();publishStep_('листы');
+    const edits=prepareTeacherEdits_(dateIso,teacherEdits),built=buildEffectiveGrid_(dateIso,edits);publishStep_('сетка');
     if(expectedRevision && expectedRevision!==workspaceRevisionFor_(built.base.cells,readTeacherEditsForDate_(dateIso),readChangesForDate_(dateIso)))throw new Error('День изменён в другой вкладке. Обновите данные и сверьте свои правки перед публикацией.');
     const map=new Map();studentChanges.forEach(item=>{
       const lesson=Number(item.lesson),change=String(item.change||'').trim();
@@ -31,13 +34,13 @@ function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode,expectedRe
     const combined=new Set();[...built.base.cells,...built.effective].filter(c=>S20Schedule.classes(c.className).length>1).forEach(c=>S20Schedule.classes(c.className).forEach(cls=>combined.add(cls+'|'+c.lesson)));
     S20Schedule.studentChanges(built.base.cells,built.effective).forEach(c=>{const k=c.className+'|'+c.lesson;if(combined.has(k)&&!map.has(k))map.set(k,c);});
     const changes=Array.from(map.values()),check=validateTeacherGrid_(dateIso,edits),notices=unique_([...(check.errors||[]),...(check.warnings||[])]),summary=buildPublicationSummary_(edits,changes,notices);
-    snapshot=replacementBegin_(dateIso,built,changes,mode==='Отложенно'?'scheduled':String(mode||'').startsWith('Откат')?'rollback':'publication');
-    const previousEdits=readTeacherEditsForDate_(dateIso),previousChanges=readChangesForDate_(dateIso);
-    writeTeacherEditsForDate_(dateIso,edits);writeStudentChangesForDate_(dateIso,changes);writeTeacherPublicGrid_(dateIso,edits,built);
-    appendHistory_(dateIso,previousEdits,previousChanges,edits,changes,(mode||'Сейчас')+(notices.length?' · предупреждений: '+notices.length:''));
-    const archiveId=appendDailyArchive_(dateIso,edits,changes,summary,mode||'Сейчас');writePublicationStatus_(dateIso,summary,mode||'Сейчас');publicWindowAfterPublish_();
-    SpreadsheetApp.flush();scheduleWritten=true;
-    const review=replacementFinish_(snapshot);SpreadsheetApp.flush();
+    publishStep_('проверка');snapshot=replacementBegin_(dateIso,built,changes,mode==='Отложенно'?'scheduled':String(mode||'').startsWith('Откат')?'rollback':'publication');
+    publishStep_('снимок');const previousEdits=readTeacherEditsForDate_(dateIso),previousChanges=readChangesForDate_(dateIso);publishStep_('было');
+    writeTeacherEditsForDate_(dateIso,edits);publishStep_('Изменения_учителей');writeStudentChangesForDate_(dateIso,changes);publishStep_('Изменения');writeTeacherPublicGrid_(dateIso,edits,built);publishStep_('Учителя_сайт');
+    publishStep_('-');appendHistory_(dateIso,previousEdits,previousChanges,edits,changes,(mode||'Сейчас')+(notices.length?' · предупреждений: '+notices.length:''));
+    publishStep_('история');const archiveId=appendDailyArchive_(dateIso,edits,changes,summary,mode||'Сейчас');publishStep_('архив дня');writePublicationStatus_(dateIso,summary,mode||'Сейчас');publishStep_('статус');publicWindowAfterPublish_();publishStep_('окно');
+    SpreadsheetApp.flush();scheduleWritten=true;publishStep_('flush');
+    const review=replacementFinish_(snapshot);SpreadsheetApp.flush();publishStep_('журнал замен');
     return{teacherCount:edits.length,studentCount:changes.length,date:dateIso,savedAt:Utilities.formatDate(new Date(),CONFIG.timeZone,'HH:mm:ss'),
       warnings:notices,summary,archiveId,replacementReview:review,normalizedChanges:changes,revision:workspaceRevisionFor_(built.base.cells,readTeacherEditsForDate_(dateIso),readChangesForDate_(dateIso))};
   }catch(e){if(snapshot&&!scheduleWritten)replacementFail_(snapshot);throw e;}finally{lock.releaseLock();}

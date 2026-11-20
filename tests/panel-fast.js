@@ -102,16 +102,32 @@ test('the weekly status of the journal is cached until the journal changes', () 
   assert.equal(c.pending, 0, 'the replacement was removed by the new publication');
 });
 
+test('during a publication the weekly status does not wait for the lock: the last answer comes at once', () => {
+  const h = harness();
+  const day = h.plain(h.call('getAdminDay', h.token, h.date));
+  h.call('publishAdminDayEnhanced', h.token, h.date, [cancel(h.names[0], 4), set(h.names[2], 4, '5А')], [], day.revision);
+  const first = h.plain(h.call('getReplacementWeeklyStatus', h.token, h.date));
+  h.context.replacementBump_(); // the journal changed…
+  h.context.LockService.getScriptLock = () => ({ waitLock() { throw new Error('busy 15 s'); }, tryLock: () => false, releaseLock() {} }); // …and is being written now
+  const journal = reads(h, 'Журнал_замен');
+  const busy = h.plain(h.call('getReplacementWeeklyStatus', h.token, h.date));
+  assert.equal(busy.stale, true);
+  assert.equal(busy.pending, first.pending);
+  assert.equal(journal(), 0, 'no reading, no waiting');
+});
+
 test('«Увидел изменения» of the same teacher on the same device is written once in 6 hours', () => {
   const h = harness();
   h.call('ensureManagementSheets_');
   const seen = reads(h, 'Просмотры_учителей');
   const mark = () => h.call('markTeacherViewedPublic_', h.date, h.names[0], 'device-1');
   mark(); mark(); mark();
-  assert.equal(seen(), 1);
   h.call('markTeacherViewedPublic_', h.date, h.names[0], 'device-2');
-  assert.equal(seen(), 2, 'another device is a new mark');
-  assert.equal(h.sheets.get('Просмотры_учителей').getDataRange().getValues().slice(1).filter((r) => r.some(Boolean)).length, 2);
+  assert.equal(seen(), 0, 'the sheet is never read: a mark is only appended');
+  assert.equal(h.sheets.get('Просмотры_учителей').getDataRange().getValues().slice(1).filter((r) => r.some(Boolean)).length, 2, 'once per device');
+  h.call('markTeacherViewedPublic_', h.date, h.names[1], 'device-3');
+  const summary = h.plain(h.call('getTeacherSeenSummary', h.token, h.date));
+  assert.deepEqual(Object.keys(summary).sort(), [h.names[0], h.names[1]].sort(), 'the panel sees each teacher once');
 });
 
 let failed = 0;

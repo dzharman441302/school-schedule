@@ -248,7 +248,10 @@ function getReplacementWeeklyStatus(token,selectedDate){
   // The panel asks for it after every day it opens; while the journal is the same, the answer is too.
   const cache=CacheService.getScriptCache(),cacheKey='repl:week:'+(cache.get('repl:ver')||'0')+':'+today+':'+selectedDate,hit=cache.get(cacheKey);
   if(hit){try{return JSON.parse(hit);}catch(_){}}
-  const lock=LockService.getScriptLock();lock.waitLock(15000);
+  // During a publication the journal is locked for up to half a minute. The status is only a badge:
+  // instead of waiting (and failing after 15 s) it gives the last known answer, or reads without the lock.
+  const lastKey='repl:weeklast:'+today+':'+selectedDate,lock=LockService.getScriptLock(),locked=lock.tryLock(2000);
+  if(!locked){const last=cache.get(lastKey);if(last){try{return Object.assign(JSON.parse(last),{stale:true});}catch(_){}}}
   try{
     const selected=replacementWeek_(selectedDate),snapshots=new Map(replacementSnapshots_().map(s=>[s.date,s])),weeks=new Map();let pending=0;
     replacementRead_().filter(r=>replacementEligible_(r)&&r.decision==='pending').forEach(r=>{
@@ -258,9 +261,9 @@ function getReplacementWeeklyStatus(token,selectedDate){
       if(!weeks.has(week.from))weeks.set(week.from,Object.assign({pending:0},week));weeks.get(week.from).pending++;
     });
     const out={today,selectedWeek:selected,pending,weeks:Array.from(weeks.values()).sort((a,b)=>a.from.localeCompare(b.from))};
-    try{cache.put(cacheKey,JSON.stringify(out),600);}catch(_){}
+    try{if(locked)cache.put(cacheKey,JSON.stringify(out),600);cache.put(lastKey,JSON.stringify(out),21600);}catch(_){}
     return out;
-  }finally{lock.releaseLock();}
+  }finally{if(locked)lock.releaseLock();}
 }
 function getReplacementPeriodReview(token,fromIso,toIso){
   assertSession_(token);replacementRange_(fromIso,toIso,30);const lock=LockService.getScriptLock();lock.waitLock(15000);
