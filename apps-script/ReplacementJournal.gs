@@ -6,13 +6,18 @@ const REPLACEMENTS = Object.freeze({
   snapshotHeaders:['Дата','Версия','Состояние','База JSON','Итог JSON','Опубликовано','Источник','Ученики JSON','Версия решений'],
   auditHeaders:['Когда','Событие','Дата','ID','До JSON','После JSON','Роль']
 });
+// Within one call each journal sheet is checked once (headers, frozen row): those are API calls too.
+var REPL_SHEETS_={};
+// Audit rows are collected and written in one setValues (before: one appendRow per replacement).
+var REPL_AUDIT_=[];
 function replacementSheet_(name,headers) {
+  if(REPL_SHEETS_[name])return REPL_SHEETS_[name];
   const ss=getSpreadsheet_();let sh=ss.getSheetByName(name);
   if(!sh){sh=ss.insertSheet(name);sh.hideSheet();}
   if(sh.getMaxColumns()<headers.length)sh.insertColumnsAfter(sh.getMaxColumns(),headers.length-sh.getMaxColumns());
   const existing=sh.getRange(1,1,1,headers.length).getValues()[0];
   if(headers.some((h,i)=>existing[i]!==h))sh.getRange(1,1,1,headers.length).setValues([headers]);
-  sh.setFrozenRows(1);return sh;
+  if(sh.getFrozenRows()!==1)sh.setFrozenRows(1);REPL_SHEETS_[name]=sh;return sh;
 }
 function replacementEnsure_(){
   replacementSheet_(REPLACEMENTS.journal,REPLACEMENTS.headers);
@@ -22,7 +27,10 @@ function replacementEnsure_(){
 function replacementNow_(){return Utilities.formatDate(new Date(),CONFIG.timeZone,'yyyy-MM-dd HH:mm:ss');}
 function replacementHash_(value){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value),Utilities.Charset.UTF_8).map(b=>('0'+((b+256)%256).toString(16)).slice(-2)).join('');}
 function replacementText_(value){const s=String(value==null?'':value);return /^[=+@-]/.test(s)?"'"+s:s;}
+// Any write to the journal changes the version: the cached weekly status is then read afresh.
+function replacementBump_(){try{CacheService.getScriptCache().put('repl:ver',Utilities.getUuid(),21600);}catch(_){}}
 function replacementWriteBody_(sheet,columns,rows){
+  replacementAuditFlush_();replacementBump_();
   if(rows.length>sheet.getMaxRows()-1)sheet.insertRowsAfter(sheet.getMaxRows(),rows.length-sheet.getMaxRows()+1);
   if(rows.length)sheet.getRange(2,1,rows.length,columns).setValues(rows.map(r=>Array.from({length:columns},(_,i)=>typeof r[i]==='string'?replacementText_(r[i]):r[i]==null?'':r[i])));
   const tail=sheet.getLastRow()-1-rows.length;if(tail>0)sheet.getRange(rows.length+2,1,tail,columns).clearContent();
@@ -36,6 +44,7 @@ function replacementSnapshots_(){
     source:String(r[6]||''),studentChanges:safeJsonParse_(r[7],[]),reviewVersion:Number(r[8])||0})).filter(r=>r.date);
 }
 function replacementPutSnapshot_(s){
+  replacementAuditFlush_();replacementBump_();
   const sh=replacementSheet_(REPLACEMENTS.snapshots,REPLACEMENTS.snapshotHeaders);
   const r=[formatRuDate_(s.date),s.revision,s.phase,JSON.stringify(replacementPack_(s.base)),JSON.stringify(replacementPack_(s.final)),
     s.publishedAt,s.source,JSON.stringify(s.studentChanges||[]),s.reviewVersion||0];
@@ -64,8 +73,14 @@ function replacementRow_(r){
 }
 function replacementAudit_(event,date,id,before,after){
   const clean=r=>r?Object.fromEntries(Object.entries(r).filter(([k])=>!['raw','legacy'].includes(k))):null;
-  const sh=replacementSheet_(REPLACEMENTS.audit,REPLACEMENTS.auditHeaders);
-  sh.appendRow([replacementNow_(),event,formatRuDate_(date),id,JSON.stringify(clean(before)),JSON.stringify(clean(after)),'Администратор панели']);
+  REPL_AUDIT_.push([replacementNow_(),event,formatRuDate_(date),id,JSON.stringify(clean(before)),JSON.stringify(clean(after)),'Администратор панели']);
+}
+function replacementAuditFlush_(){
+  if(!REPL_AUDIT_.length)return;
+  const rows=REPL_AUDIT_.map(r=>r.map(v=>typeof v==='string'?replacementText_(v):v));REPL_AUDIT_=[];
+  const sh=replacementSheet_(REPLACEMENTS.audit,REPLACEMENTS.auditHeaders),first=sh.getLastRow()+1,need=first+rows.length-1-sh.getMaxRows();
+  if(need>0)sh.insertRowsAfter(sh.getMaxRows(),need);
+  sh.getRange(first,1,rows.length,REPLACEMENTS.auditHeaders.length).setValues(rows);
 }
 function replacementCandidate_(s,c){return{
   date:s.date,lesson:c.lesson,className:c.className,subject:c.subject,room:c.room,originalTeachers:c.originalTeachers,
@@ -230,6 +245,9 @@ function replacementWeek_(date){
 }
 function getReplacementWeeklyStatus(token,selectedDate){
   assertSession_(token);const today=isoToday_();selectedDate=selectedDate||today;validateIsoDate_(selectedDate);
+  // The panel asks for it after every day it opens; while the journal is the same, the answer is too.
+  const cache=CacheService.getScriptCache(),cacheKey='repl:week:'+(cache.get('repl:ver')||'0')+':'+today+':'+selectedDate,hit=cache.get(cacheKey);
+  if(hit){try{return JSON.parse(hit);}catch(_){}}
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
     const selected=replacementWeek_(selectedDate),snapshots=new Map(replacementSnapshots_().map(s=>[s.date,s])),weeks=new Map();let pending=0;
@@ -239,7 +257,9 @@ function getReplacementWeeklyStatus(token,selectedDate){
       const week=replacementWeek_(r.date);if(today<week.due)return;
       if(!weeks.has(week.from))weeks.set(week.from,Object.assign({pending:0},week));weeks.get(week.from).pending++;
     });
-    return{today,selectedWeek:selected,pending,weeks:Array.from(weeks.values()).sort((a,b)=>a.from.localeCompare(b.from))};
+    const out={today,selectedWeek:selected,pending,weeks:Array.from(weeks.values()).sort((a,b)=>a.from.localeCompare(b.from))};
+    try{cache.put(cacheKey,JSON.stringify(out),600);}catch(_){}
+    return out;
   }finally{lock.releaseLock();}
 }
 function getReplacementPeriodReview(token,fromIso,toIso){

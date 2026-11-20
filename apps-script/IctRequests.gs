@@ -276,7 +276,10 @@ function iktLogin_(pin) {
   if (error) return { ok: false, error, pin: true };
   const token = Utilities.getUuid();
   CacheService.getScriptCache().put('ikt:' + token, String(Date.now()), 21600);
-  return { ok: true, token, hours: ICT.sessionHours };
+  // The open requests come with the login: the page shows them without a second round trip.
+  const out = { ok: true, token, hours: ICT.sessionHours };
+  try { out.list = iktList_({ status: 'open' }); } catch (_) {}
+  return out;
 }
 
 // A session lives 12 hours from the login. The cache keeps a value at most 6 hours, so each
@@ -384,6 +387,8 @@ function ictApplyUpdate_(item, body, now, by) {
 function iktUpdate_(body) {
   const r = ictWriteUpdate_(ictId_(body.id), body, 'зам по ИКТ');
   if (r.ok && r.changed) ictPingBot_();
+  // The counters come with the answer: no separate «iktStats» call after each button.
+  if (r.ok) { try { r.stats = ictStats_(ictReadAll_(), new Date()); } catch (_) {} }
   return r;
 }
 

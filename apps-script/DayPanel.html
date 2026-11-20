@@ -94,7 +94,7 @@
     $('#dp-date').value = date;
     busy(true);
     try {
-      const [events, task] = await Promise.all([run('getDayEvents', date), run('getDailyTask', date)]);
+      const { events, task } = await run('getDayPanel', date); // one round trip for both
       current = events;
       renderEvents(events.draft || []);
       renderState();

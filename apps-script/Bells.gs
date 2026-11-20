@@ -42,7 +42,9 @@ function bellProblems_(times) {
   return problems;
 }
 
-function readBells_() {
+function readBells_() { return tableCache_('bells', readBellsRaw_); }
+
+function readBellsRaw_() {
   ensureBellSheets_();
   const ss = getSpreadsheet_(), rows = perfRows_(ss.getSheetByName(BELL_SHEETS.times).getDataRange().getDisplayValues());
   const head = rows[0] || [], variants = {}, order = [];
@@ -111,6 +113,7 @@ function saveBells(token, input) {
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
+    tableCacheClear_(['bells']); // the new bells are seen at once
   }
   return getBells(token);
 }
@@ -133,6 +136,7 @@ function setDayBells(token, dateIso, variant, comment) {
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
+    tableCacheClear_(['bells']); // the new bells are seen at once
   }
   return bellsForDate_(dateIso);
 }

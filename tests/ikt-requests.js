@@ -262,6 +262,19 @@ test('site: how long a request waits, in words', () => {
   assert.equal(age(60 * 49), '2 дн');
 });
 
+test('the login brings the open requests; a change brings the counters (one round trip each)', () => {
+  const t = ictHarness();
+  t.request({ urgency: 'red', text: 'проектор' });
+  t.request({ urgency: 'white', text: 'мышь' });
+  const login = t.post({ action: 'iktLogin', pin: '135790' });
+  assert.equal(login.list.ok, true);
+  assert.deepEqual(login.list.items.map((x) => x.id).sort(), ['0001', '0002']);
+  assert.equal(login.list.stats.total, 2);
+  const up = t.post({ action: 'iktUpdate', token: login.token, id: '0001', status: 'done' });
+  assert.equal(up.item.status, 'done');
+  assert.equal(up.stats.closedWeek, 1, 'the counters after the change');
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {

@@ -48,7 +48,7 @@
       state.token = r.token;
       session.set(r.token);
       $('#ikt-pin').value = '';
-      startApp();
+      startApp(r.list);
     } catch (err) {
       showLogin(/Failed to fetch|HTTP|abort/i.test(err.message) ? 'Нет связи с сервером' : err.message);
     } finally {
@@ -72,11 +72,7 @@
     const sync = $('[data-sync]');
     if (!quiet) sync.textContent = 'Обновляем…';
     try {
-      const r = await call('iktList', { filter: { status: 'open' } });
-      state.items = r.items;
-      state.stats = r.stats;
-      $('[data-pin-warning]').hidden = r.staffPinSet;
-      $('[data-staff-pin-state]').textContent = r.staffPinSet ? 'PIN для учителей задан. Новый PIN сразу заменит старый.' : 'PIN для учителей ещё не задан.';
+      applyList(await call('iktList', { filter: { status: 'open' } }));
       if (state.tab === 'closed') state.closed = (await call('iktList', { filter: { status: 'closed' } })).items;
       noticeNewRed();
       sync.textContent = `Обновлено в ${new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date())}`;
@@ -89,6 +85,13 @@
     } finally {
       state.busy = false;
     }
+  }
+
+  function applyList(r) {
+    state.items = r.items;
+    state.stats = r.stats;
+    $('[data-pin-warning]').hidden = r.staffPinSet;
+    $('[data-staff-pin-state]').textContent = r.staffPinSet ? 'PIN для учителей задан. Новый PIN сразу заменит старый.' : 'PIN для учителей ещё не задан.';
   }
 
   // A 🔴 request that was not in the previous list: sound and a blinking tab title.
@@ -213,23 +216,34 @@
     else if (state.closed) state.closed = state.closed.filter((x) => x.id !== item.id);
   }
 
+  // The card changes at once; the server answer only confirms it. If saving fails, the card
+  // goes back to what it was and a message says so.
   async function update(x, change, message) {
     const before = snapshot(x);
+    replaceItem({ ...x, ...change });
+    render();
     try {
       const r = await call('iktUpdate', { id: x.id, ...change });
       replaceItem(r.item);
       render();
+      showStats(r.stats);
       toast(message, async () => {
         const back = await call('iktUpdate', { id: x.id, ...before });
         replaceItem(back.item);
         render();
         toast('Отменено');
-        refreshStats();
+        showStats(back.stats);
       });
-      refreshStats();
     } catch (err) {
-      toast(`Не сохранилось: ${err.message}`);
+      replaceItem(x);
+      render();
+      toast(`Не сохранилось, вернула как было: ${err.message}`);
     }
+  }
+  function showStats(stats) {
+    if (!stats) { refreshStats(); return; }
+    state.stats = stats;
+    $('[data-stats]').innerHTML = statsMarkup(state.stats);
   }
   async function refreshStats() {
     try { state.stats = (await call('iktStats')).stats; $('[data-stats]').innerHTML = statsMarkup(state.stats); } catch (_) {}
@@ -309,11 +323,19 @@
     }
   }
 
-  function startApp() {
+  // list: the requests that came with the login (one round trip); without it — load them now.
+  function startApp(list) {
     $('[data-login]').hidden = true;
     $('[data-app]').hidden = false;
-    render();
-    refresh();
+    if (list && list.ok) {
+      applyList(list);
+      noticeNewRed();
+      $('[data-sync]').textContent = `Обновлено в ${new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date())}`;
+      render();
+    } else {
+      render();
+      refresh();
+    }
     clearInterval(state.timer);
     state.timer = setInterval(() => refresh({ quiet: true }), REFRESH_MS);
   }

@@ -34,7 +34,8 @@ test('the window starts on Monday of the previous week', () => {
 
 test('older rows move to the hidden archive, the window and the future stay', () => {
   const h = harness();
-  const out = h.plain(h.call('archivePublicSheets'));
+  const { yearly, ...out } = h.plain(h.call('archivePublicSheets'));
+  assert.deepEqual(yearly, {}, 'nothing of past school years here');
   assert.deepEqual(out, { 'Учителя_сайт': { kept: 3, moved: 2 }, 'Изменения': { kept: 2, moved: 2 } });
   assert.deepEqual(dates(h.sheets.get('Учителя_сайт')), ['14.09.2026', '25.09.2026', '28.09.2026']);
   assert.deepEqual(dates(h.sheets.get('Изменения')), ['15.09.2026', '29.09.2026']);
@@ -42,7 +43,8 @@ test('older rows move to the hidden archive, the window and the future stay', ()
   assert.deepEqual(dates(h.sheets.get('Изменения_архив')), ['01.09.2026', '13.09.2026']);
   assert.ok(h.sheets.get('Учителя_архив').hidden && h.sheets.get('Изменения_архив').hidden, 'the site never reads them');
   assert.deepEqual(h.sheets.get('Изменения_архив').getDataRange().getValues()[0], CH_HEAD);
-  assert.deepEqual(h.plain(h.call('archivePublicSheets')), { 'Учителя_сайт': { kept: 3, moved: 0 }, 'Изменения': { kept: 2, moved: 0 } }, 'a second run moves nothing');
+  const { yearly: _y, ...again } = h.plain(h.call('archivePublicSheets'));
+  assert.deepEqual(again, { 'Учителя_сайт': { kept: 3, moved: 0 }, 'Изменения': { kept: 2, moved: 0 } }, 'a second run moves nothing');
   assert.deepEqual(dates(h.sheets.get('Учителя_архив')), ['07.09.2026', '11.09.2026'], 'and duplicates nothing');
 });
 

@@ -15,7 +15,7 @@ function publishAdminDayEnhanced(token, dateIso, teacherEdits, studentChanges, e
 }
 
 function publishPayloadCore_(dateIso,teacherEdits,studentChanges,mode,expectedRevision) {
-  validateIsoDate_(dateIso);
+  validateIsoDate_(dateIso);tableFresh_();
   if(!Array.isArray(teacherEdits)||!Array.isArray(studentChanges))throw new Error('Некорректные данные публикации');
   const lock=LockService.getScriptLock();lock.waitLock(15000);let snapshot=null,scheduleWritten=false;
   try{

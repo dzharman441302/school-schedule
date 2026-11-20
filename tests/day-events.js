@@ -143,6 +143,20 @@ test('weather for the screens: fetched by the script, kept 30 minutes, errors to
   assert.equal(JSON.parse(res).ok, false, 'routed through doPost');
 });
 
+test('the window opens with one call; past results are checked once a day', () => {
+  const t = dayHarness();
+  t.call('saveDailyTask', D, { task: 'Задача', answer: '7' });
+  let runs = 0;
+  const real = t.ctx.dayPublishResults_;
+  t.ctx.dayPublishResults_ = () => { runs += 1; return real(); };
+  const both = t.call('getDayPanel', D);
+  assert.equal(both.task.task, 'Задача');
+  assert.ok(Array.isArray(both.events.draft));
+  t.call('getDayPanel', D);
+  t.call('getDailyTask', D);
+  assert.equal(runs, 1);
+});
+
 let failed = 0;
 for (const [name, fn] of tests) {
   try { fn(); console.log(`PASS ${name}`); } catch (err) { failed += 1; console.error(`FAIL ${name}\n${err.stack}`); }

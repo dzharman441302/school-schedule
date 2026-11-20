@@ -34,7 +34,12 @@ function login(pin) {
   }
   const token = Utilities.getUuid();
   CacheService.getScriptCache().put('session:' + token, '1', CONFIG.sessionSeconds);
-  return { token, expiresHours: 6 };
+  // Login = start of work: the tables are read afresh (e.g. after an import of the schedule),
+  // and the panel gets its data in the same answer — one round trip instead of five.
+  tableCacheClear_();
+  let boot = null;
+  try { boot = adminBootstrapData_(token); } catch (_) {}
+  return { token, expiresHours: 6, boot };
 }
 
 function logout(token) {
@@ -247,11 +252,13 @@ function parseTeacherCell_(value){
   const p=text.split(/\r?\n|\s*\|\s*/).map(x=>x.trim());
   return{className:S20Schedule.classLabel(p[0]),subject:S20Schedule.subject(p[1]||''),room:p[2]||''};
 }
-function getTeacherTable_(){const sheet=getSpreadsheet_().getSheetByName(CONFIG.teachersSheet);if(!sheet)throw new Error('Не найден технический лист «'+CONFIG.teachersSheet+'»');const values=perfRows_(sheet.getDataRange().getDisplayValues());if(!values.length)return{headers:[],rows:[],teachers:[]};const rows=values.slice(1).filter(row=>row.some(Boolean)),teachers=unique_(rows.map(row=>String(row[0]||'').trim()).filter(Boolean));return{headers:values[0],rows,teachers}}
+function getTeacherTable_(){return tableCache_('teachers',readTeacherTable_)}
+function readTeacherTable_(){const sheet=getSpreadsheet_().getSheetByName(CONFIG.teachersSheet);if(!sheet)throw new Error('Не найден технический лист «'+CONFIG.teachersSheet+'»');const values=perfRows_(sheet.getDataRange().getDisplayValues());if(!values.length)return{headers:[],rows:[],teachers:[]};const rows=values.slice(1).filter(row=>row.some(Boolean)),teachers=unique_(rows.map(row=>String(row[0]||'').trim()).filter(Boolean));return{headers:values[0],rows,teachers}}
 function assertSession_(token){const key='session:'+String(token||''),cache=CacheService.getScriptCache();if(!token||cache.get(key)!=='1')throw new Error('Сессия истекла. Введите PIN-код ещё раз.');cache.put(key,'1',CONFIG.sessionSeconds)}
 function getSpreadsheet_(){return SpreadsheetApp.openById(getRequiredProperty_('SPREADSHEET_ID'))}
 function getRequiredProperty_(name){const value=PropertiesService.getScriptProperties().getProperty(name);if(!value)throw new Error('Не задано свойство скрипта '+name);return value}
-function getScheduleTable_(){const sheet=getSpreadsheet_().getSheetByName(CONFIG.scheduleSheet);if(!sheet)throw new Error('Не найден лист «'+CONFIG.scheduleSheet+'»');const values=perfRows_(sheet.getDataRange().getDisplayValues());if(!values.length)return{headers:[],rows:[]};return{headers:values[0],rows:values.slice(1).filter(row=>row.some(Boolean))}}
+function getScheduleTable_(){return tableCache_('schedule',readScheduleTable_)}
+function readScheduleTable_(){const sheet=getSpreadsheet_().getSheetByName(CONFIG.scheduleSheet);if(!sheet)throw new Error('Не найден лист «'+CONFIG.scheduleSheet+'»');const values=perfRows_(sheet.getDataRange().getDisplayValues());if(!values.length)return{headers:[],rows:[]};return{headers:values[0],rows:values.slice(1).filter(row=>row.some(Boolean))}}
 function readChangesForDate_(dateIso){const ss=getSpreadsheet_();if(!ss.getSheetByName(CONFIG.changesSheet))throw new Error('Не найден лист «'+CONFIG.changesSheet+'»');return readPublicRows_(ss,CONFIG.changesSheet,dateIso,dateIso).map(row=>({className:normalizeClass_(row[1]),lesson:Number(row[2])||0,change:String(row[3]||'').trim(),note:String(row[4]||'').trim()})).filter(item=>item.className&&item.lesson>=1&&item.lesson<=12&&item.change).sort((a,b)=>classCompare_(a.className,b.className)||a.lesson-b.lesson)}
 function dayColumnIndex_(dateIso,headers){const codes=['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'],code=codes[new Date(dateIso+'T12:00:00Z').getUTCDay()];if(code==='СБ'||code==='ВС')return-1;const aliases={ПОНЕДЕЛЬНИК:'ПН',ВТОРНИК:'ВТ',СРЕДА:'СР',ЧЕТВЕРГ:'ЧТ',ПЯТНИЦА:'ПТ'};const normalized=headers.map(value=>{const v=String(value||'').trim().toUpperCase();return aliases[v]||v});return normalized.indexOf(code)}
 function weekdayName_(dateIso){const names=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];return names[new Date(dateIso+'T12:00:00Z').getUTCDay()]}
@@ -275,7 +282,7 @@ function workspaceRevisionFor_(baseCells, edits, changes) {
     .map(v => ((v + 256) % 256).toString(16).padStart(2, '0')).join('');
 }
 function saveWorkspaceDraft(token, dateIso, teacherEdits, studentChanges, expectedRevision) {
-  assertSession_(token); validateIsoDate_(dateIso);
+  assertSession_(token); validateIsoDate_(dateIso); tableFresh_();
   if (!Array.isArray(teacherEdits) || !Array.isArray(studentChanges)) throw new Error('Некорректный черновик');
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {

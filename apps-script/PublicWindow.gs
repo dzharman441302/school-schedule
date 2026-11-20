@@ -27,7 +27,54 @@ function publicWindowStart_(todayIso) {
 function archivePublicSheets() {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  try { return publicWindowRun_(); } finally { lock.releaseLock(); }
+  try {
+    const out = publicWindowRun_();
+    try { out.yearly = yearlyArchiveRun_(); } catch (e) { out.yearly = { error: String(e && e.message || e) }; }
+    return out;
+  } finally { lock.releaseLock(); }
+}
+
+/* Рабочие листы кабинетов — только текущий учебный год (с 1 сентября) ----------------------
+   «Журнал_замен» (табель замен) и заявки ИКТ прошлых лет уходят в «Журнал_замен_архив» и
+   «Заявки_ИКТ_архив» (в той же таблице, что и рабочий лист). Незакрытые заявки остаются. */
+
+function schoolYearStart_(todayIso) {
+  const t = todayIso || isoToday_(), y = Number(t.slice(0, 4)), m = Number(t.slice(5, 7));
+  return (m >= 9 ? y : y - 1) + '-09-01';
+}
+
+function yearlyArchiveSpecs_() {
+  const specs = [{ ss: getSpreadsheet_, name: REPLACEMENTS.journal, archive: REPLACEMENTS.journal + '_архив', columns: REPLACEMENTS.headers.length, date: (r) => normalizeDate_(r[0]) }];
+  if (typeof ICT !== 'undefined') specs.push({ ss: ictSpreadsheet_, name: ICT.sheet, archive: ICT.sheet + '_архив', columns: ICT.headers.length,
+    date: (r) => normalizeDate_(r[ICT_COL['Создана']]), keep: (r) => ictOpen_(ictRow_(r)) });
+  return specs;
+}
+
+function yearlyArchiveRun_(todayIso) {
+  const start = schoolYearStart_(todayIso), out = {};
+  yearlyArchiveSpecs_().forEach((spec) => {
+    let ss = null;
+    try { ss = spec.ss(); } catch (_) { return; }
+    const sheet = ss && ss.getSheetByName(spec.name);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    const values = perfRows_(sheet.getRange(1, 1, sheet.getLastRow(), spec.columns).getValues());
+    const keep = [], old = [];
+    values.slice(1).forEach((r) => {
+      if (!r.some((c) => String(c == null ? '' : c).trim())) return;
+      const d = spec.date(r);
+      (d && d < start && !(spec.keep && spec.keep(r)) ? old : keep).push(r);
+    });
+    if (old.length) {
+      let ar = ss.getSheetByName(spec.archive);
+      if (!ar) { ar = ss.insertSheet(spec.archive); ar.getRange(1, 1, 1, spec.columns).setValues([values[0]]); ar.setFrozenRows(1); ar.hideSheet(); }
+      const first = Math.max(ar.getLastRow(), 1) + 1, need = first + old.length - 1 - ar.getMaxRows();
+      if (need > 0) ar.insertRowsAfter(ar.getMaxRows(), need);
+      ar.getRange(first, 1, old.length, spec.columns).setValues(old);
+      rewriteBody_(sheet, spec.columns, keep);
+    }
+    out[spec.name] = { kept: keep.length, moved: old.length };
+  });
+  return out;
 }
 
 // Без блокировки: вызывающий её уже держит. → { «Учителя_сайт»: { kept, moved }, … }

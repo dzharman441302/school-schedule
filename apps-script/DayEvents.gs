@@ -193,7 +193,9 @@ function dayKeyRow_(dateIso) {
 
 function getDailyTask(token, dateIso) {
   assertSession_(token); validateIsoDate_(dateIso);
-  dayPublishResults_();
+  // Results of past days: once a day is enough (the night trigger does it too).
+  const cache = CacheService.getScriptCache(), doneKey = 'dayResults:' + isoToday_();
+  if (!cache.get(doneKey)) { dayPublishResults_(); cache.put(doneKey, '1', 6 * 3600); }
   const t = dayTaskRow_(dateIso), k = dayKeyRow_(dateIso);
   const answers = perfRows_(daySheet_(dayPrivateSpreadsheet_(), DAY.taskAnswers, ['Дата', 'Время', 'Класс', 'Верно', 'Устройство']).getDataRange().getValues()).slice(1).filter((r) => normalizeDate_(r[0]) === dateIso);
   return { date: dateIso, task: t.task ? t.task.task : '', explain: t.task ? t.task.explain : '', parallels: t.task ? t.task.parallels : '', answer: k.answer, answers: answers.length, correct: answers.filter((r) => String(r[3]) === 'да').length };
@@ -283,6 +285,11 @@ function dayPublishResults_() {
   return rows.length;
 }
 function publishDailyTaskResults() { dayPublishResults_(); }
+
+// The window «Сегодня на ТВ» opens with one call: events and the task of the date.
+function getDayPanel(token, dateIso) {
+  return { events: getDayEvents(token, dateIso), task: getDailyTask(token, dateIso) };
+}
 
 // Ночной триггер в 00:xx: итоги вчерашней задачи. Создаётся один раз при сохранении задачи.
 function dayEnsureTrigger_() {

@@ -17,7 +17,7 @@ function createHarness(root=path.resolve(__dirname,'..')){
   getMaxRows(){return this.maxRows;}getMaxColumns(){return this.maxCols;}
   insertRowsAfter(_,n){this.maxRows+=n;}insertColumnsAfter(_,n){this.maxCols+=n;}
   appendRow(r){this.getRange(this.getLastRow()+1,1,1,r.length).setValues([r]);return this;}
-  deleteRows(r,n){this.rows.splice(r-1,n);}deleteRow(r){this.deleteRows(r,1);}hideSheet(){this.hidden=true;}setFrozenRows(n){this.frozen=n;}
+  deleteRows(r,n){this.rows.splice(r-1,n);}deleteRow(r){this.deleteRows(r,1);}hideSheet(){this.hidden=true;}setFrozenRows(n){this.frozen=n;}getFrozenRows(){return this.frozen||0;}
  }
  const sheets=new Map(),ss={getSheetByName:n=>sheets.get(n)||null,insertSheet:n=>{const s=new Sheet(n);sheets.set(n,s);return s;}};
  const put=(name,rows,cols)=>{const sh=new Sheet(name,rows,cols);sheets.set(name,sh);return sh;};
@@ -33,7 +33,7 @@ function createHarness(root=path.resolve(__dirname,'..')){
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},LockService:{getScriptLock:()=>({waitLock:()=>{if(locked)throw Error('nested lock');locked=true;},releaseLock:()=>{locked=false;}})},
   ScriptApp:{getService:()=>({getUrl:()=>''}),newTrigger:()=>({timeBased:()=>({at:()=>({create:()=>{}})})})}};
  const context=vm.createContext(sandbox);
- for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs','Bells.gs','PublicWindow.gs','Скорость.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
- return{context,model:context.S20Schedule,sheets,put,names,token:'fixture-token',date:'2026-09-25',call:(name,...args)=>context[name](...args),plain:v=>JSON.parse(JSON.stringify(v))};
+ for(const file of ['ScheduleModel.gs','Code.gs','PublishWarnings.gs','ManagementExtensions.gs','ReplacementJournal.gs','Bells.gs','PublicWindow.gs','PanelFast.gs','Скорость.gs'])vm.runInContext(fs.readFileSync(path.join(root,'apps-script',file),'utf8'),context,{filename:file});
+ return{context,model:context.S20Schedule,sheets,put,names,token:'fixture-token',date:'2026-09-25',call:(name,...args)=>{context.REPL_SHEETS_={};context.REPL_AUDIT_=[];context.TABLE_MEMO_={};context.TABLE_FRESH_=false;return context[name](...args);},plain:v=>JSON.parse(JSON.stringify(v))};
 }
 module.exports={createHarness};
