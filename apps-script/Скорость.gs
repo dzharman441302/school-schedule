@@ -19,7 +19,10 @@ var PERF = Object.freeze({
   prefix: 'perf|',
   skip: { perfFlush: 1, perfStatus: 1 },
   flushMinutes: 5,
-  flushMax: 400,
+  flushMax: 1500,
+  maxRows: 20000, // the sheet keeps the latest records; older ones are removed
+  // Calls that come by themselves every minute (the ИКТ bot polling) would only crowd the sheet.
+  quiet: { 'doPost:ictBotFeed': 1 },
 });
 
 var PERF_DEPTH_ = 0; // var: файл можно выполнить повторно (тесты), уже обёрнутое не трогается
@@ -79,7 +82,7 @@ function perfRun_(name, self, args, fn) {
 
 function perfLog_(action, ms, rows, result, steps) {
   try {
-    if (!perfEnabled_()) return;
+    if (PERF.quiet[action] || !perfEnabled_()) return;
     const when = Utilities.formatDate(new Date(), 'Europe/Moscow', 'yyyy-MM-dd HH:mm:ss');
     const key = PERF.prefix + Date.now() + '|' + Math.random().toString(36).slice(2, 7);
     PropertiesService.getScriptProperties().setProperty(key, JSON.stringify([when, action, ms, rows, result, steps || '']));
@@ -121,7 +124,14 @@ function perfFlush() {
     } else if (sh.getRange(1, PERF.head.length).getValue() !== PERF.head[PERF.head.length - 1]) {
       sh.getRange(1, 1, 1, PERF.head.length).setValues([PERF.head]); // the column «Шаги» was added later
     }
-    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, PERF.head.length).setValues(rows);
+    if (rows.length) {
+      // The sheet grows: add rows first (writing past its last row fails), and keep it bounded.
+      const first = sh.getLastRow() + 1, need = first + rows.length - 1 - sh.getMaxRows();
+      if (need > 0) sh.insertRowsAfter(sh.getMaxRows(), need);
+      sh.getRange(first, 1, rows.length, PERF.head.length).setValues(rows);
+      const extra = sh.getLastRow() - 1 - PERF.maxRows;
+      if (extra > 0) sh.deleteRows(2, extra);
+    }
     keys.forEach((k) => props.deleteProperty(k));
     return rows.length;
   } finally {

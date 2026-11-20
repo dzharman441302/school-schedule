@@ -91,6 +91,21 @@ test('a publication tells where its time goes; old 5-column records are still mo
   assert.ok(rows.some((r) => r[1] === 'getAdminDay' && r[2] === 100 && r[5] === ''), 'the old record got an empty «Шаги»');
 });
 
+test('a full sheet gets more rows; the bot polling every minute is not logged', () => {
+  const h = perfHarness();
+  h.call('getAdminDay', h.token, h.date);
+  h.call('perfFlush');
+  const sheet = h.sheets.get('Замеры');
+  sheet.maxRows = sheet.getLastRow(); // the sheet is full to its last row
+  for (let i = 0; i < 3; i += 1) h.props.set(`perf|9${i}|x`, JSON.stringify(['2026-11-20 10:00:00', 'login', 100, 0, 'ок', '']));
+  const realRange = sheet.getRange.bind(sheet);
+  sheet.getRange = (r, ...a) => { if (r > sheet.maxRows) throw new Error('Range out of bounds'); return realRange(r, ...a); };
+  assert.equal(h.call('perfFlush'), 3);
+  assert.equal(sheet.getDataRange().getValues().filter((r) => r[1] === 'login').length, 3);
+  h.call('doPost', { parameter: {}, postData: { contents: JSON.stringify({ action: 'ictBotFeed', secret: 'x' }) } });
+  assert.equal(h.records().length, 0);
+});
+
 test('perfStatus reports what is wrapped', () => {
   const h = perfHarness();
   const s = h.plain(h.call('perfStatus'));
