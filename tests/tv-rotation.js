@@ -1,6 +1,6 @@
 'use strict';
 // Staff room TV (tv.js): 10 teachers per page in alphabetical order, pages turn
-// every 15 s, minute refreshes and lesson bells never restart or reorder the cycle.
+// every 20 s, minute refreshes and lesson bells never restart or reorder the cycle.
 const assert = require('node:assert/strict');
 const { startScreen, runTests } = require('./tv-harness');
 
@@ -30,10 +30,12 @@ test('ten teachers a page in alphabetical order, pages named by letters', async 
     'Щукина Щ.Щ.', 'Яковлева Я.Я.'];
   const h = await staff(sorted.slice().reverse());
   assert.deepEqual(h.names(), sorted.slice(0, 10));
-  assert.match(h.page(), /^Страница 1 из 3 · дальше через 15 с$/);
+  assert.match(h.page(), /^Страница 1 из 3 · дальше через 20 с$/);
   const chips = [...h.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]);
   assert.deepEqual(chips, ['А–Ко', 'Ку–Т', 'У–Я']);
-  await h.advance(15000);
+  await h.advance(19999);
+  assert.deepEqual(h.names(), sorted.slice(0, 10));
+  await h.advance(1);
   assert.deepEqual(h.names(), sorted.slice(10, 20));
 });
 
@@ -41,34 +43,34 @@ test('43 teachers complete two ordered cycles despite minute refreshes', async (
   const all = names(43), h = await staff(all);
   for (let i = 0; i < 10; i += 1) {
     assert.deepEqual(h.names(), all.slice((i % 5) * 10, (i % 5) * 10 + 10));
-    await h.advance(15000);
+    await h.advance(20000);
   }
   assert(h.fetches('Учителя') >= 3);
-  assert.equal(h.pageTimers(15000), 1);
+  assert.equal(h.pageTimers(20000), 1);
 });
 
 test('slow refresh finishing after a page turn keeps the page and the timer', async () => {
   const h = await staff(names(30));
   await h.advance(50000);
-  assert.match(h.page(), /^Страница 1 из 3/);
+  assert.match(h.page(), /^Страница 3 из 3/);
   h.hold();
   await h.advance(15000);
-  assert.match(h.page(), /^Страница 2 из 3/);
+  assert.match(h.page(), /^Страница 1 из 3/);
   await h.release();
+  assert.match(h.page(), /^Страница 1 из 3/);
+  await h.advance(15000);
   assert.match(h.page(), /^Страница 2 из 3/);
-  await h.advance(10000);
-  assert.match(h.page(), /^Страница 3 из 3/);
-  assert.equal(h.pageTimers(15000), 1);
+  assert.equal(h.pageTimers(20000), 1);
 });
 
 test('removing earlier teachers keeps the place in the list', async () => {
   const all = names(43), h = await staff(all);
-  await h.advance(50000);
-  assert.deepEqual(h.names(), all.slice(30, 40));
+  await h.advance(59000);
+  assert.deepEqual(h.names(), all.slice(20, 30));
   h.setTeachers(all.slice(5));
-  // The refresh at 60 s finds «Учитель 31» on the 3rd page, then the page turns to the 4th.
-  await h.advance(10000);
-  assert.deepEqual(h.names(), all.slice(35));
+  // The refresh at 60 s keeps «Учитель 21» in view before the next page turn.
+  await h.advance(1000);
+  assert.deepEqual(h.names(), all.slice(25, 35));
 });
 
 test('removing the teachers on screen continues with the next one', async () => {
@@ -86,17 +88,17 @@ test('removing the teachers on screen continues with the next one', async () => 
 
 test('page timer follows the refreshed number of pages', async () => {
   const h = await staff(names(10));
-  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.pageTimers(20000), 0);
   assert.equal(h.page(), 'Все учителя на одном экране');
   h.setTeachers(names(30));
   await h.advance(60000);
   assert.match(h.page(), /^Страница 1 из 3/);
-  assert.equal(h.pageTimers(15000), 1);
-  await h.advance(15000);
+  assert.equal(h.pageTimers(20000), 1);
+  await h.advance(20000);
   assert.match(h.page(), /^Страница 2 из 3/);
   h.setTeachers(names(10));
-  await h.advance(45000);
-  assert.equal(h.pageTimers(15000), 0);
+  await h.advance(40000);
+  assert.equal(h.pageTimers(20000), 0);
   assert.equal(h.page(), 'Все учителя на одном экране');
 });
 
@@ -107,33 +109,33 @@ test('resizing the window keeps the page and never adds a second timer', async (
   await h.resize(1280, 720);
   await h.resize(3840, 2160);
   assert.match(h.page(), /^Страница 2 из 3/);
-  assert.equal(h.pageTimers(15000), 1);
+  assert.equal(h.pageTimers(20000), 1);
 });
 
 test('the bell rebuilds the grid without restarting the cycle', async () => {
   const h = await staff(names(30), { epoch: '2026-09-28T05:39:00Z' });
   assert.match(h.text('status-label'), /^Идёт 1-й урок/);
   await h.advance(50000);
-  assert.match(h.page(), /^Страница 1 из 3/);
+  assert.match(h.page(), /^Страница 3 из 3/);
   await h.advance(12000);
   assert.match(h.text('status-label'), /^Перемена · 2-й урок в 08:50/);
-  assert.match(h.page(), /^Страница 2 из 3/);
-  assert.equal(h.pageTimers(15000), 1);
+  assert.match(h.page(), /^Страница 1 из 3/);
+  assert.equal(h.pageTimers(20000), 1);
 });
 
 test('empty, one-page and multi-page lists start and stop only the page timer', async () => {
   const h = await staff([]);
-  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.pageTimers(20000), 0);
   assert.match(h.board(), /Уроки на сегодня закончились/);
   h.setTeachers(names(1));
   await h.advance(60000);
-  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.pageTimers(20000), 0);
   h.setTeachers(names(11));
   await h.advance(60000);
-  assert.equal(h.pageTimers(15000), 1);
+  assert.equal(h.pageTimers(20000), 1);
   h.setTeachers(names(1));
   await h.advance(60000);
-  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.pageTimers(20000), 0);
 });
 
 test('past lessons and teachers with only cancelled lessons stay hidden', async () => {
@@ -169,7 +171,7 @@ test('a day off shows the next school day instead of an empty grid', async () =>
   const h = await staff(names(6), { epoch: '2026-10-03T08:00:00Z' });
   assert.match(h.board(), /Сегодня выходной.*Понедельник, 5 октября/);
   assert.equal(h.text('status-value'), 'Понедельник, 5 октября');
-  assert.equal(h.pageTimers(15000), 0);
+  assert.equal(h.pageTimers(20000), 0);
 });
 
 /* The «Сегодня» slide on the staff TV (tv-today.js, audience «teachers») ------------------- */
@@ -188,7 +190,7 @@ test('the slide comes once after a full round of grid pages, for 20 s; a dot of 
   assert.equal(h.chips().length, 4, 'three grid pages and «Сегодня»');
   assert.equal(h.chips()[3], 'Сегодня');
   const seen = [];
-  for (let i = 0; i < 5; i += 1) { seen.push(h.seen()); await h.advance(h.today() ? 20000 : 15000); }
+  for (let i = 0; i < 5; i += 1) { seen.push(h.seen()); await h.advance(20000); }
   assert.deepEqual(seen, ['Учитель 01', 'Учитель 11', 'Учитель 21', 'Сегодня', 'Учитель 01']);
   await h.advance(45000);
   assert.ok(h.today());
@@ -199,15 +201,15 @@ test('the slide comes once after a full round of grid pages, for 20 s; a dot of 
 test('one grid page, before 08:00 and after the lessons: the slide every other time; no grid — only it', async () => {
   const one = await staffToday(names(6), '10:00');
   const seq = [];
-  for (let i = 0; i < 4; i += 1) { seq.push(one.today() ? 'Сегодня' : 'сетка'); await one.advance(one.today() ? 20000 : 15000); }
+  for (let i = 0; i < 4; i += 1) { seq.push(one.today() ? 'Сегодня' : 'сетка'); await one.advance(20000); }
   assert.deepEqual(seq, ['сетка', 'Сегодня', 'сетка', 'Сегодня']);
   const early = await staffToday(names(25), '07:45');
   const seq2 = [];
-  for (let i = 0; i < 4; i += 1) { seq2.push(early.seen()); await early.advance(early.today() ? 20000 : 15000); }
+  for (let i = 0; i < 4; i += 1) { seq2.push(early.seen()); await early.advance(20000); }
   assert.deepEqual(seq2, ['Учитель 01', 'Сегодня', 'Учитель 11', 'Сегодня']);
   const evening = await staffToday(names(25), '19:00');
   assert.ok(evening.today(), 'all lessons over: only the slide');
-  assert.equal(evening.pageTimers(15000) + evening.pageTimers(20000), 0);
+  assert.equal(evening.pageTimers(20000), 0);
 });
 
 test('the teachers’ variant: today’s changes instead of the task, duty administrators, teacher-only events', async () => {

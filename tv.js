@@ -1,5 +1,5 @@
 // ТВ в учительской: сетка «учитель × урок» на сегодня во всю ширину экрана.
-// На странице 10 учителей по алфавиту, страницы сменяются каждые 15 секунд;
+// На странице 10 учителей по алфавиту, страницы сменяются каждые 20 секунд;
 // снятые, добавленные уроки и смена кабинета отмечены цветом прямо в сетке.
 // Слайд «Сегодня» в учительском варианте (tv-today.js, 20 с): после каждого полного круга
 // страниц сетки; если страница одна, до 08:00 и после уроков 2-й смены — через раз; когда
@@ -9,7 +9,7 @@
   const site = window.SchoolSite, tv = window.TvCore;
   if (!site || !tv) return;
 
-  const ROWS = 10, MAX_COLS = 12, PERIOD = 15000;
+  const ROWS = 10, MAX_COLS = 12, PERIOD = 20000;
   const SHEETS = ['Учителя', 'Учителя_сайт'];
   const DAY_CODES = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
   const esc = site.escapeHtml;
@@ -199,7 +199,8 @@
     const started = rotation.sync();
     const gridPages = view.gridPages;
     const nextKey = view.keys[((rotation.page() + 1) % pages) * ROWS];
-    const text = !names.length ? '' : pages <= 1 ? 'Все учителя на одном экране' : isToday(nextKey) ? `Страница ${page + 1} из ${gridPages} · дальше «Сегодня» через 15 с` : gridPages > 1 ? `Страница ${page + 1} из ${gridPages} · дальше через 15 с` : 'Все учителя на одном экране';
+    const seconds = PERIOD / 1000;
+    const text = !names.length ? '' : pages <= 1 ? 'Все учителя на одном экране' : isToday(nextKey) ? `Страница ${page + 1} из ${gridPages} · дальше «Сегодня» через ${seconds} с` : gridPages > 1 ? `Страница ${page + 1} из ${gridPages} · дальше через ${seconds} с` : 'Все учителя на одном экране';
     renderPager(key, text);
     if (turned || started || pages <= 1) tv.restartBar(rotation.currentPeriod(), pages > 1);
     tv.fitWhenReady(board);

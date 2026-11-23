@@ -19,7 +19,7 @@
   const state = { publicRows: [], teacherRows: [], scheduleRows: [], cells: [], teachers: [], date: '', dateNote: '', search: '', onlyChanged: false, selectedTeacher: '', view: 'day' };
   const $ = (s) => document.querySelector(s), esc = site.escapeHtml;
   const normalizeClass = (v) => String(v || '').split(/\s*\+\s*/).map(site.normalizeClass).filter(Boolean).join(' + ');
-  const fullSubject = (v) => (window.SchoolSubjects?.expandSubject ? window.SchoolSubjects.expandSubject(v) : String(v ?? ''));
+  const fullSubject = (v, cls) => (window.SchoolSubjects?.expandSubject ? window.SchoolSubjects.expandSubject(v, cls) : String(v ?? ''));
   const stripWindow = (v) => (/^\s*окно\s*$/i.test(String(v || '')) ? '' : String(v || ''));
   const ruDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; };
   const isoOf = (date) => date.toISOString().slice(0, 10);
@@ -31,8 +31,8 @@
   function setStatus(text, type = '') { if (!statusEl) return; statusEl.textContent = text; statusEl.className = `staff-status${type ? ` ${type}` : ''}`; }
   function dateCode(iso) { return DAY_CODES[dateOf(iso).getUTCDay()]; }
   function normalizeDate(v) { const s = String(v || '').trim(); let m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/); if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; }
-  function parseStudent(text) { return window.SchoolSubjects?.parseLesson ? window.SchoolSubjects.parseLesson(text) : { subject: fullSubject(text), room: '' }; }
-  function parseTeacherCell(value) { const s = String(value || '').trim(); if (!s) return { className: '', subject: '', room: '' }; const p = s.split(/\r?\n|\s*\|\s*/).map((x) => x.trim()).filter(Boolean); return p.length >= 2 ? { className: normalizeClass(p[0]), subject: fullSubject(p[1] || ''), room: p[2] || '' } : { className: normalizeClass(s), subject: '', room: '' }; }
+  function parseStudent(text, cls) { return window.SchoolSubjects?.parseLesson ? window.SchoolSubjects.parseLesson(text, cls) : { subject: fullSubject(text), room: '' }; }
+  function parseTeacherCell(value) { const s = String(value || '').trim(); if (!s) return { className: '', subject: '', room: '' }; const p = s.split(/\r?\n|\s*\|\s*/).map((x) => x.trim()).filter(Boolean); return p.length >= 2 ? { className: normalizeClass(p[0]), subject: fullSubject(p[1] || '', p[0]), room: p[2] || '' } : { className: normalizeClass(s), subject: '', room: '' }; }
   function headerIndex(headers, names, fallback = -1) { return site.findHeaderIndex(headers, names, fallback); }
   function teacherOrderFromBase() { if (!state.teacherRows.length) return []; const h = state.teacherRows[0], d = state.teacherRows.slice(1), ix = headerIndex(h, ['ФИО', 'Учитель'], 0), out = []; d.forEach((r) => { const t = String(r[ix] || '').trim(); if (t && !out.includes(t)) out.push(t); }); return out; }
 
@@ -40,7 +40,7 @@
     if (!state.publicRows.length) return [];
     const h = state.publicRows[0], d = state.publicRows.slice(1);
     const ix = { date: headerIndex(h, ['Дата'], 0), teacher: headerIndex(h, ['Учитель'], 1), lesson: headerIndex(h, ['Урок'], 2), cls: headerIndex(h, ['Класс'], 3), subject: headerIndex(h, ['Предмет'], 4), room: headerIndex(h, ['Кабинет'], 5), status: headerIndex(h, ['Статус'], 6), oldClass: headerIndex(h, ['Было_класс'], 7), oldSubject: headerIndex(h, ['Было_предмет'], 8), oldRoom: headerIndex(h, ['Было_кабинет'], 9), note: headerIndex(h, ['Примечание'], 10) };
-    return d.filter((r) => normalizeDate(r[ix.date]) === iso).map((r) => ({ teacher: String(r[ix.teacher] || '').trim(), lesson: Number(r[ix.lesson]) || 0, className: normalizeClass(r[ix.cls]), subject: fullSubject(String(r[ix.subject] || '').trim()), room: String(r[ix.room] || '').trim(), status: String(r[ix.status] || 'normal').trim() || 'normal', oldClass: normalizeClass(r[ix.oldClass]), oldSubject: fullSubject(String(r[ix.oldSubject] || '').trim()), oldRoom: String(r[ix.oldRoom] || '').trim(), note: String(r[ix.note] || '').trim() })).filter((x) => x.teacher && x.lesson >= 1 && x.lesson <= 12);
+    return d.filter((r) => normalizeDate(r[ix.date]) === iso).map((r) => ({ teacher: String(r[ix.teacher] || '').trim(), lesson: Number(r[ix.lesson]) || 0, className: normalizeClass(r[ix.cls]), subject: fullSubject(r[ix.subject], r[ix.cls]), room: String(r[ix.room] || '').trim(), status: String(r[ix.status] || 'normal').trim() || 'normal', oldClass: normalizeClass(r[ix.oldClass]), oldSubject: fullSubject(r[ix.oldSubject], r[ix.oldClass]), oldRoom: String(r[ix.oldRoom] || '').trim(), note: String(r[ix.note] || '').trim() })).filter((x) => x.teacher && x.lesson >= 1 && x.lesson <= 12);
   }
 
   function baseCells(iso = state.date) {
@@ -56,7 +56,7 @@
     return td.map((r) => {
       const teacher = String(r[teacherIx] || '').trim(), lesson = Number(r[lessonIx]) || 0;
       if (!teacher || lesson < 1 || lesson > 12 || dayIx < 0) return null;
-      const tc = parseTeacherCell(r[dayIx]), sp = parseStudent(scheduleMap[`${tc.className}|${lesson}`] || '');
+      const tc = parseTeacherCell(r[dayIx]), sp = parseStudent(scheduleMap[`${tc.className}|${lesson}`] || '', tc.className);
       return { teacher, lesson, className: tc.className, subject: tc.subject || sp.subject, room: tc.room || sp.room, status: 'normal', oldClass: '', oldSubject: '', oldRoom: '', note: '' };
     }).filter(Boolean);
   }

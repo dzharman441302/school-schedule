@@ -19,6 +19,18 @@ const lines = (c, changeRows) => plain(c.boundsLines(c.dayBounds(c.actualDay(sch
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
 
+test('career guidance displays as «Профессия» in grades 10 and 11 only', async () => {
+  const c = await core();
+  const rows = [HEAD, ['9А', 1, 'Проф'], ['10А', 1, 'Профориентация (305)'], ['11А', 1, 'Проф (305)']];
+  const changes = [['Дата', 'Класс', 'Урок', 'Изменения'], ['28.09.2026', '11А', 1, 'Профессия (306)']];
+  assert.equal(c.actualDay(rows, [], MONDAY, '9А')[0].base.subject, 'Профориентация');
+  assert.equal(c.actualDay(rows, [], MONDAY, '10А')[0].base.subject, 'Профессия');
+  const [lesson] = c.actualDay(rows, changes, MONDAY, '11А');
+  assert.equal(lesson.base.subject, 'Профессия');
+  assert.equal(lesson.type, 'room');
+  assert.equal(lesson.newLesson.room, '306');
+});
+
 test('an ordinary day says nothing about start and end', async () => {
   const c = await core();
   assert.deepEqual(lines(c, changes()), []);

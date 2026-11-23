@@ -207,7 +207,7 @@
 
   function changeWhat(x) {
     if (/^отмен/i.test(x.change)) return 'отменён';
-    const p = core.parseLesson(x.change);
+    const p = core.parseLesson(x.change, x.className);
     return `${p.subject || x.change}${p.room ? `, каб. ${p.room}` : ''}`;
   }
   const changeText = (x) => (/^отмен/i.test(x.change) ? `${x.lesson} урок отменён` : `${x.lesson} урок — ${changeWhat(x)}`);

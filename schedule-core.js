@@ -81,8 +81,8 @@
     return m ? `${m[3].padStart(2, '0')}.${m[2].padStart(2, '0')}.${m[1]}` : s;
   }
 
-  function parseLesson(value) {
-    if (window.SchoolSubjects?.parseLesson) return window.SchoolSubjects.parseLesson(value);
+  function parseLesson(value, className) {
+    if (window.SchoolSubjects?.parseLesson) return window.SchoolSubjects.parseLesson(value, className);
     const raw = String(value ?? '').trim();
     return { subject: fullSubject(raw), room: '', raw };
   }
@@ -128,7 +128,7 @@
     const cls = site.normalizeClass(className);
     data.filter((r) => site.normalizeClass(r[classIndex]) === cls).forEach((r) => {
       const lesson = lessonNumber(r[lessonIndex]), raw = String(r[day.index] ?? '').trim();
-      if (lesson >= 1 && lesson <= 12 && raw) out.set(lesson, { lesson, ...parseLesson(raw) });
+      if (lesson >= 1 && lesson <= 12 && raw) out.set(lesson, { lesson, ...parseLesson(raw, cls) });
     });
     return out;
   }
@@ -157,7 +157,7 @@
 
   function classifyChange(base, change) {
     if (/^отмена$/i.test(change.change)) return { type: 'cancelled', base, newLesson: null, ...change };
-    const next = parseLesson(change.change);
+    const next = parseLesson(change.change, change.className);
     if (!base) return { type: 'added', base: null, newLesson: next, ...change };
     if (isMerged(base, next)) return { type: 'merged', base, newLesson: { subject: next.subject || base.subject, room: next.room, raw: change.change }, ...change };
     if (sameText(base.subject, next.subject || base.subject) && next.room && String(base.room || '') !== String(next.room || '')) return { type: 'room', base, newLesson: { subject: next.subject || base.subject, room: next.room, raw: change.change }, ...change };
