@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#15366D">
+  <title>Олимпиады и конкурсы — МОУ СОШ № 20</title>
+  <link rel="icon" href="assets/icons/favicon-48.png" type="image/png">
+  <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css?v=26">
+  <link rel="stylesheet" href="achievements-contests.css?v=1">
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержанию</a>
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="index.html" aria-label="На главную">
+      <img class="brand__logo" src="assets/icons/logo-128.jpg" alt="" width="44" height="44">
+      <span class="brand__text"><strong>МОУ СОШ № 20</strong><span>личный кабинет учителя</span></span>
+    </a>
+    <nav class="topnav" aria-label="Основная навигация">
+      <a class="topnav__link" href="staff.html">Учителям</a>
+      <a class="topnav__link" href="achievements-form.html">Внести достижение</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="container stack ikt">
+    <div class="page-title"><div><h1>Олимпиады и конкурсы</h1></div></div>
+    <p class="help-alert" data-broken role="alert" hidden></p>
+    <section class="ikt-login" data-login hidden aria-labelledby="ct-login-title">
+      <h2 id="ct-login-title" class="ach-h2">Вход</h2>
+      <form data-login-form>
+        <div class="field"><label for="ct-staff">Кто вы</label><select class="select" id="ct-staff" data-login-select><option value="">Загружаем список…</option></select></div>
+        <div class="field"><label for="ct-pin">Личный PIN (6 цифр)</label><input class="input" id="ct-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" data-login-pin></div>
+        <div class="help-error" data-login-error role="alert" hidden></div>
+        <button class="btn" type="submit" data-login-btn>Войти</button>
+      </form>
+    </section>
+
+    <section class="stack" data-app hidden aria-label="Каталог конкурсов">
+      <div class="ach-who">
+        <span>Вы вошли: <b data-me></b></span>
+        <button class="btn btn--sm" type="button" data-create hidden>Добавить конкурс</button>
+        <button class="btn btn--ghost btn--sm" type="button" data-reload-catalog disabled>Обновить список</button>
+        <button class="btn btn--ghost btn--sm" type="button" data-logout>Выйти</button>
+      </div>
+      <div class="contest-tools">
+        <div class="ikt-card__actions" role="group" aria-label="Раздел">
+          <button class="btn btn--sm" type="button" data-view="catalog" aria-pressed="true">Конкурсы</button>
+          <button class="btn btn--ghost btn--sm" type="button" data-view="mine" aria-pressed="false">Мои заявки</button>
+        </div>
+        <div class="contest-filters">
+          <div class="field"><label for="ct-year">Учебный год</label><select class="select" id="ct-year" data-year disabled></select></div>
+          <div class="field"><label for="ct-class">Участники</label><select class="select" id="ct-class" data-class disabled></select></div>
+          <div class="field"><label for="ct-scope">Приём заявок</label><select class="select" id="ct-scope" data-scope disabled>
+            <option value="open">Приём открыт</option>
+            <option value="all">Все конкурсы</option>
+            <option value="closed">Приём завершён</option>
+          </select></div>
+        </div>
+      </div>
+      <p class="help-note" data-notice role="status" hidden></p>
+      <div class="stack" data-catalog-error hidden>
+        <p class="help-alert" data-error-text role="alert"></p>
+        <div><button class="btn btn--ghost btn--sm" type="button" data-refresh>Повторить загрузку</button></div>
+      </div>
+      <div class="ikt-list" data-contest-list aria-live="polite"></div>
+    </section>
+  </div>
+</main>
+
+<dialog class="ach-dialog contest-dialog" data-dialog aria-labelledby="ct-dialog-title">
+  <div class="ach-mine-head">
+    <h2 id="ct-dialog-title" data-dialog-title></h2>
+    <button class="btn btn--ghost btn--sm" type="button" data-dialog-close>Закрыть</button>
+  </div>
+  <div class="help-error" data-dialog-error role="alert" hidden></div>
+  <div data-dialog-content></div>
+</dialog>
+
+<script src="config.js?v=25"></script>
+<script src="achievements-core.js?v=1"></script>
+<script src="achievements-contests.js?v=1"></script>
+</body>
+</html>

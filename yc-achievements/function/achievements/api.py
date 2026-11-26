@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from urllib.parse import urlsplit
 
-from . import auth, config, jobs
+from . import auth, config, jobs, registration
 from .contests import ContestsCache
-from .export import REPORT_COLUMNS, build_registry, build_supervisors_report, supervisors_report
+from .export import REPORT_COLUMNS, build_competition_export, build_registry, build_supervisors_report, supervisors_report
 from .repo import Repo
 from .validation import (ValidationError, clean_text, school_year_range, school_year_start, split_form,
                          validate_event, validate_student)
@@ -69,11 +69,20 @@ class App:
         self._audit: list[dict] = []
         r = re.compile
         I = r'(?P<id>[0-9a-zA-Z_-]{1,64})'
+        A = r'(?P<author_id>[0-9a-zA-Z_-]{1,64})'
         self.routes = [
             ('POST', r(r'^/login$'), self.login, None),
             ('GET', r(r'^/staff$'), self.staff_public, None),
             ('GET', r(r'^/me$'), self.me, ALL),
             ('GET', r(r'^/dictionaries$'), self.dictionaries, ALL),
+            ('GET', r(r'^/contests$'), self.list_competitions, ALL),
+            ('POST', r(r'^/contests$'), self.create_competition, CHECKERS),
+            ('GET', r(rf'^/contests/{I}$'), self.get_competition, ALL),
+            ('PUT', r(rf'^/contests/{I}$'), self.update_competition, CHECKERS),
+            ('PUT', r(rf'^/contests/{I}/application$'), self.submit_application, ALL),
+            ('GET', r(rf'^/contests/{I}/applications$'), self.list_applications, CHECKERS),
+            ('POST', r(rf'^/contests/{I}/applications/{A}$'), self.review_application, CHECKERS),
+            ('GET', r(rf'^/contests/{I}/applications\.xlsx$'), self.export_applications, CHECKERS),
             ('POST', r(r'^/records$'), self.create_records, ALL),
             ('GET', r(r'^/records/mine$'), self.my_records, ALL),
             ('PUT', r(rf'^/records/{I}$'), self.update_record, ALL),
@@ -342,13 +351,142 @@ class App:
         return Response(200, {'staff': {'id': u['id'], 'short_name': u['short_name'], 'role': u['role']}})
 
     def dictionaries(self, req: Request) -> Response:
+        year = school_year_start(self.today())
+        managed_contests = [
+            {**{key: c[key] for key in ('id', 'name', 'direction', 'level', 'subject', 'form')}, 'date': c['event_date']}
+            for contest_year in (year, year - 1) for c in self.repo.list_competitions(contest_year)
+            if c['status'] != 'draft' and c['audience'] == 'students'
+        ]
         return Response(200, {
             'directions': config.DIRECTIONS, 'levels': config.LEVELS, 'forms': config.FORMS,
-            'results': config.RESULTS, 'classes': self.settings.classes, 'contests': self.contests.get(),
-            'school_year': school_year_start(self.today()),
+            'results': config.RESULTS, 'classes': self.settings.classes, 'contests': managed_contests + self.contests.get(),
+            'school_year': year,
             'limits': {'students_per_form': config.MAX_STUDENTS_PER_FORM, 'diploma_bytes': config.DIPLOMA_MAX_BYTES,
                        'diploma_types': list(config.DIPLOMA_TYPES)},
         })
+
+    # ---------------------------------------------------- competitions and applications
+
+    def _competition(self, req):
+        contest = self.repo.get_competition(req.params['id'])
+        if not contest or (contest['status'] == 'draft' and req.user['role'] not in CHECKERS):
+            raise ApiError(404, 'not_found', 'Конкурс не найден')
+        return contest
+
+    def _competition_view(self, contest, mine=None):
+        return {**contest, 'registration_open': registration.registration_open(contest, self.today()), 'mine': mine}
+
+    @staticmethod
+    def _check_revision(saved):
+        if not saved:
+            raise ApiError(409, 'changed', 'Данные изменились. Обновите список и повторите действие')
+
+    def list_competitions(self, req):
+        year = self._year(req)
+        own = {a['contest_id']: a for a in self.repo.author_applications(req.user['id'])}
+        items = [self._competition_view(c, own.get(c['id'])) for c in self.repo.list_competitions(year)
+                 if c['status'] != 'draft' or req.user['role'] in CHECKERS]
+        items.sort(key=lambda c: (not c['registration_open'], c['deadline'], c['name'].casefold()))
+        return Response(200, {'school_year': year, 'current_year': school_year_start(self.today()),
+                              'classes': self.settings.classes, 'directions': config.DIRECTIONS,
+                              'levels': config.LEVELS, 'forms': config.FORMS, 'contests': items})
+
+    def get_competition(self, req):
+        contest = self._competition(req)
+        mine = self.repo.get_application(contest['id'], req.user['id'])
+        return Response(200, {'contest': self._competition_view(contest, mine)})
+
+    def create_competition(self, req):
+        contest = registration.validate_competition(self._body(req), self.today(), self.settings.classes)
+        contest.update(id=_new_id(), revision=_new_id())
+        self._check_revision(self.repo.save_competition(contest, None))
+        self.audit(req.user, 'contest_create', contest['id'], details=contest['status'])
+        return Response(201, {'contest': self._competition_view(contest)})
+
+    def update_competition(self, req):
+        previous = self._competition(req)
+        data = self._body(req)
+        self._check_revision(data.get('revision') == previous['revision'])
+        contest = registration.validate_competition(data, self.today(), self.settings.classes)
+        if previous['status'] != 'draft' and contest['status'] == 'draft':
+            raise ApiError(409, 'status', 'Опубликованный конкурс можно закрыть или открыть снова')
+        if registration.scope_changes(previous, contest):
+            apps = self.repo.competition_applications(previous['id'])
+            if not registration.applications_fit(previous, contest, apps):
+                raise ApiError(409, 'participants', 'Новые условия не подходят существующим заявкам')
+        contest.update(id=previous['id'], revision=_new_id())
+        self._check_revision(self.repo.save_competition(contest, previous))
+        self.audit(req.user, 'contest_update', contest['id'], details=contest['status'])
+        mine = self.repo.get_application(contest['id'], req.user['id'])
+        return Response(200, {'contest': self._competition_view(contest, mine)})
+
+    def submit_application(self, req):
+        contest, user = self._competition(req), req.user
+        if not registration.registration_open(contest, self.today()):
+            raise ApiError(409, 'registration_closed', 'Приём заявок завершён или ещё не открыт')
+        data = self._body(req)
+        previous = self.repo.get_application(contest['id'], user['id'])
+        revision = previous['revision'] if previous else None
+        self._check_revision(data.get('revision') == revision)
+        if previous and previous['status'] == 'accepted':
+            raise ApiError(409, 'accepted', 'Заявка принята. Для правки обратитесь к ответственному')
+        students = registration.validate_participants(data.get('students'), contest, user)
+        app = {'contest_id': contest['id'], 'author_id': user['id'], 'students': students, 'status': 'submitted',
+               'return_comment': '', 'updated_at': self.now(), 'revision': _new_id()}
+        self._check_revision(self.repo.save_application(app, revision, contest['revision']))
+        self.audit(user, 'contest_submit', contest['id'], details=f'count={len(students)}')
+        return Response(200, {'application': app})
+
+    def list_applications(self, req):
+        contest = self._competition(req)
+        apps = self.repo.competition_applications(contest['id'])
+        names = self._staff_names()
+        duplicates = registration.possible_duplicates(apps)
+        covered = {s['class_name'] for a in apps if a['status'] != 'returned' for s in a['students']}
+        for app in apps:
+            app['author_name'] = names.get(app['author_id'], 'Педагог')
+            app['duplicate_students'] = [s for s in app['students'] if app['status'] != 'returned'
+                                         and registration.participant_key(s) in duplicates]
+        apps.sort(key=lambda a: (a['status'] != 'submitted', a['author_name'], a['author_id']))
+        missing = [c for c in contest['classes'] if c not in covered] if contest['required'] else []
+        self.audit(req.user, 'contest_list_applications', contest['id'], details=f'count={len(apps)}')
+        return Response(200, {'applications': apps, 'missing_classes': missing})
+
+    def review_application(self, req):
+        contest = self._competition(req)
+        app = self.repo.get_application(contest['id'], req.params['author_id'])
+        if not app:
+            raise ApiError(404, 'not_found', 'Заявка не найдена')
+        data = self._body(req)
+        revision = app['revision']
+        self._check_revision(data.get('revision') == revision)
+        action = data.get('action')
+        comment = clean_text(data.get('comment'), 500)
+        if action == 'accept' and app['status'] == 'submitted':
+            if contest['audience'] == 'students' and any(s['class_name'] not in contest['classes'] for s in app['students']):
+                raise ApiError(409, 'classes', 'В заявке есть классы, которых больше нет в условиях конкурса')
+            app.update(status='accepted', return_comment='')
+        elif action == 'return' and app['status'] in ('submitted', 'accepted'):
+            if not comment or len(comment) > 500:
+                raise ApiError(400, 'comment', 'Укажите комментарий до 500 символов')
+            app.update(status='returned', return_comment=comment)
+        elif action in ('accept', 'return'):
+            raise ApiError(409, 'status', 'Действие недоступно для текущего статуса заявки')
+        else:
+            raise ApiError(400, 'action', 'Неизвестное действие с заявкой')
+        app.update(updated_at=self.now(), revision=_new_id())
+        self._check_revision(self.repo.save_application(app, revision, contest['revision']))
+        self.audit(req.user, f'contest_{action}', contest['id'], details=app['author_id'])
+        return Response(200, {'application': app})
+
+    def export_applications(self, req):
+        contest = self._competition(req)
+        apps = self.repo.competition_applications(contest['id'])
+        names = {s['id']: s['full_name'] or s['short_name'] for s in self.repo.list_staff()}
+        data = build_competition_export(contest, apps, names)
+        count = sum(len(a['students']) for a in apps if a['status'] == 'accepted')
+        self.audit(req.user, 'contest_export', contest['id'], details=f'count={count}')
+        return Response(200, data, content_type=XLSX, filename='Участники конкурса.xlsx')
 
     # ---------------------------------------------------------------- records
 

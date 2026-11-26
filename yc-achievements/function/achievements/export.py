@@ -8,6 +8,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from . import config
+from .registration import participant_key, possible_duplicates
 
 COLUMNS = [
     ('№', 6), ('Дата', 12), ('Мероприятие', 40), ('Направление', 22), ('Уровень', 16), ('Форма', 14),
@@ -81,6 +82,32 @@ def _bytes(wb: Workbook) -> bytes:
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+def build_competition_export(contest, applications, names):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Участники'
+    _head(ws, [('№', 6), ('ФИО участника', 34), ('Класс', 10), ('Педагог', 34), ('Возможный дубль', 20)])
+    accepted = [app for app in applications if app['status'] == 'accepted']
+    duplicates = possible_duplicates(accepted)
+    entries = [(student, names.get(app['author_id'], '')) for app in accepted for student in app['students']]
+    entries.sort(key=lambda entry: (entry[0]['class_name'], entry[0]['student_name'].casefold(), entry[1]))
+    for i, (student, teacher) in enumerate(entries, 1):
+        duplicate = 'Да' if participant_key(student) in duplicates else ''
+        ws.append([i, student['student_name'], student['class_name'], teacher, duplicate])
+        for cell in ws[ws.max_row][1:]:
+            cell.data_type = 's'
+    ws.freeze_panes = 'A2'
+    ws.auto_filter.ref = ws.dimensions
+
+    info = wb.create_sheet('Конкурс')
+    _head(info, [('Поле', 24), ('Значение', 62)])
+    for label, value in [('Название', contest['name']), ('Дата проведения', ru_date(contest['event_date'])),
+                         ('Приём заявок до', ru_date(contest['deadline'])), ('Положение', contest['regulation_url'])]:
+        info.append([label, value])
+        info.cell(info.max_row, 2).data_type = 's'
+    return _bytes(wb)
 
 
 def build_registry(records: list[dict], staff_names: dict[str, str], *, school_year: int | None = None,

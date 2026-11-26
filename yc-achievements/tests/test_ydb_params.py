@@ -1,4 +1,7 @@
 """YdbRepo без сервера: параметры запросов должны превращаться в protobuf так же, как в настоящем SDK."""
+from contextlib import contextmanager
+from types import SimpleNamespace
+
 from ydb import convert
 
 from achievements.ydb_repo import TS, D, YdbRepo, _from_db, _to_db
@@ -48,3 +51,36 @@ def test_value_conversions_roundtrip():
     assert _from_db(D, _to_db(D, '2026-11-10')) == '2026-11-10'
     assert _from_db(D, 20402) == '2025-11-10'
     assert _from_db(D, date(2026, 11, 10)) == '2026-11-10'
+
+
+class TransactionPool(FakePool):
+    def __init__(self, rows):
+        super().__init__()
+        self.rows = iter(rows)
+
+    def retry_operation_sync(self, operation):
+        return operation(self)
+
+    @contextmanager
+    def transaction(self, _mode):
+        yield self
+
+    @contextmanager
+    def execute(self, query, parameters, commit_tx=False):
+        convert.query_parameters_to_pb(parameters)
+        self.calls.append((query, parameters, commit_tx))
+        yield [] if commit_tx else [SimpleNamespace(rows=next(self.rows))]
+
+
+def test_application_write_requires_current_contest_and_application_in_one_transaction():
+    student = {'student_name': 'Иванов Пётр', 'class_name': '8Б'}
+    application = {'contest_id': 'c1', 'author_id': 't1', 'students': [student], 'status': 'submitted',
+                   'return_comment': '', 'updated_at': 1763540000.5, 'revision': 'app_v2'}
+    pool = TransactionPool([[{'revision': 'contest_v1'}], [{'revision': 'app_v1'}]])
+    assert YdbRepo(pool).save_application(application, 'app_v1', 'contest_v1')
+    assert [commit for _, _, commit in pool.calls] == [False, False, True]
+    assert 'Иванов Пётр' in pool.calls[-1][1]['$rows'][0][0]['students']
+
+    closed = TransactionPool([[{'revision': 'contest_v2'}]])
+    assert not YdbRepo(closed).save_application(application, 'app_v1', 'contest_v1')
+    assert len(closed.calls) == 1 and not closed.calls[0][2]

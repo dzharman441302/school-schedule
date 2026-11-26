@@ -60,3 +60,36 @@ CREATE TABLE IF NOT EXISTS login_limits (
     locked_until Timestamp,
     PRIMARY KEY (key)
 );
+
+CREATE TABLE IF NOT EXISTS competitions (
+    id Utf8,
+    school_year Int32,
+    name Utf8,
+    direction Utf8,
+    level Utf8,
+    form Utf8,
+    subject Utf8,
+    event_date Date,
+    deadline Date,
+    regulation_url Utf8,
+    audience Utf8,
+    classes Utf8,
+    required Bool,
+    status Utf8,
+    revision Utf8,
+    PRIMARY KEY (id),
+    INDEX idx_competitions_year GLOBAL ON (school_year)
+);
+
+-- Список участников одной заявки хранится целиком, чтобы правка была атомарной.
+CREATE TABLE IF NOT EXISTS competition_applications (
+    contest_id Utf8,
+    author_id Utf8,
+    students Utf8,
+    status Utf8,
+    return_comment Utf8,
+    updated_at Timestamp,
+    revision Utf8,
+    PRIMARY KEY (contest_id, author_id),
+    INDEX idx_application_author GLOBAL ON (author_id)
+);

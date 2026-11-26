@@ -1,0 +1,53 @@
+.contest-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px 20px;
+}
+
+.contest-filters {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.contest-filters .field { flex: 0 1 200px; }
+.contest-card h2 { overflow-wrap: anywhere; font-size: 19px; }
+.contest-card ul,
+.contest-dialog ul { padding-left: 1.4em; overflow-wrap: anywhere; }
+
+.contest-dialog {
+  width: min(720px, calc(100% - 24px));
+  max-width: none;
+  max-height: calc(100% - 24px);
+  overflow: auto;
+}
+
+.contest-fields,
+.contest-classes { min-width: 0; margin: 0; padding: 0; border: 0; }
+.contest-fields { display: flex; flex-direction: column; gap: 12px; }
+.contest-classes legend { margin-bottom: 6px; font-size: 14px; font-weight: 700; }
+.contest-classes details + details { margin-top: 4px; }
+.contest-classes summary { padding: 6px 0; cursor: pointer; font-weight: 700; }
+.contest-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 0 12px;
+}
+
+.contest-student {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 115px) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.contest-review-heading { overflow-wrap: anywhere; }
+
+@media (max-width: 479px) {
+  .contest-filters .field { flex: 1 1 130px; }
+  .contest-dialog { padding: 16px; }
+  .contest-student { grid-template-columns: minmax(0, 1fr) auto; }
+  .contest-student .field:first-child { grid-column: 1 / -1; }
+}

@@ -65,6 +65,7 @@
       fillForm();
       addRow();
       loadMine();
+      void preselectContest();
     } catch (err) {
       if (!handle(err)) showError(err.message);
     }
@@ -86,14 +87,28 @@
 
   const ddmmyyyy = (s) => { const m = String(s || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/); return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : (/^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''); };
 
+  async function preselectContest() {
+    const id = new URLSearchParams(window.location.search).get('contest');
+    if (!id || !/^[\da-zA-Z_-]{1,64}$/.test(id)) return;
+    try {
+      const { contest } = await api.get('/contests/' + encodeURIComponent(id));
+      if (!form.elements.event_name.value.trim() && contest.audience === 'students' && contest.status !== 'draft') pickContest(contest);
+    } catch (err) {
+      if (!handle(err) && !form.elements.event_name.value.trim()) {
+        $('[data-event-note]').textContent = 'Не удалось подставить конкурс. Выберите его из списка или укажите название вручную.';
+      }
+    }
+  }
+
   function pickContest(c) {
     const el = form.elements;
     el.event_name.value = c.name;
     state.contestId = c.id || null;
     if (c.direction) el.direction.value = c.direction;
     if (c.level) el.level.value = c.level;
+    if (c.form) el.form.value = c.form;
     if (c.subject) el.subject.value = c.subject;
-    const date = ddmmyyyy(c.date);
+    const date = ddmmyyyy(c.event_date || c.date);
     if (date && !el.event_date.value) el.event_date.value = date;
     $('[data-suggest]').hidden = true;
     $('[data-event-note]').textContent = 'Из списка конкурсов школы — направление и уровень подставлены, их можно поправить.';

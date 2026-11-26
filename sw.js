@@ -1,4 +1,4 @@
-const CACHE='school20-pwa-v36';
+const CACHE='school20-pwa-v37';
 const SHELL=['./','index.html','schedule.html','staff.html','site.css','home.css','config.js','app.js','subject-names.js','schedule-core.js','site-shell.js','home.js','schedule.js','staff.js','help.html','help.js','ict-core.js','menu-core.js','data/menu-cycle.json?v=1','today-core.js','data/days.json?v=1','task.html','task.js','assets/fonts/onest-cyrillic.woff2','assets/fonts/onest-latin.woff2','assets/fonts/unbounded-cyrillic.woff2','assets/fonts/unbounded-latin.woff2','assets/icons/logo-128.jpg','assets/icons/favicon-48.png','manifest.webmanifest'];
 const STATUS_URL='https://docs.google.com/spreadsheets/d/1Va5atMLtrqb9JEXE7d9eytoTUFgN-lwT0xlYOevm4S4/gviz/tq?tqx=out:csv&sheet=%D0%A1%D1%82%D0%B0%D1%82%D1%83%D1%81_%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D0%B8';
 self.addEventListener('install',event=>{
@@ -16,7 +16,7 @@ self.addEventListener('fetch',event=>{
   // The ИКТ deputy's page is never stored on the device.
   if(/\/ikt(\.html|\.js)?$/.test(url.pathname)){event.respondWith(fetch(event.request));return;}
   // «Достижения»: страницы не хранятся на устройстве (ответы API идут на другой домен и тоже не кэшируются).
-  if(/\/achievements-(form|review)(\.html|\.js)?$/.test(url.pathname)){event.respondWith(fetch(event.request,{cache:'no-store'}));return;}
+  if(/\/achievements-(form|review|contests)(\.html|\.js|\.css)?$/.test(url.pathname)){event.respondWith(fetch(event.request,{cache:'no-store'}));return;}
   event.respondWith(
     fetch(event.request).then(response=>{
       const copy=response.clone();

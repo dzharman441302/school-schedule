@@ -4,6 +4,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const core = require('../achievements-core.js');
 
 const root = path.join(__dirname, '..');
@@ -152,18 +153,31 @@ test('no API address — a clear message, no request', async () => {
   assert.equal(server.calls.length, 0);
 });
 
-test('pages never touch localStorage/sessionStorage directly and are not cached by the service worker', () => {
-  for (const file of ['achievements-form.js', 'achievements-review.js']) {
+test('private achievement pages never persist pupil data or use the service worker cache', async () => {
+  const listeners = {};
+  const origin = 'https://school.example';
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  vm.runInNewContext(sw, {
+    self: { addEventListener: (name, fn) => { listeners[name] = fn; } },
+    URL, location: { origin },
+    fetch: (request, options) => Promise.resolve({ request, options, clone: () => ({}) }),
+    caches: { open: async () => ({ put: async () => {} }) },
+  });
+  const pages = ['achievements-form', 'achievements-review', 'achievements-contests'];
+  for (const url of [...pages.flatMap((page) => [page + '.html', page + '.js']), 'achievements-contests.css']) {
+    const request = { url: origin + '/' + url + '?v=1', method: 'GET' };
+    let response;
+    listeners.fetch({ request, respondWith: (pending) => { response = pending; } });
+    assert.equal((await response).options?.cache, 'no-store', url);
+  }
+  for (const page of pages) {
+    const file = page + '.js';
     const src = fs.readFileSync(path.join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     assert.ok(!/localStorage|sessionStorage/.test(src), file);
+    assert.ok(fs.readFileSync(path.join(root, page + '.html'), 'utf8').includes('name="robots" content="noindex'), page);
   }
-  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-  assert.ok(/achievements-\(form\|review\)/.test(sw));
   const shell = sw.match(/const SHELL=\[(.*?)\]/)[1];
   assert.ok(!/achievements/.test(shell));
-  for (const page of ['achievements-form.html', 'achievements-review.html']) {
-    assert.ok(fs.readFileSync(path.join(root, page), 'utf8').includes('name="robots" content="noindex'), page);
-  }
 });
 
 (async () => {

@@ -41,7 +41,9 @@ def test_seed_rejects_bad_role_and_duplicates(tmp_path):
 
 def test_schema_has_all_tables():
     sql = init_db.statements((ROOT / 'schema' / 'schema.yql').read_text(encoding='utf-8'))
-    assert [s.split()[5] for s in sql] == ['staff', 'records', 'audit', 'login_limits']
+    assert [s.split()[5] for s in sql] == [
+        'staff', 'records', 'audit', 'login_limits', 'competitions', 'competition_applications',
+    ]
 
 
 def test_purge_cutoff_is_school_year_based():

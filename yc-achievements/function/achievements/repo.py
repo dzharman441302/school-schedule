@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import copy
+from threading import Lock
+
+from .registration import applications_fit, scope_changes
 
 STAFF_FIELDS = ['id', 'short_name', 'full_name', 'position', 'role', 'pin_hash', 'pin_set_at', 'active']
 RECORD_FIELDS = [
@@ -14,6 +17,13 @@ RECORD_FIELDS = [
 ]
 AUDIT_FIELDS = ['id', 'at', 'staff_id', 'action', 'record_id', 'details']
 LIMIT_FIELDS = ['key', 'count', 'window_start', 'locked_until']
+COMPETITION_FIELDS = [
+    'id', 'school_year', 'name', 'direction', 'level', 'form', 'subject', 'event_date', 'deadline',
+    'regulation_url', 'audience', 'classes', 'required', 'status', 'revision',
+]
+APPLICATION_FIELDS = [
+    'contest_id', 'author_id', 'students', 'status', 'return_comment', 'updated_at', 'revision',
+]
 
 
 class Repo:
@@ -30,6 +40,13 @@ class Repo:
     def add_audit(self, entries: list[dict]) -> None: raise NotImplementedError
     def records_before(self, date_to: str) -> list[dict]: raise NotImplementedError
     def delete_records(self, ids: list[str]) -> None: raise NotImplementedError
+    def list_competitions(self, year: int) -> list[dict]: raise NotImplementedError
+    def get_competition(self, contest_id: str) -> dict | None: raise NotImplementedError
+    def save_competition(self, contest: dict, previous: dict | None) -> bool: raise NotImplementedError
+    def get_application(self, contest_id: str, author_id: str) -> dict | None: raise NotImplementedError
+    def competition_applications(self, contest_id: str) -> list[dict]: raise NotImplementedError
+    def author_applications(self, author_id: str) -> list[dict]: raise NotImplementedError
+    def save_application(self, application: dict, expected: str | None, contest_revision: str) -> bool: raise NotImplementedError
 
 
 class MemoryRepo(Repo):
@@ -38,6 +55,9 @@ class MemoryRepo(Repo):
         self.records: dict[str, dict] = {}
         self.audit: list[dict] = []
         self.limits: dict[str, dict] = {}
+        self.competitions: dict[str, dict] = {}
+        self.applications: dict[tuple[str, str], dict] = {}
+        self._registration_lock = Lock()
 
     def list_staff(self):
         return [copy.deepcopy(s) for s in self.staff.values()]
@@ -83,3 +103,43 @@ class MemoryRepo(Repo):
     def delete_records(self, ids):
         for i in ids:
             self.records.pop(i, None)
+
+    def list_competitions(self, year):
+        with self._registration_lock:
+            return [copy.deepcopy(c) for c in self.competitions.values() if c['school_year'] == year]
+
+    def get_competition(self, contest_id):
+        return copy.deepcopy(self.competitions.get(contest_id))
+
+    def save_competition(self, contest, previous):
+        with self._registration_lock:
+            current = self.competitions.get(contest['id'], {})
+            if current.get('revision') != (previous or {}).get('revision'):
+                return False
+            if scope_changes(previous, contest):
+                apps = [a for a in self.applications.values() if a['contest_id'] == contest['id']]
+                if not applications_fit(previous, contest, apps):
+                    return False
+            self.competitions[contest['id']] = copy.deepcopy(contest)
+            return True
+
+    def get_application(self, contest_id, author_id):
+        return copy.deepcopy(self.applications.get((contest_id, author_id)))
+
+    def competition_applications(self, contest_id):
+        with self._registration_lock:
+            return [copy.deepcopy(a) for a in self.applications.values() if a['contest_id'] == contest_id]
+
+    def author_applications(self, author_id):
+        with self._registration_lock:
+            return [copy.deepcopy(a) for a in self.applications.values() if a['author_id'] == author_id]
+
+    def save_application(self, application, expected, contest_revision):
+        key = (application['contest_id'], application['author_id'])
+        with self._registration_lock:
+            contest = self.competitions.get(application['contest_id'], {})
+            current = self.applications.get(key, {})
+            if contest.get('revision') != contest_revision or current.get('revision') != expected:
+                return False
+            self.applications[key] = copy.deepcopy(application)
+            return True
