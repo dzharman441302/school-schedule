@@ -2,8 +2,8 @@
   'use strict';
 
   // Home page: the hero with class chips, the bell ring and the line of the day; «Мой день» of
-  // the chosen class for today or the next school day; changes across the school; the class's
-  // week and the bells. Notices and the publication time are filled in by site-shell.js.
+  // the chosen class for today or the next school day; the changes tile, MAX bot and bells.
+  // Notices and the publication time are filled in by site-shell.js.
 
   const site = window.SchoolSite;
   const core = window.ScheduleCore;
@@ -17,7 +17,6 @@
   const RECENT = 'school:recentClasses';
   const SHEET_SCHEDULE = config.googleSheets?.sheets?.schedule || 'Расписание';
   const SHEET_CHANGES = config.googleSheets?.sheets?.changes || 'Изменения';
-  const TICKER_LIMIT = 8;
   const dayBox = $('[data-hd-day]');
   if (!dayBox) return;
 
@@ -210,7 +209,6 @@
     const p = core.parseLesson(x.change, x.className);
     return `${p.subject || x.change}${p.room ? `, каб. ${p.room}` : ''}`;
   }
-  const changeText = (x) => (/^отмен/i.test(x.change) ? `${x.lesson} урок отменён` : `${x.lesson} урок — ${changeWhat(x)}`);
 
   // The MAX tile shows the class's real nearest change, never an invented one.
   function renderBot() {
@@ -230,49 +228,22 @@
     bubble.innerHTML = `<b>${esc(cls)}</b><br>Сейчас изменений нет. Как только школа опубликует замену, бот сразу напишет.`;
   }
 
-  function renderChanges() {
-    const box = $('[data-hd-ticker]');
-    if (!box || !loaded) return;
+  function renderChangesTile() {
+    if (!loaded) return;
     const d = changesDay(), rows = core.changeRowsFor(changesRows, d);
     const w = site.schoolChangeWindow(today()), other = core.sameDay(d, w.first) ? w.second : null;
     const otherRows = other ? core.changeRowsFor(changesRows, other) : [];
     const classesHit = new Set(rows.map((x) => x.className)).size;
-    const label = `Изменения ${inDay(d)}`;
-    box.innerHTML = `<span class="hd-ticker__label">${esc(label)}</span>` +
-      (rows.length ? rows.slice(0, TICKER_LIMIT).map((x) => `<span class="hd-ticker__item"><b>${esc(x.className)}</b>${esc(changeText(x))}</span>`).join('') : '<span class="hd-ticker__item">Изменений нет — всё по расписанию</span>') +
-      `<a class="hd-ticker__more" href="schedule.html#changes">${rows.length > TICKER_LIMIT ? `Ещё ${rows.length - TICKER_LIMIT} · ` : ''}Все изменения →</a>`;
-
     const big = $('[data-hd-changes-count]'), text = $('[data-hd-changes-text]'), note = $('[data-hd-changes-note]');
     if (big) { big.textContent = String(rows.length); big.hidden = false; }
     if (text) text.textContent = rows.length ? `${inDay(d)} в ${classesHit} ${core.plural(classesHit, 'классе', 'классах', 'классах')}` : `${site.capitalize(inDay(d))} изменений нет`;
     if (note) { note.hidden = !otherRows.length; note.textContent = otherRows.length ? `${inDay(other)}: ${otherRows.length}` : ''; }
   }
 
-  /* Week of the class ---------------------------------------------- */
-
-  function renderWeek() {
-    const box = $('[data-hd-week-days]'), title = $('#hd-week-title');
-    if (!box || !loaded) return;
-    const cls = ui.cls;
-    if (title) title.textContent = cls ? `Неделя ${cls}` : 'Неделя класса';
-    if (!cls) { box.innerHTML = '<div class="hd-empty" style="grid-column:1/-1"><span>Выберите класс — здесь появится его неделя с отметками изменений.</span></div>'; return; }
-    const first = site.schoolChangeWindow(today()).first, monday = site.addUtcDays(first, -((first.getUTCDay() + 6) % 7)), t = today();
-    box.innerHTML = Array.from({ length: 5 }, (_, i) => {
-      const d = site.addUtcDays(monday, i), holiday = site.holidayFor(d), lessons = holiday ? [] : core.actualDay(scheduleRows, changesRows, d, cls);
-      const count = lessons.filter((x) => x.type !== 'cancelled').length, changes = lessons.filter((x) => x.type !== 'normal').length, isToday = core.sameDay(d, t);
-      const tag = holiday ? holiday.title : changes ? `${changes} изм.` : isToday ? 'сегодня' : '';
-      const aria = `${core.fmtDay(d)}: ${holiday ? holiday.title : `${count} ${core.plural(count, 'урок', 'урока', 'уроков')}`}${changes ? `, изменений: ${changes}` : ''}`;
-      return `<a class="hd-wday${isToday ? ' is-today' : ''}${changes ? ' has-changes' : ''}${holiday ? ' is-holiday' : ''}" href="schedule.html?class=${encodeURIComponent(cls)}" aria-label="${esc(aria)}">
-        <span class="hd-wday__dow">${esc(new Intl.DateTimeFormat('ru-RU', { timeZone: 'UTC', weekday: 'short' }).format(d))}</span><span class="hd-wday__date">${d.getUTCDate()}</span>
-        <span class="hd-wday__count">${holiday ? 'нет уроков' : `${count} ${core.plural(count, 'урок', 'урока', 'уроков')}`}</span>${tag ? `<span class="hd-wday__tag">${esc(tag)}</span>` : ''}<span class="hd-wday__dot" aria-hidden="true"></span></a>`;
-    }).join('');
-  }
-
   function renderAll() {
     renderClasses();
     renderDay();
-    renderChanges();
-    renderWeek();
+    renderChangesTile();
     renderHeroNext();
     renderBot();
     const link = $('[data-hd-schedule-link]');
@@ -314,6 +285,6 @@
   site.onSheetsUpdated?.((names) => { if ([SHEET_SCHEDULE, SHEET_CHANGES, 'Звонки', 'Звонки_даты', 'Календарь'].some((n) => names.has(n))) load(); });
   setInterval(renderClock, 20000);
   setInterval(() => { if (loaded) renderDay(); }, 30000); // the progress of the lesson on now
-  setInterval(() => { if (loaded) { renderChanges(); renderHeroNext(); } }, 60000);
+  setInterval(() => { if (loaded) { renderChangesTile(); renderHeroNext(); } }, 60000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(); });
 })();

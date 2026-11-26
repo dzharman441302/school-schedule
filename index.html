@@ -15,7 +15,7 @@
   <link rel="preload" href="assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="site.css?v=26">
   <link rel="preload" href="assets/fonts/unbounded-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="home.css?v=22">
+  <link rel="stylesheet" href="home.css?v=23">
 </head>
 <body>
 <a class="skip-link" href="#main">Перейти к содержанию</a>
@@ -85,30 +85,19 @@
       </a>
     </nav>
 
-    <section class="hd-ticker" id="changes" data-hd-ticker aria-label="Изменения по школе">
-      <span class="hd-ticker__label">Изменения</span><span class="hd-ticker__item">Загружаем…</span>
+    <section class="hd-bot" aria-labelledby="hd-bot-title">
+      <div class="hd-bot__text">
+        <span class="hd-bot__from">Бот «МОУ СОШ 20 Тверь»</span>
+        <h2 id="hd-bot-title">Изменения сами прилетают в MAX</h2>
+        <p>Выберите класс или свою фамилию один раз — бот напишет, как только школа опубликует замену.</p>
+        <a class="hd-bot__cta" href="https://max.ru/se14285144_bot" data-max-link target="_blank" rel="noopener noreferrer">Подключить бота</a>
+      </div>
+      <div class="hd-chat" aria-hidden="true">
+        <span class="hd-chat__me" data-hd-chat-class>Ваш класс</span>
+        <span class="hd-chat__bot" data-hd-chat-bot><b>Изменения в расписании</b><br>Бот пришлёт их, как только школа опубликует замену.</span>
+        <span class="hd-chat__buttons"><span>Открыть день</span><span>Меню</span></span>
+      </div>
     </section>
-
-    <div class="hd-grid">
-      <section class="hd-card hd-week hd-wide" data-hd-week aria-labelledby="hd-week-title">
-        <div class="hd-head"><h2 class="hd-title" id="hd-week-title">Неделя класса</h2><span class="hd-sub">с рамкой — есть изменения</span></div>
-        <div class="hd-week__days" data-hd-week-days></div>
-      </section>
-
-      <section class="hd-bot hd-wide" aria-labelledby="hd-bot-title">
-        <div class="hd-bot__text">
-          <span class="hd-bot__from">Бот «МОУ СОШ 20 Тверь»</span>
-          <h2 id="hd-bot-title">Изменения сами прилетают в MAX</h2>
-          <p>Выберите класс или свою фамилию один раз — бот напишет, как только школа опубликует замену.</p>
-          <a class="hd-bot__cta" href="https://max.ru/se14285144_bot" data-max-link target="_blank" rel="noopener noreferrer">Подключить бота</a>
-        </div>
-        <div class="hd-chat" aria-hidden="true">
-          <span class="hd-chat__me" data-hd-chat-class>Ваш класс</span>
-          <span class="hd-chat__bot" data-hd-chat-bot><b>Изменения в расписании</b><br>Бот пришлёт их, как только школа опубликует замену.</span>
-          <span class="hd-chat__buttons"><span>Открыть день</span><span>Меню</span></span>
-        </div>
-      </section>
-    </div>
 
     <div class="hd-grid">
       <section class="hd-card hd-bells hd-wide" id="bells" aria-labelledby="hd-bells-title">
@@ -159,6 +148,6 @@
 <script src="schedule-core.js?v=22"></script>
 <script src="site-shell.js?v=22"></script>
 <script src="achievements-public.js?v=1"></script>
-<script src="home.js?v=23"></script>
+<script src="home.js?v=24"></script>
 </body>
 </html>

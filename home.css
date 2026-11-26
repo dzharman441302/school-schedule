@@ -131,34 +131,6 @@
 .hd-tile .hd-tile__icon{color:var(--hd-ink)}
 @media (max-width:679px){.hd-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.hd-tile__icon{display:none}.hd-tile__big{font-size:30px}.hd-tile h2{font-size:15px}.hd-tile p{font-size:13px}}
 
-/* «Сегодня в школе» */
-.hd-ticker{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:14px 16px;border:var(--hd-border);border-radius:22px;background:var(--hd-accent-soft);box-shadow:5px 5px 0 var(--hd-ink)}
-.hd-ticker__label{padding:6px 12px;border-radius:999px;background:var(--hd-ink);color:#fff;font-weight:800}
-.hd-ticker__item{display:inline-flex;align-items:baseline;gap:6px;padding:6px 12px;border:var(--hd-border);border-radius:999px;background:var(--surface);font-size:15px;font-weight:700}
-.hd-ticker__more{margin-left:auto;font-weight:800;color:var(--hd-ink)}
-@media (max-width:679px){.hd-ticker{flex-direction:column;align-items:stretch}.hd-ticker__label{align-self:flex-start}.hd-ticker__item{border-radius:14px}.hd-ticker__more{margin-left:0}}
-
-/* Week of the class */
-.hd-week__days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-@media (min-width:760px){.hd-week__days{gap:10px}}
-.hd-wday{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;border:var(--hd-border);border-radius:16px;background:var(--surface);color:var(--hd-ink);text-decoration:none}
-@media (min-width:760px){.hd-wday{align-items:flex-start;gap:6px;min-height:128px;padding:14px;border-radius:20px}}
-.hd-wday:hover{color:var(--hd-ink);background:var(--bg)}
-.hd-wday__dow{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
-.hd-wday__date{font-family:var(--hd-display);font-size:18px;font-weight:800;line-height:1}
-@media (min-width:760px){.hd-wday__dow{font-size:13px}.hd-wday__date{font-size:26px}}
-.hd-wday__count{display:none;font-size:13px;font-weight:600}
-.hd-wday__tag{display:none;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:800}
-@media (min-width:760px){.hd-wday__count,.hd-wday__tag{display:block}}
-.hd-wday__dot{width:10px;height:10px;border-radius:50%}
-@media (min-width:760px){.hd-wday__dot{display:none}}
-.hd-wday.has-changes{border-color:var(--hd-warn-line);background:var(--hd-warn-tint)}
-.hd-wday.has-changes .hd-wday__tag{background:var(--hd-warn-badge);color:var(--hd-warn-text)}
-.hd-wday.has-changes .hd-wday__dot{background:var(--hd-warn-line);box-shadow:0 0 0 2px var(--hd-ink)}
-.hd-wday.is-today{border-color:var(--hd-ink);background:var(--brand);color:#fff;box-shadow:3px 3px 0 var(--hd-ink)}
-.hd-wday.is-today .hd-wday__tag{background:var(--hd-accent);color:var(--hd-ink)}
-.hd-wday.is-holiday{border-style:dashed;color:var(--hd-muted)}
-
 /* MAX bot */
 .hd-bot{display:grid;gap:16px;align-items:center;padding:20px;border:var(--hd-border);border-radius:26px;background:var(--hd-dark);color:#fff;box-shadow:5px 5px 0 var(--hd-accent)}
 @media (min-width:760px){.hd-bot{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px;padding:24px 26px;border-radius:30px;box-shadow:6px 6px 0 var(--hd-accent)}}
@@ -190,7 +162,7 @@
 
 .hd :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){.hd-tile,.hd-chip{transition:none}.hd-tile:hover,.hd-chip:hover{transform:none}}
-@media print{.hd-hero,.hd-tiles,.hd-ticker,.hd-bot,.hd-school{display:none}}
+@media print{.hd-hero,.hd-tiles,.hd-bot,.hd-school{display:none}}
 
 /* «Поздравляем!»: последние результаты регионального уровня и выше (achievements-public.js) */
 .hd-congrats{background:#FEF9C3}
