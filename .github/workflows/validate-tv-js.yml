@@ -7,6 +7,12 @@ on:
       - 'tv.js'
       - 'tv-students.js'
       - 'tv-core.js'
+      - 'tv-today.js'
+      - 'today-core.js'
+      - 'menu-core.js'
+      - 'qr.js'
+      - 'achievements-public.js'
+      - 'perf.js'
       - 'schedule-core.js'
       - 'lateness-core.js'
       - 'config.js'
@@ -35,12 +41,15 @@ jobs:
           node --check tv-core.js
           node --check tv.js
           node --check tv-students.js
+          node --check tv-today.js
           node --check lateness-core.js
           node --check subject-names.js
       - name: Staff room grid, alphabetical pages and refresh-safe rotation
         run: node tests/tv-rotation.js
       - name: Student parallel board, changes, lost connection and the punctuality slide
         run: node tests/tv-students.js
+      - name: Today slide and audience-specific blocks
+        run: node tests/tv-today.js
       - name: Lateness marks, counted shifts, streaks and the weekly rating
         run: node tests/lateness-core.js
       - name: Check both screens share the stage and load scripts in order
@@ -53,14 +62,15 @@ jobs:
           for(const [short,full] of [['Вер','Вероятность и статистика'],['внеур','Внеурочная деятельность'],['Про','Программирование'],['ПРОФ','Профориентация'],['Ф-РА','Физическая культура']]){
             assert.equal(subjects.expandSubject(short),full);
           }
-          const order=['config.js','app.js','subject-names.js','schedule-core.js','tv-core.js'];
-          for(const [html,app,extra] of [['tv.html','tv.js',[]],['tv-students.html','tv-students.js',['lateness-core.js']]]){
+          const order=['config.js','perf.js','app.js','subject-names.js','schedule-core.js','lateness-core.js','menu-core.js','today-core.js'];
+          for(const [html,app,extra] of [['tv.html','tv.js',[]],['tv-students.html','tv-students.js',['qr.js']]]){
             const text=fs.readFileSync(html,'utf8');
             assert(text.includes('tv.css'),html+': tv.css');
             assert(text.includes('id="stage"'),html+': 1920×1080 stage');
             const scripts=[...text.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>m[1].split('?')[0]);
-            const want=[...order];want.splice(4,0,...extra);
-            assert.deepEqual(scripts,[...want,app],html+': script order');
+            const want=[...order,...extra,'tv-core.js','achievements-public.js','tv-today.js',app];
+            assert.deepEqual(scripts,want,html+': script order');
           }
           console.log('Subject names, shared stage and TV script order verified');
           JS
+
