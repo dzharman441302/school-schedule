@@ -180,7 +180,7 @@ test('a day off shows the next school day instead of an empty grid', async () =>
 const at = (hhmm, date = '2026-11-18') => { const [h, m] = hhmm.split(':').map(Number); const [y, mo, d] = date.split('-').map(Number); return new Date(Date.UTC(y, mo - 1, d, h - 3, m)).toISOString(); };
 async function staffToday(teachers, time, options = {}) {
   const sheets = { 'Учителя': options.rows || rows(teachers), 'Учителя_сайт': options.changes || [CHANGES_HEAD], 'Дежурство': [['Неделя с', 'Неделя по', 'Смена', 'Классы'], ['16.11.2026', '20.11.2026', '1', '6К, 4Б'], ['16.11.2026', '20.11.2026', '2', '8Г, 3Г']], ...(options.extra || {}) };
-  const screen = await startScreen('tv.js', { sheets, epoch: at(time, options.date), search: options.search || '', before: ['tv-today.js'] });
+  const screen = await startScreen('tv.js', { sheets, epoch: at(time, options.date), search: options.search || '', before: ['tv-today.js'], fetchMore: options.fetchMore });
   const today = () => /data-slide="today"/.test(screen.board());
   return { ...screen, sheets, today, names: () => [...screen.board().matchAll(/data-teacher="([^"]*)"/g)].map((m) => m[1]), chips: () => [...screen.html('pager').matchAll(/<span class="tv-chip[^"]*">([^<]*)</g)].map((m) => m[1]), seen: () => (today() ? 'Сегодня' : [...screen.board().matchAll(/data-teacher="([^"]*)"/g)][0]?.[1]) };
 }
@@ -212,25 +212,45 @@ test('one grid page, before 08:00 and after the lessons: the slide every other t
   assert.equal(evening.pageTimers(20000), 0);
 });
 
-test('the teachers’ variant: today’s changes instead of the task, duty administrators, teacher-only events', async () => {
+test('the teachers’ variant: upcoming olympiads instead of the task and changes, duty administrators, teacher-only events', async () => {
   const changes = [CHANGES_HEAD,
     ['18.11.2026', 'Учитель 01', 3, '', '', '', 'cancelled', '7А', 'Рус', '305'], ['18.11.2026', 'Учитель 02', 3, '7А', 'Рус', '214', 'changed', '', '', ''],
     ['18.11.2026', 'Учитель 02', 4, '7А', 'Рус', '214', 'room', '7А', 'Рус', '305'], ['18.11.2026', 'Учитель 03', 5, '5А', 'Рус', '305', 'normal', '', '', ''],
     ['19.11.2026', 'Учитель 04', 2, '', '', '', 'cancelled', '5А', 'Рус', '305']];
   const events = [['Дата', 'Время', 'Что', 'Где', 'Для', 'Опубликовано'], ['18.11.2026', '14:00', 'Педсовет', 'Каб. 211', 'Учителям', ''], ['18.11.2026', '15:00', 'Концерт', 'Актовый зал', 'Всем', '']];
   const task = [['Дата', 'Задача', 'Пояснение', 'Параллели'], ['18.11.2026', 'Задача для учеников', '', '']];
-  const noon = await staffToday(names(6), '11:30', { search: '?slide=today', changes, extra: { 'События_сайт': events, 'Задача_дня': task } });
+  const olympiad = (name, event_date, deadline = '2026-11-18', status = 'published') => ({ name, event_date, deadline, status, classes: ['8А', '8Б'], audience: 'students' });
+  let olympiads = [olympiad('Дальняя', '2026-12-01'), olympiad('Прошедшая', '2026-11-17'), olympiad('Физика', '2026-11-20', '2026-11-16', 'closed'), olympiad('Черновик', '2026-11-18', '2026-11-18', 'draft'), olympiad('Математика <и логика>', '2026-11-19'), olympiad('Информатика', null)];
+  let fail = false, calls = 0;
+  const fetchMore = (url, options) => {
+    if (!url.endsWith('/public/upcoming-olympiads')) return null;
+    calls += 1;
+    assert.equal(options.credentials, 'omit');
+    assert.equal(options.cache, 'no-store');
+    return { ok: !fail, status: fail ? 503 : 200, json: async () => ({ olympiads }) };
+  };
+  const noon = await staffToday(names(6), '11:30', { search: '?slide=today', changes, extra: { 'События_сайт': events, 'Задача_дня': task }, fetchMore });
   const board = noon.board();
-  assert.match(board, /Сегодня по расписанию[\s\S]*td-sched__num">3<[\s\S]*изменения сегодня[\s\S]*отмен 1 · замен 1 · смен кабинета 1 · затронуто учителей: 2/);
+  assert.match(board, /Ближайшие олимпиады[\s\S]*18\.11[\s\S]*Приём до[\s\S]*Информатика[\s\S]*Дата уточняется[\s\S]*19\.11[\s\S]*Математика &lt;и логика&gt;[\s\S]*Заявки до 18\.11 · 8А, 8Б[\s\S]*20\.11[\s\S]*Физика[\s\S]*Приём завершён/);
+  assert.doesNotMatch(board, /Дальняя|Прошедшая|Черновик|Сегодня по расписанию|Сегодня изменений нет|td-sched/);
   assert.doesNotMatch(board, /td-task|Задача для учеников/, 'no task strip for teachers');
-  assert.doesNotMatch(board, /td-sched__next/, 'tomorrow only after 15:00');
   assert.match(board, /Педсовет[\s\S]*Концерт/, 'teachers see teacher-only events');
   assert.match(board, /1 смена[\s\S]*6К, 4Б[\s\S]*администратор: Дятлов В\. С\.[\s\S]*2 смена[\s\S]*8Г, 3Г[\s\S]*администратор: Фатьянова Е\. А\./, 'Wednesday duty administrators of config.js');
   assert.match(board, /Сегодня на обед/, 'the menu is the same as for pupils');
-  const late = await staffToday(names(6), '15:30', { search: '?slide=today', changes });
-  assert.match(late.board(), /На завтра уже опубликовано: 1 изменение/);
-  const none = await staffToday(names(6), '15:30', { search: '?slide=today' });
-  assert.match(none.board(), /Сегодня изменений нет[\s\S]*На завтра изменения ещё не опубликованы/);
+  fail = true;
+  await noon.advance(60000);
+  assert.match(noon.board(), /Математика &lt;и логика&gt;/, 'last successful feed survives a network error');
+  fail = false;
+  olympiads = [olympiad('Новая олимпиада', '2026-11-18')];
+  await noon.advance(60000);
+  assert.match(noon.board(), /Новая олимпиада/);
+  assert.doesNotMatch(noon.board(), /Математика &lt;и логика&gt;/);
+  assert.ok(calls >= 3, 'refreshes with the TV every minute');
+  olympiads = [];
+  await noon.advance(60000);
+  assert.match(noon.board(), /Предстоящих олимпиад пока нет/);
+  const offline = await staffToday(names(6), '15:30', { search: '?slide=today', changes });
+  assert.doesNotMatch(offline.board(), /td-olympiads|Сегодня по расписанию|На завтра уже опубликовано/, 'a failed initial fetch is not an empty catalogue');
 });
 
 test('duty administrators by weekday and shift; the changes summary', async () => {

@@ -290,18 +290,25 @@ s.pb-subj{color:var(--muted)}
 .td-events li b{font-size:24px;font-weight:800;line-height:1.12;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .td-events li b small{font-size:.86em;font-weight:600;color:var(--ink-2)}
 
-/* Полоса «Задача дня» (ученики) и «Сегодня по расписанию» (учительская) */
-.td-task,.td-sched{flex:0 0 148px;flex-direction:row;align-items:center;gap:24px;padding:12px 22px;--td-accent:var(--brand)}
+/* Полоса «Задача дня» (ученики) */
+.td-task{flex:0 0 148px;flex-direction:row;align-items:center;gap:24px;padding:12px 22px;--td-accent:var(--brand)}
 .td-task__qr{flex-shrink:0;width:112px;height:112px;padding:4px;border:3px solid var(--ink);border-radius:14px;background:#fff}
 .td-task__qr svg{display:block;width:100%;height:100%}
-.td-task__body,.td-sched__body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.td-task__body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
 .td-task__text{margin:0;font-family:var(--display);font-size:28px;font-weight:800;line-height:1.15;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-.td-task__past,.td-sched__next{flex-shrink:1;margin:0;align-self:center;max-width:36%;white-space:normal;font-size:21px}
-.td-sched__row{display:flex;align-items:center;gap:20px;min-width:0}
-.td-sched__num{flex-shrink:0;font-family:var(--display);font-size:62px;font-weight:800;line-height:1;color:var(--brand)}
-.td-sched__text{min-width:0;display:flex;flex-direction:column;gap:2px}
-.td-sched__text strong{font-family:var(--display);font-size:30px;font-weight:800;white-space:nowrap;overflow:hidden}
-.td-sched__text span{font-size:22px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden}
+.td-task__past{flex-shrink:1;margin:0;align-self:center;max-width:36%;white-space:normal;font-size:21px}
+
+/* Ближайшие олимпиады (учительская): даты и сроки читаются издалека. */
+.td-olympiads{flex:0 0 168px;padding:12px 22px;--td-accent:var(--brand)}
+.td-olympiads__list{flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--olympiads,3),minmax(0,1fr));gap:14px;margin:0;padding:0;list-style:none}
+.td-olympiads__item{min-width:0;display:flex;align-items:center;gap:14px;padding:7px 12px;border-radius:14px;background:var(--head);overflow:hidden}
+.td-olympiads__date{flex:0 0 120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:10px;background:var(--brand);color:#fff;padding:6px 8px;white-space:nowrap}
+.td-olympiads__date b{max-width:100%;overflow:hidden;font-family:var(--display);font-variant-numeric:tabular-nums;font-size:28px;font-weight:800;line-height:1.1}
+.td-olympiads__date small{font-size:18px;font-weight:700;color:#BFDBFE}
+.td-olympiads__info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.td-olympiads__info strong{font-size:26px;font-weight:800;line-height:1.1;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.td-olympiads__info span{font-size:20px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-olympiads__empty{flex:1;display:flex;align-items:center;font-size:29px;font-weight:800;color:var(--ink-2)}
 
 /* Бегущая строка: фирменный синий, ярлык «Объявления» на месте */
 .td-ticker{flex:0 0 58px;display:flex;align-items:stretch;overflow:hidden;border-radius:20px;background:var(--brand);color:#fff}
@@ -313,6 +320,6 @@ s.pb-subj{color:var(--muted)}
 .td-ticker.is-scroll .td-ticker__track{animation:td-ticker var(--td-ticker-s,30s) linear infinite}
 @keyframes td-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* Учительская: дежурные администраторы — та же карточка; «Сегодня по расписанию» — полоса выше */
+/* Учительская: дежурные администраторы — та же карточка */
 .td-duty__shift+.td-duty__shift{padding-top:6px;border-top:2px solid rgba(21,128,61,.18)}
 @media (prefers-reduced-motion: reduce){.td-card{animation:none}.td-ticker.is-scroll .td-ticker__track{animation:none}}

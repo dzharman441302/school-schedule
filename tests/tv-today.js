@@ -81,6 +81,17 @@ test('blocks: no empty cards; duty, task with QR and the yesterday result when t
   assert.equal(full.grade(), 'День рождения Деда Мороза');
 });
 
+test('the student TV does not load or show the teacher olympiad strip', async () => {
+  let calls = 0;
+  const h = await tvAt('11:30', { search: '?slide=today', fetchMore: (url) => {
+    if (!url.endsWith('/public/upcoming-olympiads')) return null;
+    calls += 1;
+    return { ok: true, json: async () => ({ olympiads: [{ name: 'Олимпиада', status: 'published', event_date: '2026-11-19' }] }) };
+  } });
+  assert.equal(calls, 0);
+  assert.doesNotMatch(h.board(), /td-olympiads|Ближайшие олимпиады/);
+});
+
 test('rotation in a lesson: «Сегодня» after every parallel, 20 s; boards stay 15 s', async () => {
   const h = await tvAt('08:10');
   assert.deepEqual(h.chips(), ['5', '6', '7', '9', '10–11', 'Сегодня']);

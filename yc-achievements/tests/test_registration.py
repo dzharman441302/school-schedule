@@ -125,3 +125,32 @@ def test_catalogue_integrates_with_achievement_suggestions_without_pupil_data(cl
     assert status == 200
     assert [c['id'] for c in response['contests']] == [contest['id'], 'c1']
     assert 'Иванов Пётр' not in str(response)
+
+
+def test_public_olympiad_feed_includes_only_upcoming_catalogue_fields(client, clock):
+    from datetime import datetime
+    from achievements.config import MSK
+
+    future = create(client, name='Математика')
+    assert submit(client, future)[0] == 200
+    create(client, name='Сегодня', event_date='2026-11-19')
+    create(client, name='Срок без даты', event_date='')
+    create(client, name='Закрытый приём', status='closed', event_date='2026-11-20')
+    create(client, name='Прошедшая', event_date='2026-11-18', deadline='2026-11-17')
+    create(client, name='Черновик', status='draft')
+    create(client, name='Не олимпиада', direction='Конкурс')
+    create(client, name='Закрытый без даты', status='closed', event_date='')
+    create(client, name='Следующий учебный год', event_date='2027-09-20', deadline='2027-09-15')
+
+    status, data, headers = client.call('GET', '/public/upcoming-olympiads')
+    assert status == 200 and headers['Cache-Control'] == 'no-store'
+    assert headers['Access-Control-Allow-Origin'] == 'https://sosh20tver.ru'
+    items = data['olympiads']
+    assert [c['name'] for c in items] == ['Сегодня', 'Срок без даты', 'Закрытый приём', 'Математика', 'Следующий учебный год']
+    assert all(set(c) == {'name', 'subject', 'event_date', 'deadline', 'audience', 'classes', 'status'} for c in items)
+    assert 'Иванов Пётр' not in str(data)
+    assert client.call('GET', '/contests')[0] == 401
+    assert client.call('GET', f"/contests/{future['id']}/applications")[0] == 401
+
+    clock.t = datetime(2026, 11, 20, 0, 0, tzinfo=MSK).timestamp()
+    assert [c['name'] for c in client.call('GET', '/public/upcoming-olympiads')[1]['olympiads']] == ['Закрытый приём', 'Математика', 'Следующий учебный год']

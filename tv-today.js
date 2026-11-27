@@ -5,8 +5,8 @@
 //  • шапка: часы и дата слева, урок/перемена с полосой по центру, праздник дня справа;
 //  • средний ряд: меню (коралловый, ~60 %) и колонка карточек: погода, до каникул,
 //    дежурство + пунктуальный класс, «Сегодня в школе»;
-//  • полоса «Задача дня» с QR на task.html (ученики) или «Сегодня по расписанию» (учительская:
-//    сколько изменений сегодня, сколько учителей затронуто, после 15:00 — что уже на завтра);
+//  • полоса «Задача дня» с QR на task.html (ученики) или «Ближайшие олимпиады» (учительская,
+//    опубликованные карточки из личного кабинета без данных участников);
 //  • бегущая строка из «Оповещений» с отметкой «На экран» и поздравления «Наших достижений»
 //    (муниципальный уровень и выше за 14 дней, achievements-public.js; имя — только с согласия).
 // Блока без данных нет на экране — соседние растягиваются; «нет данных» не пишется никогда.
@@ -29,7 +29,7 @@
   }
 
   function create({ audience = 'students' } = {}) {
-    const data = { holidays: [], weather: null, duty: [], events: [], tasks: [], results: [], ticker: [], days: {}, phrases: null, menuReady: false, late: null, wins: null };
+    const data = { holidays: [], weather: null, duty: [], events: [], tasks: [], results: [], ticker: [], days: {}, phrases: null, menuReady: false, late: null, wins: null, olympiads: null };
     const wins = window.AchievementsPublic;
     const lateCore = window.LatenessCore;
 
@@ -39,7 +39,7 @@
         const timer = setTimeout(() => resolve(fallback), 12000);
         Promise.resolve(p).catch(() => fallback).then((v) => { clearTimeout(timer); resolve(v); });
       });
-      const [holidays, weather, duty, events, task, ticker, days, phrases, menuState] = await Promise.all([
+      const [holidays, weather, duty, events, task, ticker, days, phrases, menuState, olympiads] = await Promise.all([
         safe(site.loadCalendar ? site.loadCalendar({ force }) : [], []),
         safe(today.loadWeather({ force: false }), null),
         safe(today.loadDuty({ force }), []),
@@ -49,10 +49,23 @@
         safe(today.loadDays(), {}),
         safe(today.loadPhrases(), null),
         safe(menu ? menu.loadMenuCycle({ force: false }) : null, null),
+        safe(audience === 'teachers' && config.achievementsApi ? loadOlympiads() : null, data.olympiads),
       ]);
       if (audience === 'teachers' && lateCore) data.late = await loadLate().catch(() => data.late);
       if (wins && config.achievementsPublicUrl) data.wins = await safe(wins.load(config.achievementsPublicUrl, { force }), data.wins);
-      Object.assign(data, { holidays: holidays || [], weather: weather || data.weather, duty: duty || [], events: events || [], tasks: task?.tasks || [], results: task?.results || [], ticker: ticker || [], days: days || {}, phrases, menuReady: Boolean(menuState?.cycle) });
+      Object.assign(data, { holidays: holidays || [], weather: weather || data.weather, duty: duty || [], events: events || [], tasks: task?.tasks || [], results: task?.results || [], ticker: ticker || [], days: days || {}, phrases, menuReady: Boolean(menuState?.cycle), olympiads });
+    }
+
+    async function loadOlympiads() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
+      try {
+        const res = await fetch(`${config.achievementsApi.replace(/\/$/, '')}/public/upcoming-olympiads`, { cache: 'no-store', credentials: 'omit', signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+        if (!Array.isArray(body?.olympiads)) throw new Error('Invalid olympiads feed');
+        return body.olympiads;
+      } finally { clearTimeout(timer); }
     }
 
     // The staff TV has no lateness data of its own: the slide reads the marks for «самый пунктуальный».
@@ -100,7 +113,7 @@
       clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>'),
       star: svg('<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8Z"/>', ' class="td-star__icon"'),
       puzzle: svg('<path d="M10 3.5a2 2 0 0 1 4 0V5h4v4h1.5a2 2 0 0 1 0 4H18v6h-6v-1.5a2 2 0 0 0-4 0V19H4v-4h1.5a2 2 0 0 0 0-4H4V5h6Z"/>'),
-      chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'),
+      trophy: svg('<path d="M8 3h8v7a4 4 0 0 1-8 0V3ZM8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 14v5M8 21h8"/>'),
       megaphone: svg('<path d="M3.5 10v4a1 1 0 0 0 1 1H7l8 4.5V4.5L7 9H4.5a1 1 0 0 0-1 1Z"/><path d="M18.5 8.5a5 5 0 0 1 0 7"/>'),
       party: svg('<path d="M4 20l4.5-12 7.5 7.5Z"/><path d="M14 4.5c.5 1.5 0 2.5-1 3.5M19.5 10c-1.5-.5-2.5 0-3.5 1"/><path d="M17 3.5h.01M20.5 6.5h.01M19 15h.01" stroke-width="3"/>'),
     };
@@ -193,25 +206,23 @@
       return `<section class="td-card td-task" style="--i:6"><div class="td-task__qr">${window.QrCode.svg(url, { label: 'QR-код: ответить на задачу дня' })}</div><div class="td-task__body">${head('puzzle', 'Задача дня · ответ — по QR-коду')}<p class="td-task__text" data-fit="24">${esc(task.task)}</p></div>${past?.text ? `<p class="td-chip td-chip--sun td-task__past" data-fit="18">${esc(past.text)}</p>` : ''}</section>`;
     }
 
-    // Учительская: «Сегодня по расписанию» из той же опубликованной сетки, что на ТВ.
-    function scheduleBlock(m, extra) {
-      if (audience !== 'teachers') return '';
-      const rows = extra?.changeRows || [];
-      const now = today.changesSummary(rows, m.date);
-      const word = (n) => plural(n, 'изменение', 'изменения', 'изменений');
-      const parts = [];
-      if (now.cancelled) parts.push(`отмен ${now.cancelled}`);
-      if (now.changed) parts.push(`замен ${now.changed}`);
-      if (now.room) parts.push(`смен кабинета ${now.room}`);
-      const main = now.total
-        ? `<b class="td-sched__num">${now.total}</b><div class="td-sched__text"><strong data-fit="24">${word(now.total)} сегодня</strong><span data-fit="18">${esc(parts.join(' · '))} · затронуто учителей: ${now.teachers}</span></div>`
-        : `<div class="td-sched__text"><strong data-fit="24">Сегодня изменений нет</strong><span>работаем по основному расписанию</span></div>`;
-      let tomorrow = '';
-      if (m.minutes >= 900 || !m.schoolDay) {
-        const next = today.changesSummary(rows, site.nextSchoolDay(m.date));
-        tomorrow = `<p class="td-chip td-chip--sun td-sched__next" data-fit="18">${next.published ? (next.total ? `На ${m.schoolDay ? 'завтра' : 'следующий учебный день'} уже опубликовано: ${next.total} ${word(next.total)}` : `На ${m.schoolDay ? 'завтра' : 'следующий учебный день'} опубликовано: изменений нет`) : `На ${m.schoolDay ? 'завтра' : 'следующий учебный день'} изменения ещё не опубликованы`}</p>`;
-      }
-      return `<section class="td-card td-sched" style="--i:6"><div class="td-sched__body">${head('chart', 'Сегодня по расписанию')}<div class="td-sched__row">${main}</div></div>${tomorrow}</section>`;
+    // Учительская: ближайшие три события, срок подачи заявок — отдельно от даты проведения.
+    function olympiadsBlock(m) {
+      if (audience !== 'teachers' || !Array.isArray(data.olympiads)) return '';
+      const iso = isoOf(m.date);
+      const open = (c) => c.status === 'published' && c.deadline >= iso;
+      const day = (c) => c.event_date || c.deadline;
+      const shortDate = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}${date.slice(0, 4) === iso.slice(0, 4) ? '' : `.${date.slice(2, 4)}`}`;
+      // Повторный отбор по дате экрана нужен и при потере связи, и в момент смены суток.
+      const list = data.olympiads.filter((c) => c && c.name && ['published', 'closed'].includes(c.status) && (c.event_date ? c.event_date >= iso : open(c)))
+        .sort((a, b) => day(a).localeCompare(day(b)) || a.name.localeCompare(b.name, 'ru')).slice(0, 3);
+      const items = list.map((c) => {
+        const title = c.subject && !c.name.toLowerCase().includes(c.subject.toLowerCase()) ? `${c.name} · ${c.subject}` : c.name;
+        const classes = c.audience === 'staff' ? 'Для педагогов' : (c.classes || []).join(', ');
+        const details = c.event_date ? (open(c) ? `Заявки до ${shortDate(c.deadline)}` : 'Приём завершён') : 'Дата уточняется';
+        return `<li class="td-olympiads__item"><div class="td-olympiads__date"><b data-fit="18">${esc(shortDate(day(c)))}</b><small>${c.event_date ? 'Проведение' : 'Приём до'}</small></div><div class="td-olympiads__info"><strong data-fit="20">${esc(title)}</strong><span data-fit="18">${esc([details, classes].filter(Boolean).join(' · '))}</span></div></li>`;
+      }).join('');
+      return `<section class="td-card td-olympiads" style="--i:6">${head('trophy', 'Ближайшие олимпиады')}${list.length ? `<ul class="td-olympiads__list" style="--olympiads:${list.length}">${items}</ul>` : '<p class="td-olympiads__empty">Предстоящих олимпиад пока нет</p>'}</section>`;
     }
 
     function tickerBlock(m) {
@@ -238,7 +249,7 @@
       const menuHtml = menuBlock(m);
       const sideHtml = side.map((html, i) => html.replace('<section class="td-card', `<section style="--i:${i + 1}" class="td-card${side.length % 2 && i === side.length - 1 ? ' td-wide' : ''}`)).join('');
       const middle = menuHtml || sideHtml ? `<div class="td-middle${menuHtml ? '' : ' td-middle--nomenu'}${sideHtml ? '' : ' td-middle--noside'}">${menuHtml}${sideHtml ? `<div class="td-side td-side--${side.length}">${sideHtml}</div>` : ''}</div>` : '';
-      return { head: headTile(m), html: `<section class="td" data-slide="today" data-audience="${audience}">${middle}${taskBlock(m)}${scheduleBlock(m, extra)}${tickerBlock(m)}</section>` };
+      return { head: headTile(m), html: `<section class="td" data-slide="today" data-audience="${audience}">${middle}${taskBlock(m)}${olympiadsBlock(m)}${tickerBlock(m)}</section>` };
     }
 
     // Anything at all to show (a screen without data shows its usual board instead).

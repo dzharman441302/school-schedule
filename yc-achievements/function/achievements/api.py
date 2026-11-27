@@ -75,6 +75,7 @@ class App:
             ('GET', r(r'^/staff$'), self.staff_public, None),
             ('GET', r(r'^/me$'), self.me, ALL),
             ('GET', r(r'^/dictionaries$'), self.dictionaries, ALL),
+            ('GET', r(r'^/public/upcoming-olympiads$'), self.upcoming_olympiads, None),
             ('GET', r(r'^/contests$'), self.list_competitions, ALL),
             ('POST', r(r'^/contests$'), self.create_competition, CHECKERS),
             ('GET', r(rf'^/contests/{I}$'), self.get_competition, ALL),
@@ -366,6 +367,28 @@ class App:
         })
 
     # ---------------------------------------------------- competitions and applications
+
+    def upcoming_olympiads(self, req):
+        """ТВ в учительской: только опубликованные карточки, без заявок и служебных полей."""
+        today = self.today()
+        iso = today.isoformat()
+        year = school_year_start(today)
+        fields = ('name', 'subject', 'event_date', 'deadline', 'audience', 'classes', 'status')
+        items = []
+        for contest_year in (year, year + 1):
+            for c in self.repo.list_competitions(contest_year):
+                if c['direction'] != 'Предметная олимпиада' or c['status'] not in ('published', 'closed'):
+                    continue
+                # Закрытый приём не отменяет предстоящее мероприятие. Без даты проведения
+                # ориентируемся на срок подачи заявок, пока приём ещё открыт.
+                if c['event_date']:
+                    if c['event_date'] < iso:
+                        continue
+                elif not registration.registration_open(c, today):
+                    continue
+                items.append({key: c[key] for key in fields})
+        items.sort(key=lambda c: (c['event_date'] or c['deadline'], c['name'].casefold()))
+        return Response(200, {'olympiads': items})
 
     def _competition(self, req):
         contest = self.repo.get_competition(req.params['id'])
